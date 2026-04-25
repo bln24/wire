@@ -1419,11 +1419,112 @@ function drawerBody(o){
     b += "</div><div style='font-size:11px;color:var(--quiet)'>HigherGov lists all attached PWS/SOW files on the profile page &middot; SAM.gov has official posted documents &middot; Upload below for AI analysis</div></section>";
   }
 
+  // Proposal stage panel (stages 7-11)
+  if(o.stage >= 7) b += proposalStagePanel(o);
+
+  // AI prompt box (all roles, all stages with solicitation)
+  b += aiPromptBox(o);
+
   // Controls
   if(state.user.role === "ceo") b += ceoControls(o);
   if(state.user.role !== "ceo" && state.user.key === o.assigned_to) b += amControls();
 
   return b;
+}
+
+function proposalStagePanel(o){
+  const st = stageOf(o);
+  const WORKER = 'https://bln24-hg-proxy.t24worker.workers.dev';
+  const safe = encodeURIComponent(o.title || '');
+  const teamsBase = 'https://thebln24.sharepoint.com/sites/BLN24-BDAI/Shared%20Documents/General/00%20Proposals';
+  const folderName = (o.title || '').substring(0,40).replace(/[^a-zA-Z0-9 ]/g,'').trim().replace(/\s+/g,'-');
+  const docUrl = teamsBase + '/' + folderName;
+
+  const stageGuide = {
+    7: { who: 'Account Manager', action: 'Review AI first draft. Flag any errors. Use the AI prompt box below to request rewrites.', color: '#ff9a62' },
+    8: { who: 'All + AI Evaluators', action: 'AI plays CO, COR, PM, Tech, and Director personas. Each scores the draft. Respond to critiques before advancing.', color: 'var(--red)' },
+    9: { who: 'Account Manager + Brian', action: 'Compliance check — every SOW requirement must be addressed. AI polishes tone and evidence. Brian does final read.', color: '#ffd166' },
+    10: { who: 'Brian', action: 'AI plays the top competitor. Read their attack on your proposal. Harden the vulnerable sections.', color: '#8d877b' },
+    11: { who: 'Brian only', action: 'Final gate. Approve to generate submission checklist and drop files to SharePoint.', color: 'var(--green)' }
+  }[o.stage] || { who: '', action: '', color: 'var(--amber)' };
+
+  return `<section class='detail-section' style='border:1px solid ${stageGuide.color}33;border-radius:10px;padding:16px;background:${stageGuide.color}0a'>
+    <div class='detail-label' style='color:${stageGuide.color}'>${esc(st.name)} Stage</div>
+    <div style='font-size:12px;color:var(--muted);margin-bottom:10px'><b>Who's up:</b> ${stageGuide.who}</div>
+    <div style='font-size:12px;color:var(--muted);margin-bottom:14px'>${stageGuide.action}</div>
+    <div style='display:flex;gap:8px;flex-wrap:wrap'>
+      <a href='${docUrl}' target='_blank' rel='noreferrer' style='display:inline-flex;align-items:center;gap:5px;background:rgba(244,183,63,.12);border:1px solid rgba(244,183,63,.3);border-radius:7px;padding:8px 14px;color:var(--amber);font-size:12px;font-weight:800;text-decoration:none'>&#8599; Open Word Doc in Teams</a>
+      ${o.stage === 8 ? `<button onclick='runRedTeam(${o.id})' class='btn' style='font-size:12px'>&#9654; Run Red Team AI</button>` : ''}
+      ${o.stage === 11 ? `<button onclick='runFinalGate(${o.id})' class='btn btn-primary' style='font-size:12px'>&#10003; Approve & Generate Checklist</button>` : ''}
+    </div>
+  </section>`;
+}
+
+function aiPromptBox(o){
+  return `<section class='detail-section'>
+    <div class='detail-label'><span data-icon='spark'></span>AI Prompt — Rewrite a Section</div>
+    <div style='font-size:11px;color:var(--quiet);margin-bottom:10px'>Tell the AI what to fix. Be specific: "Strengthen the past performance section to address DEA\'s Drupal requirement" or "Rewrite the executive summary to lead with mission alignment."</div>
+    <div class='field'><input class='input' id='aiSection_${o.id}' placeholder='Section to rewrite (e.g. Executive Summary, Technical Approach)'></div>
+    <div class='field'><textarea class='textarea' id='aiInstruction_${o.id}' placeholder='What should change and why? The more specific, the better.' style='min-height:72px'></textarea></div>
+    <button onclick='submitAIRewrite(${o.id})' class='btn btn-primary' style='font-size:12px'><span data-icon='send'></span>Send to AI</button>
+    <div class='message' id='aiRewriteMsg_${o.id}'></div>
+  </section>`;
+}
+
+function runRedTeam(oppId){
+  const o = OPPS.find(x=>x.id===oppId);
+  if(!o) return;
+  const msg = $('aiRewriteMsg_'+oppId);
+  if(msg) msg.textContent = 'Red Team analysis running… check back in ~30 seconds.';
+  fetch('https://bln24-hg-proxy.t24worker.workers.dev/ai-rewrite',{
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      opp_id:oppId, section_title:'Full Proposal — Red Team Review',
+      current_text:'Red Team review of the full proposal',
+      instruction:'Play 5 federal evaluator personas (CO, COR, PM, Technical Reviewer, Program Director). For each, score the proposal Technical/Past Performance/Price and give 2 specific criticisms and 1 specific strength. Format as a structured review.',
+      context:'Opp: '+o.title+' | Agency: '+o.agency+' | Win theme: '+(o.ai_win_theme||'')
+    })
+  }).then(r=>r.json()).then(d=>{
+    if(msg) msg.textContent = d.rewritten_text ? 'Red Team done. Review: ' + d.change_summary : 'Error: '+(d.error||'unknown');
+  }).catch(e=>{ if(msg) msg.textContent='Error: '+e.message; });
+}
+
+function runFinalGate(oppId){
+  const o = OPPS.find(x=>x.id===oppId);
+  if(!o) return;
+  if(!confirm('Approve this proposal for submission? This will generate the submission checklist and notify the team.')) return;
+  fetch('https://bln24-hg-proxy.t24worker.workers.dev/approve',{
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({opp:o})
+  }).then(r=>r.json()).then(d=>{
+    alert('Approved! Asana task: '+d.task_url);
+  }).catch(e=>alert('Error: '+e.message));
+}
+
+function submitAIRewrite(oppId){
+  const o = OPPS.find(x=>x.id===oppId);
+  if(!o) return;
+  const section = $('aiSection_'+oppId)?.value?.trim();
+  const instruction = $('aiInstruction_'+oppId)?.value?.trim();
+  const msg = $('aiRewriteMsg_'+oppId);
+  if(!instruction){ if(msg) msg.textContent = 'Please enter an instruction.'; return; }
+  if(msg){ msg.textContent = 'Sending to AI…'; msg.style.color='var(--amber)'; }
+  fetch('https://bln24-hg-proxy.t24worker.workers.dev/ai-rewrite',{
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      opp_id: oppId,
+      section_title: section || 'General',
+      current_text: '',
+      instruction: instruction,
+      context: 'Opp: '+o.title+' | Agency: '+o.agency+' | Win theme: '+(o.ai_win_theme||'')+'\nWhat they need: '+(o.what_they_need||'')
+    })
+  }).then(r=>r.json()).then(d=>{
+    if(d.rewritten_text){
+      if(msg){ msg.style.color='var(--green)'; msg.innerHTML = '<b>AI Rewrite Ready:</b><br><br>' + d.rewritten_text.replace(/\n/g,'<br>') + '<br><br><small style="color:var(--quiet)">' + (d.change_summary||'') + '</small>'; }
+    } else {
+      if(msg){ msg.style.color='var(--red)'; msg.textContent = 'Error: '+(d.error||'Unknown error'); }
+    }
+  }).catch(e=>{ if(msg){ msg.style.color='var(--red)'; msg.textContent='Error: '+e.message; } });
 }
 
 
