@@ -1606,18 +1606,25 @@ function signInWithMS() {
 }
 
 function login() {
+  const ae = $("ae");
+  const btn = $("loginBtn");
+  if(btn) { btn.textContent = "Connecting to Microsoft…"; btn.disabled = true; }
   console.log("WIRE: login() called, msalApp=", !!msalApp, "msal=", typeof msal);
   if(msalApp) {
     signInWithMS();
   } else if(typeof msal !== "undefined") {
-    // MSAL loaded but app not initialized yet — try again
-    const ae = $("ae");
-    if(ae) ae.textContent = "Connecting to Microsoft…";
-    initMSAL().then(function(){ if(msalApp) signInWithMS(); });
+    if(ae) ae.textContent = "Initializing…";
+    initMSAL().then(function(){
+      if(msalApp) { signInWithMS(); }
+      else {
+        if(btn) { btn.innerHTML = "→ Sign in with Microsoft"; btn.disabled = false; }
+        if(ae) ae.textContent = "Auth failed to initialize. Try hard refresh.";
+      }
+    });
   } else {
-    const ae = $("ae");
-    if(ae) ae.textContent = "Auth library not loaded. Please hard-refresh (Cmd+Shift+R).";
-    console.warn("WIRE: MSAL not available");
+    if(btn) { btn.innerHTML = "→ Sign in with Microsoft"; btn.disabled = false; }
+    if(ae) ae.textContent = "Microsoft auth library not loaded. Hard refresh (Cmd+Shift+R).";
+    console.warn("WIRE: MSAL not available at all");
   }
 }
 
