@@ -1370,7 +1370,8 @@ function drawerBody(o){
   b += intelList("Competitors", o.competitors, "red");
   b += intelList("Teaming partners", o.partners, "green");
 
-  // Controls
+  // Upload + Controls
+  if(state.user.role === "ceo" || state.user.role === "am") b += uploadSection(o);
   if(state.user.role === "ceo") b += ceoControls(o);
   if(state.user.role !== "ceo" && state.user.key === o.assigned_to) b += amControls();
 
@@ -1397,77 +1398,47 @@ function intelList(title,items,tone){
       <b>${esc(item.name)}</b>${item.gap ? `<div class="mini-note">Fills gap: ${esc(item.gap)}</div>` : ""}<p>${esc(item.why)}</p>${item.url ? `<a href="${esc(item.url)}" target="_blank" rel="noreferrer">View source</a>` : ""}
     </div>`).join("")}</section>`;
 }
-function ceoControls(o){
-  return `<section class="detail-section"><div class="detail-label">CEO decision</div>
-    <div class="field"><label class="label">Your win theme</label><textarea class="textarea" id="ceoTheme">${esc(o.brian_win_theme || "")}</textarea></div>
-    <div class="field"><label class="label">Assign to</label><select class="select" id="assignTo"><option value="">Select account manager</option>${["hayk","michael","gabe","eric"].map(k=>`<option value="${k}" ${o.assigned_to === k ? "selected" : ""}>${USERS[k].name}</option>`).join("")}</select></div>
-    <div class="field"><label class="label">Challenge WIRE</label><textarea class="textarea" id="challenge" placeholder="What did the model miss?"></textarea></div>
-    <div class="message" id="decisionMsg"></div>
+function uploadSection(o){
+  return `<section class="detail-section">
+    <div class="detail-label">Solicitation Documents</div>
+    <div style="border:1px dashed rgba(244,183,63,.3);border-radius:8px;padding:16px;text-align:center;background:rgba(244,183,63,.03)">
+      <div style="font-size:13px;font-weight:700;margin-bottom:6px">Upload PWS / SOW / RFP</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:12px">WIRE will extract requirements, build a compliance matrix, and deepen the capability analysis using GPT-4.1.</div>
+      <label style="display:inline-flex;align-items:center;gap:8px;background:rgba(244,183,63,.15);border:1px solid rgba(244,183,63,.3);border-radius:8px;padding:9px 18px;cursor:pointer;font-size:13px;font-weight:700;color:var(--amber)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        Choose File (PDF or DOCX)
+        <input type="file" id="sol-upload-${o.id}" accept=".pdf,.docx,.doc,.txt" style="display:none" onchange="handleSolUpload(event, ${o.id})">
+      </label>
+      <div id="sol-upload-status-${o.id}" style="margin-top:10px;font-size:12px;color:var(--muted)"></div>
+      ${o.compliance_matrix ? '<div style="margin-top:8px;font-size:11px;color:var(--green)">✓ Compliance matrix generated — scroll down to view</div>' : ''}
+    </div>
+    ${o.compliance_matrix ? renderComplianceMatrix(o.compliance_matrix) : ''}
   </section>`;
-}
-function amControls(){
-  return `<section class="detail-section"><div class="detail-label">Capture strategy</div>
-    <div class="field"><label class="label">Your capture strategy</label><textarea class="textarea" id="amStrategy"></textarea></div>
-    <div class="field"><label class="label">Tag technical SME</label><select class="select" id="tagSme"><option value="">Select SME</option>${SMES.map(s=>`<option>${s}</option>`).join("")}</select></div>
-    <div class="message" id="decisionMsg"></div>
-  </section>`;
-}
-function drawerFoot(o){
-  const isCEO = state.user.role === "ceo";
-  const isOwner = state.user.key === o.assigned_to;
-  if(isCEO) return `<button class="btn btn-primary" id="approveBtn"><span data-icon="check"></span>Approve & Assign</button><button class="btn btn-danger" id="passBtn"><span data-icon="x"></span>Pass</button><button class="btn" id="closeBtn">Close</button>`;
-  if(isOwner) return `<button class="btn btn-primary" id="strategyBtn"><span data-icon="send"></span>Submit Strategy</button><button class="btn" id="closeBtn">Close</button>`;
-  return `<button class="btn" id="closeBtn">Close</button>`;
-}
-function wireDrawer(){
-  $("closeBtn")?.addEventListener("click",closeDrawer);
-  $("approveBtn")?.addEventListener("click",approveOpp);
-  $("passBtn")?.addEventListener("click",passOpp);
-  $("strategyBtn")?.addEventListener("click",()=>{$("decisionMsg").textContent = "Strategy submitted. Brian can see your input.";});
-}
-function closeDrawer(){
-  $("drawerBg").classList.remove("on");
-  $("drawer").classList.remove("on");
-  state.opp = null;
-}
-function approveOpp(){
-  const assignee = $("assignTo").value;
-  if(!assignee){$("decisionMsg").textContent = "Select an account manager before approving."; $("decisionMsg").classList.add("err"); return;}
-  state.opp.assigned_to = assignee;
-  state.opp.brian_win_theme = $("ceoTheme").value || state.opp.brian_win_theme;
-  state.opp.stage = Math.max(state.opp.stage,2);
-  $("decisionMsg").classList.remove("err");
-  $("decisionMsg").textContent = `Approved and assigned to ${USERS[assignee].name}.`;
-  buildNav();
-  renderCommand();
-  setTimeout(()=>go(state.page),500);
-}
-function passOpp(){
-  state.opp.stage = -1;
-  $("decisionMsg").textContent = "Passed. Removed from the active pipeline.";
-  buildNav();
-  renderCommand();
-  setTimeout(()=>{closeDrawer(); go(state.page);},650);
-}
-function submitOpp(){
-  const agency = $("sa").value.trim();
-  const title = $("st").value.trim();
-  const why = $("sw").value.trim();
-  const msg = $("submitMsg");
-  if(!agency || !title || !why){msg.textContent = "Agency, title, and rationale are required."; msg.classList.add("err"); return;}
-  OPPS.push({id:Date.now(),stage:0,agency,title,value:$("sv").value || "TBD",set_aside:$("ss").value,score:0,source:"Employee Submission",ref:$("sr").value,what_they_need:why,rex_take:"WIRE analysis queued.",recommendation:"Pending",cm_fit:"Pending",cm_avg:0,cm_tasks:[],competitors:[],partners:[],ai_win_theme:"Generating win theme.",brian_win_theme:null,assigned_to:null,submitted_by:state.user.name});
-  msg.classList.remove("err");
-  msg.textContent = "Submitted. WIRE analysis is queued for Brian's review.";
-  buildNav();
-  setTimeout(()=>go("pipeline"),800);
 }
 
-$("loginBtn").addEventListener("click",login);
-$("logoutBtn").addEventListener("click",logout);
-$("drawerBg").addEventListener("click",closeDrawer);
-$("drawerClose").addEventListener("click",closeDrawer);
-$("globalSearch").addEventListener("input",e=>{state.query = e.target.value; go(state.page);});
-hydrateIcons();
-</script>
-</body>
-</html>
+function renderComplianceMatrix(cm){
+  if(!cm || !cm.requirements) return "";
+  var covered = cm.requirements.filter(function(r){return r.status==="covered";}).length;
+  var gaps = cm.requirements.filter(function(r){return r.status==="gap";}).length;
+  var rows = cm.requirements.map(function(r) {
+    var sc = r.status==="covered" ? "var(--green)" : r.status==="gap" ? "var(--red)" : "var(--amber)";
+    var si = r.status==="covered" ? "✓" : r.status==="gap" ? "✗" : "~";
+    return "<tr style='border-bottom:1px solid rgba(244,241,232,.06)'>" +
+      "<td style='padding:8px 10px;font-size:12px;font-weight:600'>" + esc(r.id||"") + "</td>" +
+      "<td style='padding:8px 10px;font-size:12px;color:var(--muted)'>" + esc(r.requirement||"") + "</td>" +
+      "<td style='padding:8px 10px;text-align:center;font-size:13px;font-weight:900;color:" + sc + "'>" + si + "</td>" +
+      "<td style='padding:8px 10px;font-size:11px;color:var(--quiet)'>" + esc(r.evidence||r.note||"") + "</td>" +
+      "</tr>";
+  }).join("");
+  return "<section class='detail-section'><div class='detail-label'>Compliance Matrix</div>" +
+    "<div style='font-size:11px;color:var(--muted);margin-bottom:8px'>" + cm.requirements.length + " requirements &middot; " + covered + " covered &middot; " + gaps + " gaps</div>" +
+    "<div style='overflow-x:auto'><table style='width:100%;border-collapse:collapse'>" +
+    "<thead><tr style='background:rgba(244,241,232,.06)'>" +
+    "<th style='padding:7px 10px;text-align:left;font-size:10px;font-weight:900;color:var(--quiet)'>ID</th>" +
+    "<th style='padding:7px 10px;text-align:left;font-size:10px;font-weight:900;color:var(--quiet)'>Requirement</th>" +
+    "<th style='padding:7px 10px;text-align:center;font-size:10px;font-weight:900;color:var(--quiet)'>Status</th>" +
+    "<th style='padding:7px 10px;text-align:left;font-size:10px;font-weight:900;color:var(--quiet)'>Evidence</th>" +
+    "</tr></thead><tbody>" + rows + "</tbody></table></div></section>";
+}
+
+
