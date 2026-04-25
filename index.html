@@ -1559,7 +1559,7 @@ function signInWithMS() {
   }
   ae.textContent = "Redirecting to Microsoft...";
   msalApp.loginRedirect({
-    scopes:["User.Read"],
+    scopes:["User.Read","User.ReadBasic.All"],
     prompt: "select_account"
   }).catch(err => {
     console.error("WIRE loginRedirect error:", err);
@@ -2366,6 +2366,47 @@ async function fetchMSPhoto(account) {
 }
 
 // ── Assign-to autocomplete ────────────────────────────────────────────────
+const _photoCache = {}; // email -> blob URL or "none"
+
+async function getGraphToken() {
+  if(!msalApp || !state.user || !state.user.msalAccount) return null;
+  try {
+    const r = await msalApp.acquireTokenSilent({ scopes:["User.Read","User.ReadBasic.All"], account: state.user.msalAccount });
+    return r.accessToken;
+  } catch(e) { return null; }
+}
+
+async function fetchOrgPhoto(email, avatarEl) {
+  if(_photoCache[email] !== undefined) {
+    if(_photoCache[email] !== "none") {
+      avatarEl.style.backgroundImage = "url(" + _photoCache[email] + ")";
+      avatarEl.style.backgroundSize = "cover";
+      avatarEl.style.backgroundPosition = "center";
+      avatarEl.innerHTML = "";
+    }
+    return;
+  }
+  _photoCache[email] = "none"; // optimistic
+  const token = await getGraphToken();
+  if(!token) return;
+  try {
+    const r = await fetch("https://graph.microsoft.com/v1.0/users/" + encodeURIComponent(email) + "/photo/$value", {
+      headers: { "Authorization": "Bearer " + token }
+    });
+    if(!r.ok) return;
+    const blob = await r.blob();
+    const url = URL.createObjectURL(blob);
+    _photoCache[email] = url;
+    // Find matching avatar element and update it
+    document.querySelectorAll("[data-photoemail='" + CSS.escape(email) + "']").forEach(el => {
+      el.style.backgroundImage = "url(" + url + ")";
+      el.style.backgroundSize = "cover";
+      el.style.backgroundPosition = "center";
+      el.innerHTML = "";
+    });
+  } catch(e) {}
+}
+
 function acFilter(input) {
   const q = (input.value || "").toLowerCase().trim();
   const list = $("acList");
@@ -2375,14 +2416,20 @@ function acFilter(input) {
         r.name.toLowerCase().includes(q) ||
         r.title.toLowerCase().includes(q) ||
         r.email.toLowerCase().includes(q))
-    : ORG_ROSTER;
+    : ORG_ROSTER.slice(0, 20); // show top 20 when empty
   if(!matches.length) { list.classList.remove("on"); return; }
+  const initials = n => n.split(" ").map(w=>w[0]).join("").toUpperCase().slice(0,2);
   list.innerHTML = matches.map(r => `
     <div class="ac-item" onmousedown="acSelect('${r.key}','${r.name}')">
-      <div class="ac-avatar">${r.name.split(" ").map(w=>w[0]).join("").toUpperCase().slice(0,2)}</div>
-      <div class="ac-info"><b>${esc(r.name)}</b><span>${esc(r.title)}</span></div>
+      <div class="ac-avatar" data-photoemail="${esc(r.email)}">${initials(r.name)}</div>
+      <div class="ac-info"><b>${esc(r.name)}</b><span>${esc(r.title||r.email)}</span></div>
     </div>`).join("");
   list.classList.add("on");
+  // Lazy-load photos for visible matches
+  matches.forEach(r => {
+    const el = list.querySelector("[data-photoemail='" + CSS.escape(r.email) + "']");
+    if(el) fetchOrgPhoto(r.email, el);
+  });
 }
 function acSelect(key, name) {
   const input = $("assignTo");
