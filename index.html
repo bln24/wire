@@ -1166,9 +1166,9 @@ body.light-mode .ac-list { background:var(--panel); border-color:var(--line-stro
       <!-- Profile auto-detected from Microsoft account -->
       <select id="au" style="display:none">
         <option value="brian">Brian Nguyen - CEO</option>
-        <option value="hayk">Hayk - Account Manager</option>
-        <option value="michael">Michael - Account Manager</option>
-        <option value="gabe">Gabe - Account Manager</option>
+        <option value="hayk">Hayk - Pursuit Lead</option>
+        <option value="michael">Michael - Pursuit Lead</option>
+        <option value="gabe">Gabe - Pursuit Lead</option>
         <option value="eric">Eric Ma - BD</option>
         <option value="favi">Favi Villa - UX Lead / SME</option>
       </select>
@@ -1268,11 +1268,11 @@ body.light-mode .ac-list { background:var(--panel); border-color:var(--line-stro
 <script>
 const USERS = {
   brian:{name:"Brian Nguyen",role:"ceo",label:"CEO",email:"brian@bln24.com"},
-  hayk:{name:"Hayk Manukyan",role:"am",label:"Account Manager",email:"hayk@bln24.com"},
-  michael:{name:"Michael Nguyen",role:"am",label:"Account Manager",email:"michael@bln24.com"},
-  gabe:{name:"Gabe Meckler",role:"am",label:"Account Manager",email:"gabe@bln24.com"},
-  eric:{name:"Eric Ma",role:"am",label:"BD Manager",email:"eric.ma@bln24.com"},
-  shawn:{name:"Shawn de Lopez",role:"am",label:"Art Director / AM",email:"shawn@bln24.com"},
+  hayk:{name:"Hayk Manukyan",role:"am",label:"Pursuit Lead",email:"hayk@bln24.com"},
+  michael:{name:"Michael Nguyen",role:"am",label:"Pursuit Lead",email:"michael@bln24.com"},
+  gabe:{name:"Gabe Meckler",role:"am",label:"Pursuit Lead",email:"gabe@bln24.com"},
+  eric:{name:"Eric Ma",role:"am",label:"Pursuit Lead",email:"eric.ma@bln24.com"},
+  shawn:{name:"Shawn de Lopez",role:"am",label:"Pursuit Lead",email:"shawn@bln24.com"},
   ted:{name:"Ted Ridley",role:"am",label:"Senior Capture Manager",email:"ted.ridley@bln24.com"},
   favi:{name:"Favi Villa",role:"sme",label:"UX Lead / SME",email:"favi.villa@bln24.com"}
 };
@@ -1552,7 +1552,7 @@ function setMSUser(account) {
   const name = account.name || email;
   const role = getRoleFromEmail(email);
   const key = getUserKeyFromEmail(email);
-  const label = USERS[key] ? USERS[key].label : (role === "ceo" ? "CEO" : "Account Manager");
+  const label = USERS[key] ? USERS[key].label : (role === "ceo" ? "CEO" : "Pursuit Lead");
   state.user = {key, name, role, label, email, msalAccount: account};
   $("auth").classList.add("hidden");
   $("app").classList.add("on");
@@ -1562,7 +1562,7 @@ function setMSUser(account) {
   const initials = name.split(" ").map(w=>w[0]).join("").toUpperCase().slice(0,2);
   [$("profileInitial"),$("profileInitialLarge")].forEach(el=>{if(el) el.textContent=initials;});
   if($("profileName")) $("profileName").textContent = name;
-  if($("profileRoleLabel")) $("profileRoleLabel").textContent = role==="ceo"?"CEO · Full Access":role==="am"?"Account Manager":"SME";
+  if($("profileRoleLabel")) $("profileRoleLabel").textContent = role==="ceo"?"CEO · Full Access":role==="am"?"Pursuit Lead":"SME";
   // Apply saved theme
   setTheme(localStorage.getItem("wire_theme")||"dark");
   // Seed notifications
@@ -1823,7 +1823,7 @@ const PAGES = {
     return pageHead("Proposal control","Proposals","Color-team review stages after go/no-go") + emptyState("No proposals in review","Opportunities appear here after CEO approval and capture sign-off.");
   },
   team(){
-    const team = [["Brian Nguyen","CEO / Final Gate","All final approvals"],["Hayk","Account Manager","Available"],["Michael","Account Manager","NTIA assigned"],["Gabe","Account Manager","Available"],["Eric Ma","BD / WIRE Manager","Census assigned"],["Favi Villa","UX Lead / SME","HCD reviews"]];
+    const team = [["Brian Nguyen","CEO / Final Gate","All final approvals"],["Hayk","Pursuit Lead","Available"],["Michael","Pursuit Lead","NTIA assigned"],["Gabe","Pursuit Lead","Available"],["Eric Ma","BD / WIRE Manager","Census assigned"],["Favi Villa","UX Lead / SME","HCD reviews"]];
     return pageHead("Operating model","Team","Capture and proposal roster") + `<section class="section-panel list-view">${team.map(([n,r,note])=>`<div class="row-card" style="cursor:default"><div><div class="eyebrow" style="margin:0;color:var(--quiet)">${r}</div><h3>${n}</h3><p class="page-sub">${note}</p></div><span class="chip amber">${n.split(" ").map(x=>x[0]).join("").slice(0,2)}</span></div>`).join("")}</section>`;
   }
 };
@@ -2013,9 +2013,9 @@ function proposalStagePanel(o){
   const docUrl = teamsBase + '/' + folderName;
 
   const stageGuide = {
-    7: { who: 'Account Manager', action: 'Review AI first draft. Flag any errors. Use the AI prompt box below to request rewrites.', color: '#ff9a62' },
+    7: { who: 'Pursuit Lead', action: 'Review AI first draft. Flag any errors. Use the AI prompt box below to request rewrites.', color: '#ff9a62' },
     8: { who: 'All + AI Evaluators', action: 'AI plays CO, COR, PM, Tech, and Director personas. Each scores the draft. Respond to critiques before advancing.', color: 'var(--red)' },
-    9: { who: 'Account Manager + Brian', action: 'Compliance check - every SOW requirement must be addressed. AI polishes tone and evidence. Brian does final read.', color: '#ffd166' },
+    9: { who: 'Pursuit Lead + Brian', action: 'Compliance check - every SOW requirement must be addressed. AI polishes tone and evidence. Brian does final read.', color: '#ffd166' },
     10: { who: 'Brian', action: 'AI plays the top competitor. Read their attack on your proposal. Harden the vulnerable sections.', color: '#8d877b' },
     11: { who: 'Brian only', action: 'Final gate. Approve to generate submission checklist and drop files to SharePoint.', color: 'var(--green)' }
   }[o.stage] || { who: '', action: '', color: 'var(--amber)' };
@@ -2132,7 +2132,7 @@ function intelList(title,items,tone,oppId){
 function ceoControls(o){
   return `<section class="detail-section"><div class="detail-label">CEO decision</div>
     <div class="field"><label class="label">Your win theme</label><textarea class="textarea" id="ceoTheme">${esc(o.brian_win_theme || "")}</textarea></div>
-    <div class="field"><label class="label">Assign to</label>
+    <div class="field"><label class="label">Assign pursuit lead</label>
       <div class="ac-wrap">
         <input class="input" id="assignTo" placeholder="Search by name or title…" autocomplete="off"
           value="${o.assigned_to && ORG_ROSTER.find(r=>r.key===o.assigned_to) ? ORG_ROSTER.find(r=>r.key===o.assigned_to).name : o.assigned_to || ""}"
