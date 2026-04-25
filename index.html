@@ -1862,10 +1862,23 @@ hydrateIcons();
 
 
 function truncateText(text, maxLen, id) {
-  // Always show full text — no truncation
-  return "<span>" + esc(text||'') + "</span>";
+  if(!text || text.length <= maxLen) return "<span>" + esc(text||'') + "</span>";
+  return "<span id='tw-" + id + "'>" +
+    "<span id='ts-" + id + "'>" + esc(text.substring(0, maxLen)) + "… " +
+    "<button onclick=\"tgl('" + id + "')\" style='background:none;border:none;color:var(--amber);font-size:11px;font-weight:800;cursor:pointer;font-family:inherit;padding:0'>Read more ▾</button></span>" +
+    "<span id='tf-" + id + "' style='display:none'>" + esc(text) + " " +
+    "<button onclick=\"tgl('" + id + "')\" style='background:none;border:none;color:var(--amber);font-size:11px;font-weight:800;cursor:pointer;font-family:inherit;padding:0'>Read less ▴</button></span>" +
+    "</span>";
 }
-function tgl(id) {}
+function tgl(id) {
+  var s = document.getElementById('ts-' + id);
+  var f = document.getElementById('tf-' + id);
+  if(s && f) {
+    var expanding = f.style.display === 'none';
+    s.style.display = expanding ? 'none' : '';
+    f.style.display = expanding ? '' : 'none';
+  }
+}
 
 
 function showFilteredOpps(title, opps) {
