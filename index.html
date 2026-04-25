@@ -1657,8 +1657,8 @@ function drawerBody(o){
   }
 
   // Competitors + Partners
-  b += intelList("Competitors", o.competitors, "red");
-  b += intelList("Teaming partners", o.partners, "green");
+  b += intelList("Competitors", o.competitors, "red", o.id);
+  b += intelList("Teaming partners", o.partners, "green", o.id);
 
   // Document links
   {
@@ -1797,11 +1797,11 @@ function capabilityMatrix(o){
       </div>`;
     }).join("")}</div></section>`;
 }
-function intelList(title,items,tone){
+function intelList(title,items,tone,oppId){
   if(!items || !items.length) return "";
-  return `<section class="detail-section"><div class="detail-label">${title}</div>${items.map(item=>`
+  return `<section class="detail-section"><div class="detail-label">${title}</div>${items.map((item,ii)=>`
     <div class="intel-card" style="border-left:2px solid ${tone === "red" ? "var(--red)" : "var(--green)"}">
-      <b>${esc(item.name)}</b>${item.gap ? `<div class="mini-note">Fills gap: ${esc(item.gap)}</div>` : ""}<p>${truncateText(item.why||"", 160, "intel-" + (item.name||"").replace(/[^a-z0-9]/gi,"-").toLowerCase() + "-" + o.id)}</p>${item.url ? `<a href="${esc(item.url)}" target="_blank" rel="noreferrer">View source</a>` : ""}
+      <b>${esc(item.name)}</b>${item.gap ? `<div class="mini-note">Fills gap: ${esc(item.gap)}</div>` : ""}<p>${truncateText(item.why||"", 160, "intel-" + tone + "-" + (oppId||0) + "-" + ii)}</p>${item.url ? `<a href="${esc(item.url)}" target="_blank" rel="noreferrer">View source</a>` : ""}
     </div>`).join("")}</section>`;
 }
 function ceoControls(o){
