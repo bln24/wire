@@ -996,11 +996,19 @@ function setMSUser(account) {
 function signInWithMS() {
   const ae = $("ae");
   ae.textContent = "";
-  if(!msalApp) { ae.textContent = "Microsoft auth not loaded. Try refreshing."; return; }
-  // Use redirect — works on all browsers without popup blockers
-  msalApp.loginRedirect({scopes:["User.Read"]}).catch(err => {
-    console.error(err);
-    ae.textContent = err.message || "Sign-in failed. Try again.";
+  console.log("WIRE: signInWithMS called. msalApp:", msalApp, "msal:", typeof msal);
+  if(!msalApp) {
+    ae.textContent = "Auth library not loaded. Please hard-refresh (Cmd+Shift+R) and try again.";
+    console.error("WIRE: msalApp is null");
+    return;
+  }
+  ae.textContent = "Redirecting to Microsoft...";
+  msalApp.loginRedirect({
+    scopes:["User.Read"],
+    prompt: "select_account"
+  }).catch(err => {
+    console.error("WIRE loginRedirect error:", err);
+    ae.textContent = err.message || "Sign-in failed. Check console for details.";
   });
 }
 
