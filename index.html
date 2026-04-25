@@ -1338,7 +1338,7 @@ function drawerBody(o){
 
   // Win Theme
   b += "<section class=\"detail-section\"><div class=\"detail-label\">Win Theme</div>";
-  if(winDeep) b += "<div class=\"callout\" style=\"border-left-color:var(--amber)\">" + esc(winDeep) + "</div>";
+  if(winDeep) b += "<div class=\"callout\" style=\"border-left-color:var(--amber)\">" + truncateText(winDeep, 280, "win-" + o.id) + "</div>";
   if(o.brian_win_theme) b += "<div class=\"callout\" style=\"margin-top:8px\">\ud83d\udc64 " + esc(o.brian_win_theme) + "</div>";
   b += "</section>";
 
