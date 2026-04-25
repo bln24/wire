@@ -1622,11 +1622,12 @@ function buildNav(){
   const isAM = state.user && state.user.role === "am";
   const uKey2 = state.user ? state.user.key : ""; const mine = uKey2 ? OPPS.filter(o=>o.assigned_to===uKey2||(o.pursuit_team||[]).includes(uKey2)).length : 0;
   const needs = OPPS.filter(o=>o.stage <= 1).length;
+  const myCount = uKey2 ? OPPS.filter(o=>o.assigned_to===uKey2||(o.pursuit_team||[]).includes(uKey2)||(o.brian_win_theme&&o.stage>=2)).length : 0;
   const items = isCEO ? [
     ["pipeline","board","Pipeline",OPPS.length],
     ["review","review","CEO Review",needs],
+    ["mypursuits","inbox","My Pursuits",myCount||""],
     ["submit","plus","Submit Opp",""],
-    ["proposals","file","Proposals",""],
     ["winloss","chart","Win / Loss",""],
     ["team","users","Team",""]
   ] : isAM ? [
@@ -1789,6 +1790,17 @@ const PAGES = {
     const uKey = state.user ? state.user.key : ""; const mine = filteredOpps().filter(o=> uKey && (o.assigned_to === uKey || (o.pursuit_team||[]).includes(uKey)));
     return pageHead("Assigned work","My Queue",`${mine.length} opportunities assigned to you`) + `
       <div class="list-view">${mine.length ? mine.map(o=>rowCard(o,"Open")).join("") : emptyState("Nothing assigned yet","Approved opportunities will land here.")}</div>`;
+  },
+  mypursuits(){
+    const uKey = state.user ? state.user.key : "";
+    // CEO sees: opps they assigned a win theme to, opps they personally approved (stage >= 2), high-priority opps
+    const myOpps = filteredOpps().filter(o=>
+      (uKey && (o.assigned_to===uKey || (o.pursuit_team||[]).includes(uKey))) ||
+      o.brian_win_theme ||
+      o.stage >= 2
+    ).sort((a,b)=>b.score-a.score);
+    return pageHead("Your pursuit radar","My Pursuits",`${myOpps.length} active pursuits you\'re watching or leading`) +
+      \`<div class="list-view">\${myOpps.length ? myOpps.map(o=>rowCard(o,"View")).join("") : emptyState("All clear","No active pursuits yet.")}</div>\`;
   },
   submit(){
     return pageHead("Field intelligence","Submit an Opportunity","Add relationship-driven context that the automated feed may miss") + `
