@@ -1094,10 +1094,11 @@ function go(page){
 function pageHead(kicker,title,sub,actions=""){
   return `<div class="page-head"><div><div class="eyebrow">${kicker}</div><h1 class="page-title">${title}</h1><p class="page-sub">${sub}</p></div><div class="head-actions">${actions}</div></div>`;
 }
-function metric(value,label,copy,color,heights=[18,28,12,34,22]){
-  return `<div class="metric" style="--accent:${color}">
+function metric(value,label,copy,color,heights=[18,28,12,34,22],onclick=""){
+  return `<div class="metric" style="--accent:${color};${onclick ? 'cursor:pointer' : ''}" ${onclick ? `onclick="${onclick}"` : ''}>
     <div class="metric-value">${value}</div><div class="metric-label">${label}</div><div class="metric-copy">${copy}</div>
     <div class="mini-bars">${heights.map(h=>`<span style="height:${h}px"></span>`).join("")}</div>
+    ${onclick ? '<div style="font-size:10px;color:var(--amber);font-weight:700;margin-top:6px;opacity:.7">Click to view →</div>' : ''}
   </div>`;
 }
 function commandHero(total,needs,high){
@@ -1147,8 +1148,11 @@ function topAgencies(limit=6){
   return [...map.values()].sort((a,b)=>b.count-a.count || b.max-a.max).slice(0,limit);
 }
 function agencyStrip(){
-  return `<div class="agency-strip">${topAgencies(6).map(a=>`
-    <div class="agency-tile"><div class="agency-seal">${esc(a.code)}</div><div><b>${esc(a.name)}</b><span>${a.count} active pursuit${a.count > 1 ? "s" : ""}</span></div></div>`).join("")}</div>`;
+  return `<div class="agency-strip">${topAgencies(8).map(a=>`
+    <div class="agency-tile" onclick="showFiltered('agency','${a.name} Opportunities',o=>agencyCode(o.agency)==='${a.code}')" style="cursor:pointer" title="Click to view ${a.name} opps">
+      <div class="agency-seal">${esc(a.code)}</div>
+      <div><b>${esc(a.name)}</b><span>${a.count} active pursuit${a.count > 1 ? 's' : ''}</span></div>
+    </div>`).join("")}</div>`;
 }
 
 function oppCard(o){
@@ -1194,10 +1198,10 @@ const PAGES = {
       ${lifecycleRail()}
       ${agencyStrip()}
       <div class="insight-grid">
-        ${metric(OPPS.length,"Active opps","Tracked across the WIRE review surface","var(--amber)")}
-        ${metric(high,"Priority fits","Innovation-weighted pursuits above threshold","var(--green)",[10,22,32,28,38])}
-        ${metric(`$${Math.round(total)}M+`,"Visible TCV","Known values only; TBD excluded","var(--blue)",[30,14,26,40,18])}
-        ${metric(needs,"Need decision","CEO gates where speed creates advantage","var(--red)",[20,34,16,28,42])}
+        ${metric(OPPS.length,"Active opps","All tracked opportunities","var(--amber)",[18,28,12,34,22],"showFiltered('all','All Active Opportunities')")}
+        ${metric(high,"Priority fits","Score 70+ — high-confidence pursuits","var(--green)",[10,22,32,28,38],"showFiltered('priority','Priority Fits — Score 70+')")}
+        ${metric(`$${Math.round(total)}M+`,"Visible TCV","Known values only; TBD excluded","var(--blue)",[30,14,26,40,18],"showFiltered('tcv','Known TCV Opportunities')")}
+        ${metric(needs,"Need decision","Waiting for CEO go/no-go","var(--red)",[20,34,16,28,42],"go('review')")}
       </div>
       <div class="focus-strip">
         <section class="focus-panel"><div class="focus-title">Priority stack</div><div class="priority-list">${priorities()}</div></section>
@@ -1492,6 +1496,32 @@ function tgl(id) {
   var s=document.getElementById('ts-'+id), f=document.getElementById('tf-'+id);
   if(s&&f){var h=f.style.display==='none';s.style.display=h?'none':'';f.style.display=h?'':'none';}
 }
+
+
+function showFiltered(type, title, filterFn) {
+  // Build a filtered list view and render it as a modal-like overlay
+  var opps;
+  if(typeof filterFn === 'function') {
+    opps = OPPS.filter(filterFn);
+  } else if(type === 'all') {
+    opps = OPPS.slice().sort((a,b) => b.score - a.score);
+  } else if(type === 'priority') {
+    opps = OPPS.filter(o => o.score >= 70).sort((a,b) => b.score - a.score);
+  } else if(type === 'tcv') {
+    opps = OPPS.filter(o => (o.val_high||0) > 0 || (o.val_low||0) > 0).sort((a,b) => (b.val_high||0) - (a.val_high||0));
+  } else {
+    opps = OPPS.slice().sort((a,b) => b.score - a.score);
+  }
+
+  // Render as a full page
+  var html = pageHead("Filtered view", title, opps.length + " opportunities",
+    "<button class='btn' onclick='go(state.page)'>← Back to Pipeline</button>");
+  html += "<div class='list-view'>" + opps.map(o => rowCard(o, "View")).join("") + "</div>";
+  $("main").innerHTML = html;
+  wireMain();
+  hydrateIcons($("main"));
+}
+
 </script>
 </body>
 </html>
