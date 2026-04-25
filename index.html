@@ -5,39 +5,46 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WIRE - BLN24 Capture Intelligence</title>
 <script>
-// Minimal login bootstrap - isolated, runs before main script
+// Minimal login bootstrap - runs before anything else can break it
 function wireLogin() {
   var btn = document.getElementById("loginBtn");
   var ae = document.getElementById("ae");
-  if(btn) { btn.textContent = "Connecting..."; btn.disabled = true; }
+  if(btn) btn.textContent = "Connecting...";
   
-  // Clear stale MSAL localStorage keys only (NOT sessionStorage - MSAL needs it during redirect)
-  try {
-    Object.keys(localStorage).filter(function(k){
-      return k.indexOf("msal.")===0 || k.indexOf("msal-")===0;
-    }).forEach(function(k){ localStorage.removeItem(k); });
-  } catch(e){}
+  // Clear any stale MSAL state
+  try { Object.keys(localStorage).filter(function(k){return k.indexOf("msal.")===0;}).forEach(function(k){localStorage.removeItem(k);}); } catch(e){}
+  
+  if(typeof msal === "undefined") {
+    if(ae) ae.textContent = "Auth library not loaded. Hard-refresh (Cmd+Shift+R).";
+    if(btn) btn.textContent = "Sign in with Microsoft";
+    return;
+  }
   
   var host = window.location.hostname;
   var uri = host === "wire.bln24.com" ? "https://wire.bln24.com/" :
             host === "bln24-wire.netlify.app" ? "https://bln24-wire.netlify.app/" :
             "https://bln24.github.io/wire/";
   
-  if(typeof msal === "undefined") {
-    if(ae) ae.textContent = "Auth library not loaded. Hard-refresh (Cmd+Shift+R).";
-    if(btn) { btn.textContent = "Sign in with Microsoft"; btn.disabled = false; }
-    return;
-  }
-  
-  var cfg = {
-    auth: { clientId: "c1ab9244-fd91-468d-ba13-736c9783809c", authority: "https://login.microsoftonline.com/bce59a38-0a4f-42df-8ff2-8d40797d61f1", redirectUri: uri },
+  var config = {
+    auth: {
+      clientId: "c1ab9244-fd91-468d-ba13-736c9783809c",
+      authority: "https://login.microsoftonline.com/bce59a38-0a4f-42df-8ff2-8d40797d61f1",
+      redirectUri: uri
+    },
     cache: { cacheLocation: "localStorage", storeAuthStateInCookie: false }
   };
-  var app = new msal.PublicClientApplication(cfg);
+  
+  var app = new msal.PublicClientApplication(config);
+  var isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
   app.initialize().then(function() {
+    if(isSafari) {
+      return app.loginPopup({ scopes: ["User.Read"], prompt: "select_account" }).then(function(r) {
+        if(r && r.account && typeof setMSUser === "function") setMSUser(r.account);
+      });
+    }
     return app.loginRedirect({ scopes: ["User.Read"], prompt: "select_account" });
   }).catch(function(e) {
-    if(ae) ae.textContent = e.message || "Login failed.";
+    if(ae) ae.textContent = e.message || "Login failed. Try allowing popups or use Chrome.";
     if(btn) { btn.textContent = "Sign in with Microsoft"; btn.disabled = false; }
   });
 }
@@ -1548,18 +1555,19 @@ function agencyTitle(name){
 
 // ── MSAL CONFIG ──
 // Compute redirect URI — covers bln24.github.io/wire/ and wire.bln24.com/
-// Use SAME redirect URI as wireLogin bootstrap — must match exactly
-var _h = window.location.hostname;
-var _redirectUri = _h === "wire.bln24.com" ? "https://wire.bln24.com/" :
-                   _h === "bln24-wire.netlify.app" ? "https://bln24-wire.netlify.app/" :
-                   "https://bln24.github.io/wire/";
+var _hostMap = {
+  "wire.bln24.com": "https://wire.bln24.com/",
+  "bln24-wire.netlify.app": "https://bln24-wire.netlify.app/",
+  "bln24.github.io": "https://bln24.github.io/wire/"
+};
+var _redirectUri = _hostMap[window.location.hostname] || (window.location.origin + window.location.pathname.replace(/index\.html$/, "").replace(/\/?$/, "/"));
 const MSAL_CONFIG = {
   auth: {
     clientId: "c1ab9244-fd91-468d-ba13-736c9783809c",
     authority: "https://login.microsoftonline.com/bce59a38-0a4f-42df-8ff2-8d40797d61f1",
     redirectUri: _redirectUri,
   },
-  cache: { cacheLocation: "localStorage", storeAuthStateInCookie: false },
+  cache: { cacheLocation: "localStorage", storeAuthStateInCookie: true },
 };
 let msalApp = null;
 // Initialize MSAL async (required for v2.x)
@@ -1577,11 +1585,6 @@ async function initMSAL() {
     if(accounts.length > 0) { setMSUser(accounts[0]); }
   } catch(e) {
     console.error("MSAL init error:", e);
-    // Show error visibly on login screen
-    var ae = document.getElementById("ae");
-    if(ae) ae.textContent = "Auth error: " + e.message;
-    var btn = document.getElementById("loginBtn");
-    if(btn) { btn.textContent = "Sign in with Microsoft"; btn.disabled = false; }
   }
 }
 initMSAL();
@@ -1602,21 +1605,14 @@ function getUserKeyFromEmail(email) {
 }
 
 function setMSUser(account) {
-  try {
-  console.log("WIRE: setMSUser called for", account.username);
   const email = account.username || "";
   const name = account.name || email;
   const role = getRoleFromEmail(email);
   const key = getUserKeyFromEmail(email);
   const label = USERS[key] ? USERS[key].label : (role === "ceo" ? "CEO" : "Pursuit Lead");
   state.user = {key, name, role, label, email, msalAccount: account};
-  console.log("WIRE: state.user set, showing app");
-  var authEl = document.getElementById("auth");
-  var appEl = document.getElementById("app");
-  console.log("WIRE: auth el:", !!authEl, "app el:", !!appEl);
-  if(authEl) authEl.classList.add("hidden");
-  if(appEl) appEl.classList.add("on");
-  console.log("WIRE: auth hidden, app on");
+  $("auth").classList.add("hidden");
+  $("app").classList.add("on");
   $("userName") && ($("userName").textContent = name);
   $("rolePill").textContent = label;
   // Hydrate profile menu
@@ -1633,11 +1629,6 @@ function setMSUser(account) {
   go("pipeline");
   // Fetch MS profile photo async (non-blocking)
   fetchMSPhoto(account);
-  } catch(err) {
-    console.error("setMSUser error:", err);
-    var ae = document.getElementById("ae");
-    if(ae) ae.textContent = "Login error: " + err.message + " — hard refresh and try again.";
-  }
 }
 
 function signInWithMS() {
