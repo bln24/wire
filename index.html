@@ -1072,7 +1072,9 @@ body.light-mode .chip.blue { color:#1a3f6b !important; }
 .notif-item {
   padding:12px 16px; border-bottom:1px solid var(--line);
   font-size:12px; display:flex; flex-direction:column; gap:3px;
+  transition:background .12s;
 }
+.notif-item:hover { background:var(--amber-soft); }
 .notif-item:last-child { border-bottom:none; }
 .notif-title { font-weight:700; }
 .notif-body { color:var(--muted); }
@@ -2253,6 +2255,9 @@ function closeFilterSheet() {
   document.body.style.overflow = "";
   // Don't clear search query here - user may want to refine
 }
+function closeNotifPanel() {
+  $("notifPanel") && $("notifPanel").classList.remove("on");
+}
 
 
 // ── Theme ─────────────────────────────────────────────────────────────────
@@ -2293,15 +2298,21 @@ const NOTIFS = [];
 function seedNotifications(role){
   NOTIFS.length = 0;
   const now = Date.now();
+  // Find real opp IDs by title match
+  const findOpp = q => OPPS.find(o => o.title && o.title.toLowerCase().includes(q.toLowerCase()));
+  const deaOpp = findOpp("DEA");
+  const ntiaOpp = findOpp("NTIA");
+  const censusOpp = findOpp("Census") || findOpp("ADRM");
   if(role==="ceo"){
     NOTIFS.push(
-      {title:"DEA RFI due soon", body:"DOJ DEA Web Developer RFI closes May 9. Qualtrics form not submitted.", time: now - 3600000, unread:true},
-      {title:"NTIA Phase 2 - Michael's strategy pending", body:"Michael hasn't submitted capture strategy yet. Nudge him.", time: now - 7200000, unread:true},
-      {title:"Census ADRM - CEO review needed", body:"New opp scored 89pts. Assigned to Eric. Awaiting your go/no-go.", time: now - 86400000, unread:false}
+      {title:"DEA RFI due soon", body:"DOJ DEA Web Developer RFI closes May 9. Qualtrics form not submitted.", time: now - 3600000, unread:true, opp_id: deaOpp ? deaOpp.id : null},
+      {title:"NTIA Phase 2 — strategy pending", body:"Michael hasn\'t submitted capture strategy yet. Nudge him.", time: now - 7200000, unread:true, opp_id: ntiaOpp ? ntiaOpp.id : null},
+      {title:"Census ADRM — CEO review needed", body:"Scored 89pts. Assigned to Eric. Awaiting your go/no-go.", time: now - 86400000, unread:false, opp_id: censusOpp ? censusOpp.id : 900}
     );
   } else {
+    const myOpp = OPPS.find(o => state.user && o.assigned_to === state.user.key);
     NOTIFS.push(
-      {title:"New opp assigned", body:"Brian assigned you to an opportunity. Check My Queue.", time: now - 3600000, unread:true}
+      {title:"New opp assigned", body:"Brian assigned you to an opportunity. Check My Queue.", time: now - 3600000, unread:true, opp_id: myOpp ? myOpp.id : null}
     );
   }
   renderNotifications();
@@ -2317,10 +2328,14 @@ function renderNotifications(){
     return;
   }
   list.innerHTML = NOTIFS.map(n=>`
-    <div class="notif-item" style="${n.unread ? 'border-left:3px solid var(--amber)' : ''}">
+    <div class="notif-item" style="${n.unread ? 'border-left:3px solid var(--amber)' : ''}${n.opp_id ? ';cursor:pointer' : ''}"
+      ${n.opp_id ? `onclick="closeNotifPanel();openOpp(${n.opp_id})"` : ''}>
       <div class="notif-title">${esc(n.title)}</div>
       <div class="notif-body">${esc(n.body)}</div>
-      <div class="notif-time">${timeAgo(n.time)}</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px">
+        <div class="notif-time">${timeAgo(n.time)}</div>
+        ${n.opp_id ? `<span style="font-size:10px;color:var(--amber);font-weight:800">View opp →</span>` : ''}
+      </div>
     </div>`).join("");
 }
 function timeAgo(ts){
