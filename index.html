@@ -932,7 +932,18 @@ function scoreColor(score){return score >= 90 ? "var(--green)" : score >= 70 ? "
 function filteredOpps(){
   const q = state.query.toLowerCase().trim();
   if(!q) return OPPS;
-  return OPPS.filter(o => [o.title,o.agency,o.cm_fit,o.recommendation,o.set_aside,o.ai_win_theme,o.brian_win_theme].join(" ").toLowerCase().includes(q));
+  return OPPS.filter(o => {
+    const blob = [
+      o.title, o.agency, o.agency_full, o.cm_fit, o.recommendation,
+      o.set_aside, o.naics, o.notice, o.value, o.tier_label,
+      o.ai_win_theme, o.brian_win_theme, o.what_they_need, o.rex_take,
+      o.watch_notes, o.description, o.win_prob, o.assigned_to,
+      (o.competitors||[]).map(c=>c.name).join(" "),
+      (o.partners||[]).map(p=>p.name).join(" "),
+      (o.cm_tasks||[]).map(t=>t.task).join(" ")
+    ].join(" ").toLowerCase();
+    return q.split(" ").every(word => blob.includes(word));
+  });
 }
 function moneyValue(o){
   const raw = String(o.value || "");
@@ -1498,7 +1509,16 @@ $("logoutBtn").addEventListener("click",logout);
 $("drawerBg").addEventListener("click",closeDrawer);
 $("filterSheetBg").addEventListener("click",e=>{if(e.target===$("filterSheetBg"))closeFilterSheet();});
 $("drawerClose").addEventListener("click",closeDrawer);
-$("globalSearch").addEventListener("input",e=>{state.query = e.target.value; go(state.page);});
+$("globalSearch").addEventListener("input",e=>{
+  const q = e.target.value.trim();
+  state.query = q;
+  if(q.length === 0){ closeFilterSheet(); return; }
+  const results = filteredOpps();
+  showFilteredOpps("Search: \"" + q + "\"", results);
+});
+$("globalSearch").addEventListener("keydown",e=>{
+  if(e.key==="Escape"){ $("globalSearch").value=""; state.query=""; closeFilterSheet(); }
+});
 hydrateIcons();
 
 
@@ -1517,6 +1537,23 @@ function tgl(id) {
 }
 
 
+function showFilteredOpps(title, opps) {
+  $("filterSheetTitle").textContent = title;
+  $("filterSheetCount").textContent = opps.length + " opportunit" + (opps.length === 1 ? "y" : "ies");
+  var body = $("filterSheetBody");
+  body.innerHTML = opps.length
+    ? opps.map(o => rowCard(o, "View")).join("")
+    : "<div style='color:var(--quiet);padding:32px 0;text-align:center'>No matches found.</div>";
+  body.querySelectorAll("[data-open]").forEach(el => el.addEventListener("click", e => {
+    if(e.target.closest("a")) return;
+    closeFilterSheet();
+    $("globalSearch").value = ""; state.query = "";
+    openOpp(Number(el.dataset.open));
+  }));
+  hydrateIcons(body);
+  $("filterSheetBg").classList.add("on");
+  document.body.style.overflow = "hidden";
+}
 function showFiltered(type, title, filterFn) {
   var opps;
   if(typeof filterFn === 'function') {
@@ -1530,24 +1567,12 @@ function showFiltered(type, title, filterFn) {
   } else {
     opps = OPPS.slice().sort((a,b) => b.score - a.score);
   }
-  $("filterSheetTitle").textContent = title;
-  $("filterSheetCount").textContent = opps.length + " opportunit" + (opps.length === 1 ? "y" : "ies");
-  var body = $("filterSheetBody");
-  body.innerHTML = opps.length
-    ? opps.map(o => rowCard(o, "View")).join("")
-    : "<div style='color:var(--quiet);padding:32px 0;text-align:center'>No opportunities found.</div>";
-  body.querySelectorAll("[data-open]").forEach(el => el.addEventListener("click", e => {
-    if(e.target.closest("a")) return;
-    closeFilterSheet();
-    openOpp(Number(el.dataset.open));
-  }));
-  hydrateIcons(body);
-  $("filterSheetBg").classList.add("on");
-  document.body.style.overflow = "hidden";
+  showFilteredOpps(title, opps);
 }
 function closeFilterSheet() {
   $("filterSheetBg").classList.remove("on");
   document.body.style.overflow = "";
+  // Don't clear search query here — user may want to refine
 }
 
 </script>
