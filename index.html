@@ -1595,6 +1595,11 @@ async function initMSAL() {
     if(accounts.length > 0) { setMSUser(accounts[0]); }
   } catch(e) {
     console.error("MSAL init error:", e);
+    // Show error visibly on login screen
+    var ae = document.getElementById("ae");
+    if(ae) ae.textContent = "Auth error: " + e.message;
+    var btn = document.getElementById("loginBtn");
+    if(btn) { btn.textContent = "Sign in with Microsoft"; btn.disabled = false; }
   }
 }
 initMSAL();
@@ -1615,6 +1620,7 @@ function getUserKeyFromEmail(email) {
 }
 
 function setMSUser(account) {
+  try {
   const email = account.username || "";
   const name = account.name || email;
   const role = getRoleFromEmail(email);
@@ -1639,6 +1645,11 @@ function setMSUser(account) {
   go("pipeline");
   // Fetch MS profile photo async (non-blocking)
   fetchMSPhoto(account);
+  } catch(err) {
+    console.error("setMSUser error:", err);
+    var ae = document.getElementById("ae");
+    if(ae) ae.textContent = "Login error: " + err.message + " — hard refresh and try again.";
+  }
 }
 
 function signInWithMS() {
