@@ -2387,17 +2387,14 @@ async function fetchOrgPhoto(email, avatarEl) {
     return;
   }
   _photoCache[email] = "none"; // optimistic
-  const token = await getGraphToken();
-  if(!token) return;
   try {
-    const r = await fetch("https://graph.microsoft.com/v1.0/users/" + encodeURIComponent(email) + "/photo/$value", {
-      headers: { "Authorization": "Bearer " + token }
-    });
+    // Use worker proxy — avoids need for User.ReadBasic.All consent
+    const proxyUrl = "https://bln24-hg-proxy.bln24.workers.dev/user-photo?email=" + encodeURIComponent(email);
+    const r = await fetch(proxyUrl);
     if(!r.ok) return;
     const blob = await r.blob();
     const url = URL.createObjectURL(blob);
     _photoCache[email] = url;
-    // Find matching avatar element and update it
     document.querySelectorAll("[data-photoemail='" + CSS.escape(email) + "']").forEach(el => {
       el.style.backgroundImage = "url(" + url + ")";
       el.style.backgroundSize = "cover";
