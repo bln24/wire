@@ -774,14 +774,14 @@ button{cursor:pointer}
 
 /* ── Light mode ──────────────────────────────────────────────── */
 body.light-mode {
-  --ink:#1a1814;
-  --muted:#5a5650;
-  --quiet:#8a8680;
+  --ink:#0f0e0c;
+  --muted:#3a3630;
+  --quiet:#5a5650;
   --paper:#faf8f4;
   --panel:#ede9df;
   --panel-2:#e4e0d5;
-  --line:rgba(26,24,20,.1);
-  --line-strong:rgba(26,24,20,.2);
+  --line:rgba(26,24,20,.12);
+  --line-strong:rgba(26,24,20,.22);
   --shadow:0 24px 80px rgba(0,0,0,.1);
 }
 /* Body */
@@ -856,6 +856,28 @@ body.light-mode .mini-note { color:var(--muted); }
 body.light-mode .topbar { backdrop-filter:blur(24px); }
 /* Auth stage bg */
 body.light-mode .auth-shell { background:var(--paper); }
+/* Force readable text on hardcoded colors in light mode */
+body.light-mode .detail-copy { color:var(--ink) !important; }
+body.light-mode .callout { color:var(--muted) !important; }
+body.light-mode .mini-note { color:var(--muted) !important; }
+body.light-mode .opp-agency { color:var(--muted) !important; }
+body.light-mode .drawer-kicker { color:var(--muted) !important; }
+body.light-mode .intel-card p { color:var(--muted) !important; }
+body.light-mode .matrix-row .mini-note { color:var(--muted) !important; }
+body.light-mode [style*="color:#9a9488"] { color:var(--muted) !important; }
+body.light-mode [style*="color:var(--quiet)"] { color:var(--quiet) !important; }
+body.light-mode .nav-label { color:var(--quiet) !important; }
+body.light-mode .opp-title { color:var(--ink) !important; }
+body.light-mode .priority { color:var(--ink) !important; }
+body.light-mode .life-copy { color:var(--muted) !important; }
+body.light-mode .hero-copy p { color:var(--muted) !important; }
+body.light-mode .focus-title { color:var(--ink) !important; }
+body.light-mode .cmd-stat span { color:var(--muted) !important; }
+body.light-mode .chip { color:var(--muted) !important; }
+body.light-mode .chip.amber { color:#7a4800 !important; background:rgba(244,183,63,.25) !important; }
+body.light-mode .chip.green { color:#1a6b40 !important; }
+body.light-mode .chip.red { color:#8b1a1a !important; }
+body.light-mode .chip.blue { color:#1a3f6b !important; }
 
 /* ── Profile / notification dropdown ────────────────────────── */
 .topbar-actions { display:flex; align-items:center; gap:8px; position:relative; }
