@@ -4,67 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WIRE - BLN24 Capture Intelligence</title>
-<script>
-var _msalReady = false;
-function wireLogin() {
-  var btn = document.getElementById("loginBtn");
-  var ae = document.getElementById("ae");
-  if(btn) { btn.textContent = "Connecting..."; btn.disabled = true; }
-  
-  function doLogin() {
-    if(!msalApp) {
-      if(ae) ae.textContent = "Auth not ready. Refresh and try again.";
-      if(btn) { btn.textContent = "Sign in with Microsoft"; btn.disabled = false; }
-      return;
-    }
-    // Clear any stuck interaction state in sessionStorage
-    try {
-      Object.keys(sessionStorage).filter(function(k){
-        return k.indexOf("msal.")===0 && (k.indexOf("interaction")>=0 || k.indexOf("request")>=0);
-      }).forEach(function(k){sessionStorage.removeItem(k);});
-    } catch(e) {}
-    
-    msalApp.loginRedirect({ scopes: ["User.Read"], prompt: "select_account" }).catch(function(e) {
-      if(ae) ae.textContent = e.message || "Login failed. Try again.";
-      if(btn) { btn.textContent = "Sign in with Microsoft"; btn.disabled = false; }
-    });
-  }
-  
-  if(msalApp) { doLogin(); }
-  else {
-    var t=0; var iv=setInterval(function(){
-      t+=100;
-      if(msalApp){clearInterval(iv);doLogin();}
-      else if(t>=2000){
-        clearInterval(iv);
-        // initMSAL failed or still running - create fresh instance as fallback
-        if(typeof msal==="undefined"){
-          if(ae) ae.textContent="Auth library not loaded. Hard-refresh.";
-          if(btn){btn.textContent="Sign in with Microsoft";btn.disabled=false;}
-          return;
-        }
-        var h=window.location.hostname;
-        var uri=h==="wire.bln24.com"?"https://wire.bln24.com/":
-                 h==="bln24-wire.netlify.app"?"https://bln24-wire.netlify.app/":
-                 "https://bln24.github.io/wire/";
-        var freshApp=new msal.PublicClientApplication({
-          auth:{clientId:"c1ab9244-fd91-468d-ba13-736c9783809c",
-                authority:"https://login.microsoftonline.com/bce59a38-0a4f-42df-8ff2-8d40797d61f1",
-                redirectUri:uri},
-          cache:{cacheLocation:"sessionStorage",storeAuthStateInCookie:true}
-        });
-        freshApp.initialize().then(function(){
-          try{Object.keys(sessionStorage).filter(function(k){return k.indexOf("msal.")===0&&(k.indexOf("interaction")>=0||k.indexOf("request")>=0);}).forEach(function(k){sessionStorage.removeItem(k);});}catch(e){}
-          return freshApp.loginRedirect({scopes:["User.Read"],prompt:"select_account"});
-        }).catch(function(e){
-          if(ae) ae.textContent=e.message||"Login failed.";
-          if(btn){btn.textContent="Sign in with Microsoft";btn.disabled=false;}
-        });
-      }
-    },100);
-  }
-}
-</script>
 <!-- build: v4.5.1 -->
 <style>
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap");
@@ -194,9 +133,9 @@ button{cursor:pointer}
   justify-content:space-between;
 }
 
-.wordmark{font-size:76px;line-height:.82;font-weight:900;letter-spacing:-5px;text-shadow:0 0 34px rgba(244,183,63,.18)}
+.wordmark{font-size:76px;line-height:.82;font-weight:900;letter-spacing:-4px;text-shadow:0 0 34px rgba(244,183,63,.18)}
 .wordmark span{color:var(--amber)}
-.wordmark .infinity{display:inline-block;margin:0 -5px;color:#f7d889;transform:translateY(-1px) scale(.92)}
+/* infinity removed */
 .kicker{margin-top:14px;color:var(--muted);font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.32em}
 .auth-copy{max-width:610px}
 .auth-copy h1{margin:0;font-size:54px;line-height:.93;letter-spacing:-2.8px;max-width:720px}
@@ -675,13 +614,7 @@ button{cursor:pointer}
   font-weight:900;
   text-transform:uppercase;
   letter-spacing:.16em;
-  cursor:pointer;
-  user-select:none;
 }
-.stage-label:hover{color:var(--amber)}
-.stage-section.collapsed .board{display:none}
-.stage-label .toggle-icon{margin-left:4px;font-size:10px;opacity:.6;transition:transform .2s}
-.stage-section.collapsed .toggle-icon{transform:rotate(-90deg)}
 .stage-label:after{content:"";height:1px;background:var(--line);flex:1}
 .board{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(240px,280px);gap:10px;overflow-x:auto;padding-bottom:10px}
 .stage{
@@ -1212,7 +1145,7 @@ body.light-mode .ac-list { background:var(--panel); border-color:var(--line-stro
       </div>
       <div class="auth-brand">
         <div>
-          <div class="wordmark">W<span class="infinity">∞</span>RE</div>
+          <div class="wordmark">W<span>I</span>RE</div>
           <div class="kicker">BLN24 BD intelligence engine</div>
         </div>
         <div class="auth-copy">
@@ -1233,13 +1166,13 @@ body.light-mode .ac-list { background:var(--panel); border-color:var(--line-stro
       <!-- Profile auto-detected from Microsoft account -->
       <select id="au" style="display:none">
         <option value="brian">Brian Nguyen - CEO</option>
-        <option value="hayk">Hayk - Account Manager</option>
-        <option value="michael">Michael - Account Manager</option>
-        <option value="gabe">Gabe - Account Manager</option>
+        <option value="hayk">Hayk - Pursuit Lead</option>
+        <option value="michael">Michael - Pursuit Lead</option>
+        <option value="gabe">Gabe - Pursuit Lead</option>
         <option value="eric">Eric Ma - BD</option>
         <option value="favi">Favi Villa - UX Lead / SME</option>
       </select>
-      <button class="btn btn-primary" style="width:100%;margin-top:4px;display:flex;align-items:center;justify-content:center;gap:10px" id="loginBtn" onclick="wireLogin()">
+      <button class="btn btn-primary" style="width:100%;margin-top:4px;display:flex;align-items:center;justify-content:center;gap:10px" id="loginBtn">
         <svg width="18" height="18" viewBox="0 0 21 21" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="1" width="9" height="9" fill="#F25022"/><rect x="11" y="1" width="9" height="9" fill="#7FBA00"/><rect x="1" y="11" width="9" height="9" fill="#00A4EF"/><rect x="11" y="11" width="9" height="9" fill="#FFB900"/></svg>
         Sign in with Microsoft
       </button>
@@ -1335,10 +1268,12 @@ body.light-mode .ac-list { background:var(--panel); border-color:var(--line-stro
 <script>
 const USERS = {
   brian:{name:"Brian Nguyen",role:"ceo",label:"CEO",email:"brian@bln24.com"},
-  hayk:{name:"Hayk Manukyan",role:"am",label:"Account Manager",email:"hayk@bln24.com"},
-  michael:{name:"Michael Nguyen",role:"am",label:"Account Manager",email:"michael@bln24.com"},
-  gabe:{name:"Gabe Meckler",role:"am",label:"Account Manager",email:"gabe@bln24.com"},
-  eric:{name:"Eric Ma",role:"am",label:"BD Manager",email:"eric.ma@bln24.com"},
+  hayk:{name:"Hayk Manukyan",role:"am",label:"Pursuit Lead",email:"hayk@bln24.com"},
+  michael:{name:"Michael Nguyen",role:"am",label:"Pursuit Lead",email:"michael@bln24.com"},
+  gabe:{name:"Gabe Meckler",role:"am",label:"Pursuit Lead",email:"gabe@bln24.com"},
+  eric:{name:"Eric Ma",role:"am",label:"Pursuit Lead",email:"eric.ma@bln24.com"},
+  shawn:{name:"Shawn de Lopez",role:"am",label:"Pursuit Lead",email:"shawn@bln24.com"},
+  ted:{name:"Ted Ridley",role:"am",label:"Senior Capture Manager",email:"ted.ridley@bln24.com"},
   favi:{name:"Favi Villa",role:"sme",label:"UX Lead / SME",email:"favi.villa@bln24.com"}
 };
 // Full org roster — pulled from Microsoft Entra ID (135 employees)
@@ -1573,9 +1508,7 @@ const MSAL_CONFIG = {
   auth: {
     clientId: "c1ab9244-fd91-468d-ba13-736c9783809c",
     authority: "https://login.microsoftonline.com/bce59a38-0a4f-42df-8ff2-8d40797d61f1",
-    redirectUri: (window.location.hostname === "wire.bln24.com") ? "https://wire.bln24.com/" :
-    (window.location.hostname === "bln24-wire.netlify.app") ? "https://bln24-wire.netlify.app/" :
-    "https://bln24.github.io/wire/",
+    redirectUri: (window.location.hostname==="wire.bln24.com") ? "https://wire.bln24.com/" : window.location.origin + window.location.pathname.replace(/index\.html$/, "").replace(/\/?$/, "/"),
   },
   cache: { cacheLocation: "sessionStorage", storeAuthStateInCookie: true },
 };
@@ -1586,22 +1519,19 @@ async function initMSAL() {
     if(typeof msal === "undefined") { console.warn("MSAL not loaded"); return; }
     const app = new msal.PublicClientApplication(MSAL_CONFIG);
     await app.initialize();
-    console.log("WIRE: MSAL initialized OK");
-    // Handle redirect FIRST before exposing msalApp to wireLogin
-    const result = await app.handleRedirectPromise();
-    if(result && result.account) { msalApp = app; setMSUser(result.account); return; }
-    // Check for existing session silently
-    const accounts = app.getAllAccounts();
-    if(accounts.length > 0) { msalApp = app; setMSUser(accounts[0]); return; }
-    // No active session - now expose msalApp so wireLogin can use it
     msalApp = app;
+    console.log("WIRE: MSAL initialized OK");
+    // Handle redirect after login
+    const result = await app.handleRedirectPromise();
+    if(result && result.account) { setMSUser(result.account); return; }
+    const accounts = app.getAllAccounts();
+    if(accounts.length > 0) { setMSUser(accounts[0]); }
   } catch(e) {
     console.error("MSAL init error:", e);
-    // Don't show error - wireLogin will handle user-initiated auth
   }
 }
 initMSAL();
-const ROLE_MAP = {"brian@bln24.com": "ceo", "brian.nguyen@bln24.com": "ceo", "hayk@bln24.com": "am", "michael@bln24.com": "am", "gabe@bln24.com": "am", "eric.ma@bln24.com": "am", "eric@bln24.com": "am", "favi.villa@bln24.com": "sme", "favi@bln24.com": "sme"};
+const ROLE_MAP = {"brian@bln24.com": "ceo", "brian.nguyen@bln24.com": "ceo", "jomar@bln24.com": "ceo", "hayk@bln24.com": "am", "hayk.rachidian@bln24.com": "am", "michael@bln24.com": "am", "michael.dumlao@bln24.com": "am", "gabe@bln24.com": "am", "eric.ma@bln24.com": "am", "e.ma@bln24.com": "am", "eric@bln24.com": "am", "shawn@bln24.com": "am", "ted.ridley@bln24.com": "am", "favi.villa@bln24.com": "sme", "favi@bln24.com": "sme", "lily.le@bln24.com": "sme", "vasilisa.barsukova@bln24.com": "sme", "eduardo.abraham@bln24.com": "sme", "faisal.hussein@bln24.com": "sme"};
 
 function getRoleFromEmail(email) {
   const e = (email || "").toLowerCase();
@@ -1622,7 +1552,7 @@ function setMSUser(account) {
   const name = account.name || email;
   const role = getRoleFromEmail(email);
   const key = getUserKeyFromEmail(email);
-  const label = USERS[key] ? USERS[key].label : (role === "ceo" ? "CEO" : "Account Manager");
+  const label = USERS[key] ? USERS[key].label : (role === "ceo" ? "CEO" : "Pursuit Lead");
   state.user = {key, name, role, label, email, msalAccount: account};
   $("auth").classList.add("hidden");
   $("app").classList.add("on");
@@ -1632,7 +1562,7 @@ function setMSUser(account) {
   const initials = name.split(" ").map(w=>w[0]).join("").toUpperCase().slice(0,2);
   [$("profileInitial"),$("profileInitialLarge")].forEach(el=>{if(el) el.textContent=initials;});
   if($("profileName")) $("profileName").textContent = name;
-  if($("profileRoleLabel")) $("profileRoleLabel").textContent = role==="ceo"?"CEO · Full Access":role==="am"?"Account Manager":"SME";
+  if($("profileRoleLabel")) $("profileRoleLabel").textContent = role==="ceo"?"CEO · Full Access":role==="am"?"Pursuit Lead":"SME";
   // Apply saved theme
   setTheme(localStorage.getItem("wire_theme")||"dark");
   // Seed notifications
@@ -1690,7 +1620,7 @@ function logout() {
 function buildNav(){
   const isCEO = state.user && state.user.role === "ceo";
   const isAM = state.user && state.user.role === "am";
-  const mine = state.user ? OPPS.filter(o=>o.assigned_to === state.user.key).length : 0;
+  const uKey2 = state.user ? state.user.key : ""; const mine = uKey2 ? OPPS.filter(o=>o.assigned_to===uKey2||(o.pursuit_team||[]).includes(uKey2)).length : 0;
   const needs = OPPS.filter(o=>o.stage <= 1).length;
   const items = isCEO ? [
     ["pipeline","board","Pipeline",OPPS.length],
@@ -1847,14 +1777,8 @@ const PAGES = {
           <div class="callout">WIRE is built to make BLN24 faster than larger competitors: sense earlier, qualify harder, capture with evidence, assemble the right partners, and recycle every debrief into the next pursuit.</div>
         </section>
       </div>
-      <div class="stage-section" id="sec-capture">
-        <div class="stage-label" onclick="toggleSection('sec-capture')">Capture pipeline<span class="toggle-icon">&#9662;</span></div>
-        ${board(STAGES.slice(0,6))}
-      </div>
-      <div class="stage-section" id="sec-proposal">
-        <div class="stage-label" onclick="toggleSection('sec-proposal')">Proposal and color teams<span class="toggle-icon">&#9662;</span></div>
-        ${board(STAGES.slice(6))}
-      </div>\`;
+      <div class="stage-label">Capture pipeline</div>${board(STAGES.slice(0,6))}
+      <div class="stage-label">Proposal and color teams</div>${board(STAGES.slice(6))}`;
   },
   review(){
     const acts = filteredOpps().filter(o=>o.stage <= 1);
@@ -1862,7 +1786,7 @@ const PAGES = {
       <div class="list-view">${acts.length ? acts.map(o=>rowCard(o,"Review")).join("") : emptyState("All clear","Nothing is waiting for review.")}</div>`;
   },
   myqueue(){
-    const mine = filteredOpps().filter(o=>state.user && o.assigned_to === state.user.key);
+    const uKey = state.user ? state.user.key : ""; const mine = filteredOpps().filter(o=> uKey && (o.assigned_to === uKey || (o.pursuit_team||[]).includes(uKey)));
     return pageHead("Assigned work","My Queue",`${mine.length} opportunities assigned to you`) + `
       <div class="list-view">${mine.length ? mine.map(o=>rowCard(o,"Open")).join("") : emptyState("Nothing assigned yet","Approved opportunities will land here.")}</div>`;
   },
@@ -1899,7 +1823,7 @@ const PAGES = {
     return pageHead("Proposal control","Proposals","Color-team review stages after go/no-go") + emptyState("No proposals in review","Opportunities appear here after CEO approval and capture sign-off.");
   },
   team(){
-    const team = [["Brian Nguyen","CEO / Final Gate","All final approvals"],["Hayk","Account Manager","Available"],["Michael","Account Manager","NTIA assigned"],["Gabe","Account Manager","Available"],["Eric Ma","BD / WIRE Manager","Census assigned"],["Favi Villa","UX Lead / SME","HCD reviews"]];
+    const team = [["Brian Nguyen","CEO / Final Gate","All final approvals"],["Hayk","Pursuit Lead","Available"],["Michael","Pursuit Lead","NTIA assigned"],["Gabe","Pursuit Lead","Available"],["Eric Ma","BD / WIRE Manager","Census assigned"],["Favi Villa","UX Lead / SME","HCD reviews"]];
     return pageHead("Operating model","Team","Capture and proposal roster") + `<section class="section-panel list-view">${team.map(([n,r,note])=>`<div class="row-card" style="cursor:default"><div><div class="eyebrow" style="margin:0;color:var(--quiet)">${r}</div><h3>${n}</h3><p class="page-sub">${note}</p></div><span class="chip amber">${n.split(" ").map(x=>x[0]).join("").slice(0,2)}</span></div>`).join("")}</section>`;
   }
 };
@@ -1924,7 +1848,6 @@ function wireMain(){
   // delegated on main - see global handler below
   const submit = $("submitOpp");
   if(submit) submit.addEventListener("click",submitOpp);
-  try { restoreSections(); } catch(e) {}
 }
 function renderCommand(){
   if(!state.user || state.user.role !== "ceo"){ $("commandBar").classList.remove("on"); return; }
@@ -2076,7 +1999,7 @@ function drawerBody(o){
 
   // Controls
   if(state.user && state.user.role === "ceo") b += ceoControls(o);
-  if(state.user && state.user.role !== "ceo" && state.user.key === o.assigned_to) b += amControls();
+  const uKeyAM = state.user ? state.user.key : ""; if(state.user && state.user.role !== "ceo" && (uKeyAM===o.assigned_to||(o.pursuit_team||[]).includes(uKeyAM))) b += amControls();
 
   return b;
 }
@@ -2090,9 +2013,9 @@ function proposalStagePanel(o){
   const docUrl = teamsBase + '/' + folderName;
 
   const stageGuide = {
-    7: { who: 'Account Manager', action: 'Review AI first draft. Flag any errors. Use the AI prompt box below to request rewrites.', color: '#ff9a62' },
+    7: { who: 'Pursuit Lead', action: 'Review AI first draft. Flag any errors. Use the AI prompt box below to request rewrites.', color: '#ff9a62' },
     8: { who: 'All + AI Evaluators', action: 'AI plays CO, COR, PM, Tech, and Director personas. Each scores the draft. Respond to critiques before advancing.', color: 'var(--red)' },
-    9: { who: 'Account Manager + Brian', action: 'Compliance check - every SOW requirement must be addressed. AI polishes tone and evidence. Brian does final read.', color: '#ffd166' },
+    9: { who: 'Pursuit Lead + Brian', action: 'Compliance check - every SOW requirement must be addressed. AI polishes tone and evidence. Brian does final read.', color: '#ffd166' },
     10: { who: 'Brian', action: 'AI plays the top competitor. Read their attack on your proposal. Harden the vulnerable sections.', color: '#8d877b' },
     11: { who: 'Brian only', action: 'Final gate. Approve to generate submission checklist and drop files to SharePoint.', color: 'var(--green)' }
   }[o.stage] || { who: '', action: '', color: 'var(--amber)' };
@@ -2206,18 +2129,30 @@ function intelList(title,items,tone,oppId){
       <b>${esc(item.name)}</b>${item.gap ? `<div class="mini-note">Fills gap: ${esc(item.gap)}</div>` : ""}<p>${truncateText(item.why||"", 160, "intel-" + tone + "-" + (oppId||0) + "-" + ii)}</p>${item.url ? `<a href="${esc(item.url)}" target="_blank" rel="noreferrer">View source</a>` : ""}
     </div>`).join("")}</section>`;
 }
+function teamMemberField(label, idKey, currentKey, acListId) {
+  const current = currentKey ? ORG_ROSTER.find(r=>r.key===currentKey) : null;
+  return `<div class="field" style="margin-bottom:8px">
+    <label class="label" style="font-size:10px;margin-bottom:4px">${label}</label>
+    <div class="ac-wrap">
+      <input class="input" id="${idKey}_name" placeholder="Search by name or title…" autocomplete="off"
+        value="${current ? esc(current.name) : currentKey || ""}"
+        oninput="acFilterMulti(this,'${idKey}','${acListId}')"
+        onfocus="acFilterMulti(this,'${idKey}','${acListId}')"
+        onblur="setTimeout(()=>acCloseId('${acListId}'),350)">
+      <input type="hidden" id="${idKey}_key" value="${currentKey || ""}">
+      <div class="ac-list" id="${acListId}"></div>
+    </div>
+  </div>`;
+}
 function ceoControls(o){
+  const team = o.pursuit_team || [];
   return `<section class="detail-section"><div class="detail-label">CEO decision</div>
     <div class="field"><label class="label">Your win theme</label><textarea class="textarea" id="ceoTheme">${esc(o.brian_win_theme || "")}</textarea></div>
-    <div class="field"><label class="label">Assign to</label>
-      <div class="ac-wrap">
-        <input class="input" id="assignTo" placeholder="Search by name or title…" autocomplete="off"
-          value="${o.assigned_to && ORG_ROSTER.find(r=>r.key===o.assigned_to) ? ORG_ROSTER.find(r=>r.key===o.assigned_to).name : o.assigned_to || ""}"
-          oninput="acFilter(this)" onfocus="acFilter(this)" onblur="setTimeout(()=>acClose(),350)">
-        <input type="hidden" id="assignToKey" value="${o.assigned_to || ""}">
-        <div class="ac-list" id="acList"></div>
-      </div>
-    </div>
+    <div class="detail-label" style="font-size:11px;margin-bottom:8px;margin-top:4px">Pursuit Team</div>
+    ${teamMemberField("Lead", "assignTo", o.assigned_to || "", "acList")}
+    ${teamMemberField("2nd", "assignTo2", team[0] || "", "acList2")}
+    ${teamMemberField("3rd", "assignTo3", team[1] || "", "acList3")}
+    ${teamMemberField("4th", "assignTo4", team[2] || "", "acList4")}
     <div class="field"><label class="label">Challenge WIRE</label><textarea class="textarea" id="challenge" placeholder="What did the model miss?"></textarea></div>
     <div class="message" id="decisionMsg"></div>
   </section>`;
@@ -2231,7 +2166,7 @@ function amControls(){
 }
 function drawerFoot(o){
   const isCEO = state.user && state.user.role === "ceo";
-  const isOwner = state.user && state.user.key === o.assigned_to;
+  const uKeyOw = state.user ? state.user.key : ""; const isOwner = state.user && (uKeyOw===o.assigned_to||(o.pursuit_team||[]).includes(uKeyOw));
   if(isCEO) return `<button class="btn btn-primary" id="approveBtn"><span data-icon="check"></span>Approve & Assign</button><button class="btn btn-danger" id="passBtn"><span data-icon="x"></span>Pass</button><button class="btn" id="closeBtn">Close</button>`;
   if(isOwner) return `<button class="btn btn-primary" id="strategyBtn"><span data-icon="send"></span>Submit Strategy</button><button class="btn" id="closeBtn">Close</button>`;
   return `<button class="btn" id="closeBtn">Close</button>`;
@@ -2248,24 +2183,31 @@ function closeDrawer(){
   state.opp = null;
 }
 function approveOpp(){
-  // Try key first, then match typed name against roster
-  var assigneeKey = ($("assignToKey") && $("assignToKey").value) || "";
-  var typedName = ($("assignTo") && $("assignTo").value.trim()) || "";
+  // Read lead from new multi-field (assignTo_key) or legacy (assignToKey)
+  var assigneeKey = (document.getElementById("assignTo_key") && document.getElementById("assignTo_key").value) ||
+                    ($("assignToKey") && $("assignToKey").value) || "";
+  var typedName = (document.getElementById("assignTo_name") && document.getElementById("assignTo_name").value.trim()) ||
+                  ($("assignTo") && $("assignTo").value && $("assignTo").value.trim()) || "";
   if(!assigneeKey && typedName) {
-    // Try to match typed name to roster
     var match = ORG_ROSTER.find(r => r.name.toLowerCase() === typedName.toLowerCase());
     if(match) assigneeKey = match.key;
-    else assigneeKey = typedName.toLowerCase().replace(/\s+/g,"_"); // use name as key fallback
+    else assigneeKey = typedName.toLowerCase().replace(/\s+/g,"_");
   }
   const assignee = assigneeKey;
-  if(!assignee || (!typedName && !assigneeKey)){
+  if(!assignee && !typedName){
     const msg = $("decisionMsg");
-    if(msg){ msg.textContent = "Type and select a team member to assign."; msg.classList.add("err"); }
+    if(msg){ msg.textContent = "Assign at least a pursuit lead."; msg.classList.add("err"); }
     return;
   }
   const assigneeName = ORG_ROSTER.find(r=>r.key===assignee)?.name || typedName || assignee;
+  // Collect full pursuit team (slots 2-4)
+  const teamKeys = ["assignTo2","assignTo3","assignTo4"].map(id => {
+    const el = document.getElementById(id+"_key");
+    return el ? (el.value || "") : "";
+  }).filter(Boolean);
+  const teamNames = teamKeys.map(k => (ORG_ROSTER.find(r=>r.key===k)||{}).name || k);
   const oppTitle = state.opp.title || "Opportunity";
-  state.opp.assigned_to = assignee;
+  state.opp.assigned_to = assignee; state.opp.pursuit_team = teamKeys;
   state.opp.brian_win_theme = $("ceoTheme")?.value || state.opp.brian_win_theme;
   state.opp.stage = Math.max(state.opp.stage, 2);
   $("decisionMsg")?.classList.remove("err");
@@ -2276,7 +2218,7 @@ function approveOpp(){
   const msg = $("decisionMsg");
   if(msg){
     msg.style.cssText = "color:var(--green);font-weight:700;padding:10px 12px;background:rgba(88,214,141,.08);border:1px solid rgba(88,214,141,.2);border-radius:8px;margin-top:8px;display:block";
-    msg.innerHTML = "✓ Approved &amp; assigned to <b>" + esc(assigneeName) + "</b>. Moving to Capture stage.";
+    var tStr = (typeof teamNames !== "undefined" && teamNames.length) ? " (+ " + teamNames.join(", ") + ")" : ""; msg.innerHTML = "✓ Assigned to <b>" + esc(assigneeName) + "</b>" + esc(tStr) + ". Moving to Capture stage.";
   }
 
   // Toast notification
@@ -2285,13 +2227,23 @@ function approveOpp(){
   // Browser notification
   sendBrowserNotification("WIRE: Opp Approved", oppTitle + " has been assigned to " + assigneeName);
 
-  // Teams webhook notification (via worker)
-  notifyTeams({
-    title: "WIRE: Opp Approved → " + assigneeName,
-    body: oppTitle,
-    assignee: assigneeName,
-    opp_id: state.opp.id,
-    assigned_by: state.user ? state.user.name : "CEO"
+  // Full notification suite (email + Teams DM + channel)
+  getGraphToken().then(function(tok) {
+    notifyAll({
+      title: "WIRE: Opp Approved → " + assigneeName,
+      body: oppTitle,
+      assignee: assigneeName,
+      assignee_email: (ORG_ROSTER.find(r=>r.key===assignee)||{}).email || "",
+      opp_id: state.opp.id,
+      opp_hg_url: (state.opp && state.opp.hg_url) || "",
+      assigned_by: state.user ? state.user.name : "CEO",
+      assigned_by_email: state.user ? state.user.email : "brian@bln24.com",
+      delegated_token: tok || ""
+    });
+  }).catch(function() {
+    notifyAll({ title: "WIRE: Opp Approved → " + assigneeName, body: oppTitle,
+      assignee: assigneeName, assignee_email: (ORG_ROSTER.find(r=>r.key===assignee)||{}).email || "",
+      opp_id: state.opp.id, assigned_by: (state.user||{}).name||"CEO", delegated_token: "" });
   });
 
   setTimeout(()=>{ closeDrawer(); go(state.page); }, 1200);
@@ -2316,7 +2268,7 @@ function submitOpp(){
   setTimeout(()=>go("pipeline"),800);
 }
 
-// loginBtn handled by onclick attribute
+$("loginBtn").addEventListener("click",login);
 document.addEventListener("click", e=>{
   if(e.target.closest("#logoutBtn")) logout();
 });
@@ -2459,7 +2411,7 @@ function seedNotifications(role){
       {title:"Census ADRM — CEO review needed", body:"Scored 89pts. Assigned to Eric. Awaiting your go/no-go.", time: now - 86400000, unread:false, opp_id: censusOpp ? censusOpp.id : 900}
     );
   } else {
-    const myOpp = OPPS.find(o => state.user && o.assigned_to === state.user.key);
+    const uKeyN = state.user ? state.user.key : ""; const myOpp = uKeyN ? OPPS.find(o => o.assigned_to===uKeyN || (o.pursuit_team||[]).includes(uKeyN)) : null;
     NOTIFS.push(
       {title:"New opp assigned", body:"Brian assigned you to an opportunity. Check My Queue.", time: now - 3600000, unread:true, opp_id: myOpp ? myOpp.id : null}
     );
@@ -2636,33 +2588,21 @@ function sendBrowserNotification(title, body) {
   }
 }
 
-// ── Teams notification via worker ─────────────────────────────────────────
-function notifyTeams(payload) {
-  fetch("https://bln24-hg-proxy.bln24.workers.dev/notify-teams", {
+// ── Full notification suite via worker ──────────────────────────────────────
+function notifyAll(payload) {
+  fetch("https://bln24-hg-proxy.bln24.workers.dev/notify-all", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload)
-  }).catch(() => {}); // silent fail
+  }).catch(() => {});
 }
+function notifyTeams(payload) { notifyAll(payload); }
 
 // Request browser notification permission on login
 function requestNotifPermission() {
   if("Notification" in window && Notification.permission === "default") {
     Notification.requestPermission();
   }
-}
-
-function toggleSection(id) {
-  var el = document.getElementById(id);
-  if(!el) return;
-  el.classList.toggle("collapsed");
-  try { localStorage.setItem("wire_sec_" + id, el.classList.contains("collapsed") ? "1" : "0"); } catch(e) {}
-}
-function restoreSections() {
-  ["sec-capture","sec-proposal"].forEach(function(id) {
-    var saved = localStorage.getItem("wire_sec_" + id);
-    if(saved === "1") { var el = document.getElementById(id); if(el) el.classList.add("collapsed"); }
-  });
 }
 </script>
 </body>
