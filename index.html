@@ -1777,6 +1777,7 @@ const PAGES = {
         <div class="form-row">
           <div class="field"><label class="label">Estimated value</label><input class="input" id="sv" placeholder="$5M, Unknown"></div>
           <div class="field"><label class="label">Reference / source</label><input class="input" id="sr" placeholder="RFI, SAM ID, meeting note"></div>
+          <div class="field"><label class="label">HigherGov link</label><input class="input" id="shg" placeholder="https://www.highergov.com/contract-opportunity/..."></div>
         </div>
         <div class="field"><label class="label">How you heard about it *</label><input class="input" id="sh" placeholder="CO meeting, colleague, relationship"></div>
         <div class="field"><label class="label">Why BLN24 should pursue this *</label><textarea class="textarea" id="sw" placeholder="Fit, relationship, PP match, timing, inside track"></textarea></div>
@@ -2160,7 +2161,7 @@ function submitOpp(){
   const why = $("sw").value.trim();
   const msg = $("submitMsg");
   if(!agency || !title || !why){msg.textContent = "Agency, title, and rationale are required."; msg.classList.add("err"); return;}
-  OPPS.push({id:Date.now(),stage:0,agency,title,value:$("sv").value || "TBD",set_aside:$("ss").value,score:0,source:"Employee Submission",ref:$("sr").value,what_they_need:why,rex_take:"WIRE analysis queued.",recommendation:"Pending",cm_fit:"Pending",cm_avg:0,cm_tasks:[],competitors:[],partners:[],ai_win_theme:"Generating win theme.",brian_win_theme:null,assigned_to:null,submitted_by:state.user.name});
+  var hgLink = ($("shg") && $("shg").value.trim()) || ""; OPPS.push({id:Date.now(),stage:0,agency,title,value:$("sv").value || "TBD",set_aside:$("ss").value,score:0,source:"Employee Submission",ref:$("sr").value,hg_url:hgLink,source_url:hgLink,what_they_need:why,rex_take:"WIRE analysis queued.",recommendation:"Pending",cm_fit:"Pending",cm_avg:0,cm_tasks:[],competitors:[],partners:[],ai_win_theme:"Generating win theme.",brian_win_theme:null,assigned_to:null,submitted_by:state.user.name});
   msg.classList.remove("err");
   msg.textContent = "Submitted. WIRE analysis is queued for Brian's review.";
   buildNav();
