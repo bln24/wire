@@ -1303,6 +1303,26 @@ function openOpp(id){
   hydrateIcons($("drawer"));
   wireDrawer();
 }
+function truncateText(text, maxLen, id) {
+  if(!text || text.length <= maxLen) return "<span>" + esc(text) + "</span>";
+  var short = esc(text.substring(0, maxLen));
+  var full = esc(text);
+  return "<span id='t-" + id + "'>" +
+    "<span id='t-short-" + id + "'>" + short + "... <button onclick="toggleRead('" + id + "')" style='background:none;border:none;color:var(--amber);font-size:11px;font-weight:900;cursor:pointer;padding:0;font-family:inherit'>Read more</button></span>" +
+    "<span id='t-full-" + id + "' style='display:none'>" + full + " <button onclick="toggleRead('" + id + "')" style='background:none;border:none;color:var(--amber);font-size:11px;font-weight:900;cursor:pointer;padding:0;font-family:inherit'>Read less</button></span>" +
+    "</span>";
+}
+
+function toggleRead(id) {
+  var s = document.getElementById('t-short-' + id);
+  var f = document.getElementById('t-full-' + id);
+  if(s && f) {
+    var isHidden = f.style.display === 'none';
+    s.style.display = isHidden ? 'none' : '';
+    f.style.display = isHidden ? '' : 'none';
+  }
+}
+
 function drawerBody(o){
   var da = o.deep_analysis || {};
   var whatNeed = da.what_they_need_deep || o.what_they_need || "";
@@ -1328,17 +1348,17 @@ function drawerBody(o){
 
   // What they actually need
   b += "<section class=\"detail-section\"><div class=\"detail-label\"><span data-icon=\"spark\"></span>What They Actually Need</div>";
-  if(whatNeed) b += "<p class=\"detail-copy\">" + esc(whatNeed) + "</p>";
+  if(whatNeed) b += "<p class=\"detail-copy\">" + truncateText(whatNeed, 300, "need-" + o.id) + "</p>";
   b += "</section>";
 
   // Rex's Strategic Take
   b += "<section class=\"detail-section\"><div class=\"detail-label\">Rex\u2019s Strategic Take<span style=\"font-size:9px;opacity:.4;font-weight:400;text-transform:none\">" + modelBadge + "</span></div>";
-  if(strategic) b += "<div class=\"callout\">" + esc(strategic) + "</div>";
+  if(strategic) b += "<div class=\"callout\">" + truncateText(strategic, 400, "strat-" + o.id) + "</div>";
   b += "</section>";
 
   // Win Theme
   b += "<section class=\"detail-section\"><div class=\"detail-label\">Win Theme</div>";
-  if(winDeep) b += "<div class=\"callout\" style=\"border-left-color:var(--amber)\">" + esc(winDeep) + "</div>";
+  if(winDeep) b += "<div class=\"callout\" style=\"border-left-color:var(--amber)\">" + truncateText(winDeep, 300, "win-" + o.id) + "</div>";
   if(o.brian_win_theme) b += "<div class=\"callout\" style=\"margin-top:8px\">\ud83d\udc64 " + esc(o.brian_win_theme) + "</div>";
   b += "</section>";
 
