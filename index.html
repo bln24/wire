@@ -1564,14 +1564,15 @@ async function initMSAL() {
     if(typeof msal === "undefined") { console.warn("MSAL not loaded"); return; }
     const app = new msal.PublicClientApplication(MSAL_CONFIG);
     await app.initialize();
-    msalApp = app;
     console.log("WIRE: MSAL initialized OK");
-    // Only handle redirect result - never start a new login
+    // Handle redirect FIRST before exposing msalApp to wireLogin
     const result = await app.handleRedirectPromise();
-    if(result && result.account) { setMSUser(result.account); return; }
+    if(result && result.account) { msalApp = app; setMSUser(result.account); return; }
     // Check for existing session silently
     const accounts = app.getAllAccounts();
-    if(accounts.length > 0) { setMSUser(accounts[0]); }
+    if(accounts.length > 0) { msalApp = app; setMSUser(accounts[0]); return; }
+    // No active session - now expose msalApp so wireLogin can use it
+    msalApp = app;
   } catch(e) {
     console.error("MSAL init error:", e);
     // Don't show error - wireLogin will handle user-initiated auth
