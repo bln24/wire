@@ -2017,32 +2017,52 @@ function drawerBody(o){
 }
 
 function proposalStagePanel(o){
-  const st = stageOf(o);
-  const WORKER = 'https://bln24-hg-proxy.t24worker.workers.dev';
-  const safe = encodeURIComponent(o.title || '');
-  const teamsBase = 'https://thebln24.sharepoint.com/sites/BLN24-BDAI/Shared%20Documents/General/00%20Proposals';
-  const folderName = (o.title || '').substring(0,40).replace(/[^a-zA-Z0-9 ]/g,'').trim().replace(/\s+/g,'-');
-  const docUrl = teamsBase + '/' + folderName;
+  const STAGES_PROPOSAL = [
+    {id:7, name:"Pink Team",    color:"#ff9a62", who:"Pursuit Lead",  desc:"AI writes first draft. Team reviews and requests rewrites."},
+    {id:8, name:"Red Team",     color:"var(--red)", who:"All + AI",   desc:"5 evaluator personas attack the proposal. Address critiques."},
+    {id:9, name:"Gold Team",    color:"#ffd166", who:"Lead + Brian",  desc:"Compliance check. Every SOW requirement addressed. Polish."},
+    {id:10,name:"Black Hat",    color:"#8d877b", who:"Brian",         desc:"AI plays top competitor. Harden the vulnerable sections."},
+    {id:11,name:"Final Gate",   color:"var(--green)", who:"Brian only", desc:"Approve to generate submission checklist."}
+  ];
+  const teamsBase = "https://thebln24.sharepoint.com/sites/BLN24-BDAI/Shared%20Documents/General/00%20Proposals";
+  const folderName = (o.title||"").substring(0,40).replace(/[^a-zA-Z0-9 ]/g,"").trim().replace(/\s+/g,"-");
+  const docUrl = teamsBase + "/" + folderName;
 
-  const stageGuide = {
-    7: { who: 'Pursuit Lead', action: 'Review AI first draft. Flag any errors. Use the AI prompt box below to request rewrites.', color: '#ff9a62' },
-    8: { who: 'All + AI Evaluators', action: 'AI plays CO, COR, PM, Tech, and Director personas. Each scores the draft. Respond to critiques before advancing.', color: 'var(--red)' },
-    9: { who: 'Pursuit Lead + Brian', action: 'Compliance check - every SOW requirement must be addressed. AI polishes tone and evidence. Brian does final read.', color: '#ffd166' },
-    10: { who: 'Brian', action: 'AI plays the top competitor. Read their attack on your proposal. Harden the vulnerable sections.', color: '#8d877b' },
-    11: { who: 'Brian only', action: 'Final gate. Approve to generate submission checklist and drop files to SharePoint.', color: 'var(--green)' }
-  }[o.stage] || { who: '', action: '', color: 'var(--amber)' };
+  var html = "<section class='detail-section'><div class='detail-label'>Proposal Pipeline</div>";
+  // Timeline strip
+  html += "<div style='display:flex;gap:0;margin:12px 0 18px;overflow-x:auto;padding-bottom:4px'>";
+  STAGES_PROPOSAL.forEach(function(s) {
+    var active = o.stage === s.id;
+    var done = o.stage > s.id;
+    var bg = done ? "rgba(88,214,141,.12)" : active ? s.color + "22" : "rgba(244,241,232,.04)";
+    var border = done ? "var(--green)" : active ? s.color : "var(--line)";
+    var textCol = done ? "var(--green)" : active ? s.color : "var(--quiet)";
+    html += "<div style='flex:1;min-width:90px;padding:10px 8px;border:1px solid " + border + ";background:" + bg + ";border-radius:8px;margin-right:6px;position:relative'>";
+    html += "<div style='font-size:10px;font-weight:900;color:" + textCol + ";text-transform:uppercase;letter-spacing:.06em'>" + (done ? "✓ " : active ? "▶ " : "") + s.name + "</div>";
+    html += "<div style='font-size:10px;color:var(--quiet);margin-top:2px'>" + s.who + "</div>";
+    if(active) html += "<div style='position:absolute;bottom:-6px;left:50%;transform:translateX(-50%);width:10px;height:10px;background:" + s.color + ";border-radius:50%;border:2px solid var(--paper)'></div>";
+    html += "</div>";
+  });
+  html += "</div>";
 
-  return `<section class='detail-section' style='border:1px solid ${stageGuide.color}33;border-radius:10px;padding:16px;background:${stageGuide.color}0a'>
-    <div class='detail-label' style='color:${stageGuide.color}'>${esc(st.name)} Stage</div>
-    <div style='font-size:12px;color:var(--muted);margin-bottom:10px'><b>Who's up:</b> ${stageGuide.who}</div>
-    <div style='font-size:12px;color:var(--muted);margin-bottom:14px'>${stageGuide.action}</div>
-    <div style='display:flex;gap:8px;flex-wrap:wrap'>
-      <a href='${docUrl}' target='_blank' rel='noreferrer' style='display:inline-flex;align-items:center;gap:5px;background:rgba(244,183,63,.12);border:1px solid rgba(244,183,63,.3);border-radius:7px;padding:8px 14px;color:var(--amber);font-size:12px;font-weight:800;text-decoration:none'>&#8599; Open Word Doc in Teams</a>
-      ${o.stage === 8 ? `<button onclick='runRedTeam(${o.id})' class='btn' style='font-size:12px'>&#9654; Run Red Team AI</button>` : ''}
-      ${o.stage === 11 ? `<button onclick='runFinalGate(${o.id})' class='btn btn-primary' style='font-size:12px'>&#10003; Approve & Generate Checklist</button>` : ''}
-    </div>
-  </section>`;
+  // Current stage detail
+  var cur = STAGES_PROPOSAL.find(function(s){return s.id===o.stage;});
+  if(cur) {
+    html += "<div style='background:" + cur.color + "18;border:1px solid " + cur.color + "44;border-radius:10px;padding:14px;margin-bottom:14px'>";
+    html += "<div style='font-weight:800;color:" + cur.color + ";margin-bottom:4px'>" + cur.name + " — You are here</div>";
+    html += "<div style='font-size:12px;color:var(--muted);margin-bottom:10px'>" + cur.desc + "</div>";
+    html += "<div style='display:flex;gap:8px;flex-wrap:wrap'>";
+    html += "<a href='" + docUrl + "' target='_blank' rel='noreferrer' style='display:inline-flex;align-items:center;gap:5px;background:rgba(244,183,63,.12);border:1px solid rgba(244,183,63,.3);border-radius:7px;padding:8px 14px;color:var(--amber);font-size:12px;font-weight:800;text-decoration:none'>⇗ Open Word Doc in Teams</a>";
+    if(o.stage === 8) html += "<button onclick='runRedTeam(" + o.id + ")' class='btn' style='font-size:12px'>► Run Red Team AI</button>";
+    if(o.stage === 11) html += "<button onclick='runFinalGate(" + o.id + ")' class='btn btn-primary' style='font-size:12px'>✓ Approve & Submit</button>";
+    // Advance button in proposal stages
+    if(o.stage < 11) html += "<button onclick='advanceStage(" + o.id + "," + (o.stage+1) + ")' class='btn' style='font-size:12px;color:var(--amber)'>▶ Next: " + (STAGES_PROPOSAL.find(function(s){return s.id===o.stage+1;})||{name:"Final"}).name + "</button>";
+    html += "</div></div>";
+  }
+  html += "</section>";
+  return html;
 }
+
 
 function aiPromptBox(o){
   return `<section class='detail-section'>
@@ -2645,11 +2665,12 @@ function stageAdvanceButtons(o) {
   var SNAMES = ["","","Capture","Capture","Sign-off","Go/No-Go","Team Assembly","Pink Team","Red Team","Gold Team","Black Hat","Final Gate"];
   var d = '<div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--line)"><div class="detail-label" style="margin-bottom:10px">Advance Stage</div><div style="display:flex;gap:8px;flex-wrap:wrap">';
   if(o.stage >= 0 && o.stage < 5) {
-    d += '<button class="btn btn-primary" style="font-size:12px" onclick="advanceStage(' + o.id + ',5)">▶ Go/No-Go</button>';
-    d += '<button class="btn" style="font-size:12px;color:var(--quiet)" onclick="advanceStage(' + o.id + ',-1)">✕ Pass</button>';
+    d += '<button class="btn btn-primary" style="font-size:12px" onclick="advanceStage(' + o.id + ',5)">▶ Move to Go/No-Go Decision</button>';
+    d += '<button class="btn" style="font-size:12px;color:var(--quiet)" onclick="advanceStage(' + o.id + ',-1)">✕ Pass Entirely</button>';
   } else if(o.stage === 5) {
-    d += '<button class="btn btn-primary" style="font-size:12px" onclick="advanceStage(' + o.id + ',7)">▶ Go! Start Proposal</button>';
-    d += '<button class="btn btn-danger" style="font-size:12px" onclick="advanceStage(' + o.id + ',-1)">✕ No-Go</button>';
+    d += '<div style="font-size:11px;color:var(--muted);margin-bottom:8px;width:100%">Make the call:</div>';
+    d += '<button class="btn btn-primary" style="font-size:13px;padding:10px 20px;background:var(--green);border-color:var(--green)" onclick="advanceStage(' + o.id + ',7)">✔ GO — Start Proposal</button>';
+    d += '<button class="btn btn-danger" style="font-size:13px;padding:10px 20px" onclick="advanceStage(' + o.id + ',-1)">✖ NO-GO — Kill It</button>';
   } else if(o.stage >= 6 && o.stage < 11) {
     d += '<button class="btn btn-primary" style="font-size:12px" onclick="advanceStage(' + o.id + ',' + (o.stage+1) + ')">▶ ' + (SNAMES[o.stage+1]||"Next") + '</button>';
   }
