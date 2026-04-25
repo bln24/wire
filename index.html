@@ -2041,13 +2041,23 @@ function runRedTeam(oppId){
 function runFinalGate(oppId){
   const o = OPPS.find(x=>x.id===oppId);
   if(!o) return;
-  if(!confirm('Approve this proposal for submission? This will generate the submission checklist and notify the team.')) return;
-  fetch('https://bln24-hg-proxy.t24worker.workers.dev/approve',{
-    method:'POST', headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({opp:o})
-  }).then(r=>r.json()).then(d=>{
-    alert('Approved! Asana task: '+d.task_url);
-  }).catch(e=>alert('Error: '+e.message));
+  if(!confirm('Approve this proposal for submission? This will generate the submission checklist.')) return;
+  // Move to submitted stage and show checklist
+  o.stage = 12;
+  const msg = $('aiRewriteMsg_'+oppId);
+  if(msg){
+    msg.style.color='var(--green)';
+    msg.innerHTML = '<b>\u2713 Approved for submission</b><br><br>' +
+      '<b>Submission Checklist:</b><br>' +
+      '\u25a1 Final Word doc exported to SharePoint<br>' +
+      '\u25a1 Compliance matrix verified<br>' +
+      '\u25a1 Price volume signed off<br>' +
+      '\u25a1 Submit via eBuy / SAM.gov / required portal<br>' +
+      '\u25a1 Screenshot confirmation email<br>' +
+      '\u25a1 Notify CO of submission';
+  }
+  buildNav();
+  renderCommand();
 }
 
 function submitAIRewrite(oppId){
