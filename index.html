@@ -1529,7 +1529,7 @@ function emptyState(title,copy){
 
 function wireMain(){
   $("main").querySelectorAll("[data-page]").forEach(el=>el.addEventListener("click",()=>go(el.dataset.page)));
-  $("main").querySelectorAll("[data-open]").forEach(el=>el.addEventListener("click",e=>{if(e.target.closest("a")) return; if(e.target.tagName==="BUTTON" || e.target.closest("button")) return; openOpp(Number(el.dataset.open));}));
+  // delegated on main — see global handler below
   const submit = $("submitOpp");
   if(submit) submit.addEventListener("click",submitOpp);
 }
@@ -1869,6 +1869,21 @@ document.addEventListener("click", e=>{
 });
 $("drawerBg").addEventListener("click",closeDrawer);
 $("filterSheetBg").addEventListener("click",e=>{if(e.target===$("filterSheetBg"))closeFilterSheet();});
+
+// Global delegated handler for [data-open] — opens opp drawer
+document.addEventListener("click", e => {
+  // Don't open if clicking a link or a real action button
+  if(e.target.closest("a")) return;
+  if(e.target.closest("button") && !e.target.closest("[data-open]")) return;
+  // If a button IS inside a [data-open] card but it's the tgl/read-more button, skip
+  if(e.target.tagName === "BUTTON" || (e.target.closest("button") && e.target.closest("button").hasAttribute("onclick"))) return;
+  const card = e.target.closest("[data-open]");
+  if(!card) return;
+  // Don't open from inside the drawer itself
+  if(card.closest("#drawer") || card.closest("#filterSheetBg")) return;
+  const id = Number(card.dataset.open);
+  if(id) openOpp(id);
+});
 $("drawerClose").addEventListener("click",closeDrawer);
 $("globalSearch").addEventListener("input",e=>{
   const q = e.target.value.trim();
