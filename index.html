@@ -2609,6 +2609,40 @@ function acClose() {
   const list = $("acList");
   if(list) list.classList.remove("on");
 }
+function acCloseId(listId) {
+  var el = document.getElementById(listId);
+  if(el) el.classList.remove("on");
+}
+function acFilterMulti(input, fieldId, listId) {
+  const q = (input.value || "").toLowerCase().trim();
+  const list = document.getElementById(listId);
+  if(!list) return;
+  const matches = q
+    ? ORG_ROSTER.filter(r =>
+        r.name.toLowerCase().includes(q) ||
+        (r.title||"").toLowerCase().includes(q) ||
+        r.email.toLowerCase().includes(q))
+    : ORG_ROSTER.slice(0, 12);
+  if(!matches.length) { list.classList.remove("on"); return; }
+  const initials = function(n){ return n.split(" ").map(function(w){return w[0]||"";}).join("").toUpperCase().slice(0,2); };
+  list.innerHTML = matches.map(function(r) {
+    return "<div class='ac-item' onmousedown="acSelectMulti('" + fieldId + "','" + listId + "','" + r.key + "','" + r.name.replace(/'/g,"\'") + "')">" +
+      "<div class='ac-avatar' data-photoemail='" + esc(r.email) + "'>" + initials(r.name) + "</div>" +
+      "<div class='ac-info'><b>" + esc(r.name) + "</b><span>" + esc(r.title||r.email) + "</span></div></div>";
+  }).join("");
+  list.classList.add("on");
+  matches.forEach(function(r) {
+    var el = list.querySelector("[data-photoemail='" + CSS.escape(r.email) + "']");
+    if(el) fetchOrgPhoto(r.email, el);
+  });
+}
+function acSelectMulti(fieldId, listId, key, name) {
+  var nameEl = document.getElementById(fieldId + "_name");
+  var keyEl = document.getElementById(fieldId + "_key");
+  if(nameEl) nameEl.value = name;
+  if(keyEl) keyEl.value = key;
+  acCloseId(listId);
+}
 
 // ── Toast ────────────────────────────────────────────────────────────────
 let _toastTimer = null;
