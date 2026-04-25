@@ -1788,7 +1788,7 @@ function capabilityMatrix(o){
   if(!o.cm_tasks || !o.cm_tasks.length) return "";
   return `<section class="detail-section"><div class="detail-label">Capability matrix</div><div class="matrix">
     <div class="mini-note">Overall fit: <b style="color:${o.cm_fit === "Strong" ? "var(--green)" : o.cm_fit === "Pass" ? "var(--red)" : "var(--amber)"}">${esc(o.cm_fit || "?")}</b> · average ${esc(o.cm_avg || 0)}/4</div>
-    ${o.cm_tasks.map(t=>{
+    ${o.cm_tasks.map((t,i)=>{
       const color = t.score >= 4 ? "var(--green)" : t.score >= 3 ? "var(--amber)" : t.score >= 2 ? "#ff9a62" : "var(--red)";
       return `<div class="matrix-row" style="--bar-color:${color};--bar-width:${Math.round((t.score || 0) / 4 * 100)}%">
         <div class="matrix-top"><span class="matrix-name">${esc(t.task)}</span><span class="matrix-score">${esc(t.score)}/4 - ${esc(t.status)}</span></div>
