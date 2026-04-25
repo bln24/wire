@@ -952,16 +952,29 @@ const MSAL_CONFIG = {
   auth: {
     clientId: "c1ab9244-fd91-468d-ba13-736c9783809c",
     authority: "https://login.microsoftonline.com/bce59a38-0a4f-42df-8ff2-8d40797d61f1",
-    redirectUri: window.location.origin + window.location.pathname,
+    redirectUri: window.location.origin + window.location.pathname.replace(/\/$/, "") + "/",
   },
-  cache: { cacheLocation: "sessionStorage" },
+  cache: { cacheLocation: "sessionStorage", storeAuthStateInCookie: true },
 };
 let msalApp = null;
-try {
-  if(typeof msal !== 'undefined') {
-    msalApp = new msal.PublicClientApplication(MSAL_CONFIG);
+// Initialize MSAL async (required for v2.x)
+async function initMSAL() {
+  try {
+    if(typeof msal === "undefined") { console.warn("MSAL not loaded"); return; }
+    const app = new msal.PublicClientApplication(MSAL_CONFIG);
+    await app.initialize();
+    msalApp = app;
+    console.log("WIRE: MSAL initialized OK");
+    // Handle redirect after login
+    const result = await app.handleRedirectPromise();
+    if(result && result.account) { setMSUser(result.account); return; }
+    const accounts = app.getAllAccounts();
+    if(accounts.length > 0) { setMSUser(accounts[0]); }
+  } catch(e) {
+    console.error("MSAL init error:", e);
   }
-} catch(e) { console.warn('MSAL init failed:', e); }
+}
+initMSAL();
 const ROLE_MAP = {"brian@bln24.com": "ceo", "brian.nguyen@bln24.com": "ceo", "hayk@bln24.com": "am", "michael@bln24.com": "am", "gabe@bln24.com": "am", "eric.ma@bln24.com": "am", "eric@bln24.com": "am", "favi.villa@bln24.com": "sme", "favi@bln24.com": "sme"};
 
 function getRoleFromEmail(email) {
@@ -1034,23 +1047,7 @@ function logout() {
 }
 
 // Auto sign-in if already have a session
-window.addEventListener("DOMContentLoaded", function() {
-  if(typeof msal === "undefined" || !msalApp) return;
-  // Handle redirect response first
-  msalApp.handleRedirectPromise().then(result => {
-    if(result && result.account) {
-      setMSUser(result.account);
-      return;
-    }
-    // Check for existing session
-    const accounts = msalApp.getAllAccounts();
-    if(accounts.length > 0) {
-      setMSUser(accounts[0]);
-    }
-  }).catch(err => {
-    console.error("MSAL redirect error:", err);
-  });
-});
+// MSAL redirect handled in initMSAL()
 
 function buildNav(){
   const isCEO = state.user.role === "ceo";
