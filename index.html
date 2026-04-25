@@ -1303,9 +1303,9 @@ function logout() {
 // MSAL redirect handled in initMSAL()
 
 function buildNav(){
-  const isCEO = state.user.role === "ceo";
-  const isAM = state.user.role === "am";
-  const mine = OPPS.filter(o=>o.assigned_to === state.user.key).length;
+  const isCEO = state.user && state.user.role === "ceo";
+  const isAM = state.user && state.user.role === "am";
+  const mine = state.user ? OPPS.filter(o=>o.assigned_to === state.user.key).length : 0;
   const needs = OPPS.filter(o=>o.stage <= 1).length;
   const items = isCEO ? [
     ["pipeline","board","Pipeline",OPPS.length],
@@ -1471,7 +1471,7 @@ const PAGES = {
       <div class="list-view">${acts.length ? acts.map(o=>rowCard(o,"Review")).join("") : emptyState("All clear","Nothing is waiting for review.")}</div>`;
   },
   myqueue(){
-    const mine = filteredOpps().filter(o=>o.assigned_to === state.user.key);
+    const mine = filteredOpps().filter(o=>state.user && o.assigned_to === state.user.key);
     return pageHead("Assigned work","My Queue",`${mine.length} opportunities assigned to you`) + `
       <div class="list-view">${mine.length ? mine.map(o=>rowCard(o,"Open")).join("") : emptyState("Nothing assigned yet","Approved opportunities will land here.")}</div>`;
   },
@@ -1554,7 +1554,12 @@ function openOpp(id){
     o.value && o.value !== "TBD" ? `<span class="chip green">${esc(o.value)}</span>` : "",
     o.assigned_to ? `<span class="chip blue">${esc(o.assigned_to)}</span>` : ""
   ].join("");
-  $("drawerBody").innerHTML = drawerBody(o);
+  try {
+    $("drawerBody").innerHTML = drawerBody(o);
+  } catch(err) {
+    $("drawerBody").innerHTML = "<div style='color:var(--red);padding:16px'>Drawer error: " + err.message + "</div>";
+    console.error("drawerBody error:", err);
+  }
   $("drawerFoot").innerHTML = drawerFoot(o);
   $("drawerBg").classList.add("on");
   $("drawer").classList.add("on");
@@ -1677,8 +1682,8 @@ function drawerBody(o){
   b += aiPromptBox(o);
 
   // Controls
-  if(state.user.role === "ceo") b += ceoControls(o);
-  if(state.user.role !== "ceo" && state.user.key === o.assigned_to) b += amControls();
+  if(state.user && state.user.role === "ceo") b += ceoControls(o);
+  if(state.user && state.user.role !== "ceo" && state.user.key === o.assigned_to) b += amControls();
 
   return b;
 }
@@ -1814,8 +1819,8 @@ function amControls(){
   </section>`;
 }
 function drawerFoot(o){
-  const isCEO = state.user.role === "ceo";
-  const isOwner = state.user.key === o.assigned_to;
+  const isCEO = state.user && state.user.role === "ceo";
+  const isOwner = state.user && state.user.key === o.assigned_to;
   if(isCEO) return `<button class="btn btn-primary" id="approveBtn"><span data-icon="check"></span>Approve & Assign</button><button class="btn btn-danger" id="passBtn"><span data-icon="x"></span>Pass</button><button class="btn" id="closeBtn">Close</button>`;
   if(isOwner) return `<button class="btn btn-primary" id="strategyBtn"><span data-icon="send"></span>Submit Strategy</button><button class="btn" id="closeBtn">Close</button>`;
   return `<button class="btn" id="closeBtn">Close</button>`;
