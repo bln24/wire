@@ -2134,7 +2134,7 @@ function ceoControls(o){
       <div class="ac-wrap">
         <input class="input" id="assignTo" placeholder="Search by name or title…" autocomplete="off"
           value="${o.assigned_to && ORG_ROSTER.find(r=>r.key===o.assigned_to) ? ORG_ROSTER.find(r=>r.key===o.assigned_to).name : o.assigned_to || ""}"
-          oninput="acFilter(this)" onfocus="acFilter(this)" onblur="setTimeout(()=>acClose(),200)">
+          oninput="acFilter(this)" onfocus="acFilter(this)" onblur="setTimeout(()=>acClose(),350)">
         <input type="hidden" id="assignToKey" value="${o.assigned_to || ""}">
         <div class="ac-list" id="acList"></div>
       </div>
@@ -2169,12 +2169,22 @@ function closeDrawer(){
   state.opp = null;
 }
 function approveOpp(){
-  const assignee = ($("assignToKey") && $("assignToKey").value) || $("assignTo").value;
-  if(!assignee){
-    $("decisionMsg").textContent = "Select a team member before approving.";
-    $("decisionMsg").classList.add("err"); return;
+  // Try key first, then match typed name against roster
+  var assigneeKey = ($("assignToKey") && $("assignToKey").value) || "";
+  var typedName = ($("assignTo") && $("assignTo").value.trim()) || "";
+  if(!assigneeKey && typedName) {
+    // Try to match typed name to roster
+    var match = ORG_ROSTER.find(r => r.name.toLowerCase() === typedName.toLowerCase());
+    if(match) assigneeKey = match.key;
+    else assigneeKey = typedName.toLowerCase().replace(/\s+/g,"_"); // use name as key fallback
   }
-  const assigneeName = ORG_ROSTER.find(r=>r.key===assignee)?.name || USERS[assignee]?.name || assignee;
+  const assignee = assigneeKey;
+  if(!assignee || (!typedName && !assigneeKey)){
+    const msg = $("decisionMsg");
+    if(msg){ msg.textContent = "Type and select a team member to assign."; msg.classList.add("err"); }
+    return;
+  }
+  const assigneeName = ORG_ROSTER.find(r=>r.key===assignee)?.name || typedName || assignee;
   const oppTitle = state.opp.title || "Opportunity";
   state.opp.assigned_to = assignee;
   state.opp.brian_win_theme = $("ceoTheme")?.value || state.opp.brian_win_theme;
@@ -2186,7 +2196,7 @@ function approveOpp(){
   // Show in-drawer confirmation
   const msg = $("decisionMsg");
   if(msg){
-    msg.style.cssText = "color:var(--green);font-weight:700;padding:10px 12px;background:rgba(88,214,141,.08);border:1px solid rgba(88,214,141,.2);border-radius:8px;margin-top:8px";
+    msg.style.cssText = "color:var(--green);font-weight:700;padding:10px 12px;background:rgba(88,214,141,.08);border:1px solid rgba(88,214,141,.2);border-radius:8px;margin-top:8px;display:block";
     msg.innerHTML = "✓ Approved &amp; assigned to <b>" + esc(assigneeName) + "</b>. Moving to Capture stage.";
   }
 
