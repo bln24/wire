@@ -2625,8 +2625,9 @@ function acFilterMulti(input, fieldId, listId) {
     : ORG_ROSTER.slice(0, 12);
   if(!matches.length) { list.classList.remove("on"); return; }
   const initials = function(n){ return n.split(" ").map(function(w){return w[0]||"";}).join("").toUpperCase().slice(0,2); };
+  list.setAttribute("data-field", fieldId);
   list.innerHTML = matches.map(function(r) {
-    return "<div class='ac-item' onmousedown="acSelectMulti('" + fieldId + "','" + listId + "','" + r.key + "','" + r.name.replace(/'/g,"\'") + "')">" +
+    return "<div class='ac-item' data-key='" + esc(r.key) + "' data-name='" + esc(r.name) + "' onmousedown='acPickItem(this)'>" +
       "<div class='ac-avatar' data-photoemail='" + esc(r.email) + "'>" + initials(r.name) + "</div>" +
       "<div class='ac-info'><b>" + esc(r.name) + "</b><span>" + esc(r.title||r.email) + "</span></div></div>";
   }).join("");
@@ -2642,6 +2643,19 @@ function acSelectMulti(fieldId, listId, key, name) {
   if(nameEl) nameEl.value = name;
   if(keyEl) keyEl.value = key;
   acCloseId(listId);
+}
+function acPickItem(el) {
+  var list = el.closest(".ac-list");
+  if(!list) return;
+  var fieldId = list.getAttribute("data-field");
+  var key = el.getAttribute("data-key");
+  var name = el.getAttribute("data-name");
+  if(!fieldId) return;
+  var nameEl = document.getElementById(fieldId + "_name");
+  var keyEl = document.getElementById(fieldId + "_key");
+  if(nameEl) nameEl.value = name;
+  if(keyEl) keyEl.value = key;
+  list.classList.remove("on");
 }
 
 // ── Toast ────────────────────────────────────────────────────────────────
