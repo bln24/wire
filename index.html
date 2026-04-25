@@ -1404,12 +1404,19 @@ function drawerBody(o){
   b += intelList("Teaming partners", o.partners, "green");
 
   // Document links
-  if(o.source_url || o.hg_url) {
+  {
+    var solNum = (o.source_url || "").match(/(?:RFI|RFP|SOLICIT)[0-9A-Z]+/i);
+    solNum = solNum ? solNum[0].toUpperCase() : "";
+    var samUrl = solNum
+      ? "https://sam.gov/search/?keywords=" + encodeURIComponent(solNum) + "&index=opp&is_active=true"
+      : "https://sam.gov/search/?keywords=" + encodeURIComponent(o.title.split(" ").slice(0,5).join(" ")) + "&index=opp";
+    var hgDocsUrl = (o.hg_url && o.hg_url.length > 50) ? o.hg_url.replace(/\/$/, "") + "/" : "";
     b += "<section class='detail-section'><div class='detail-label'>Solicitation Documents</div>";
-    b += "<div style='display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px'>";
-    if(o.source_url) b += "<a href='" + esc(o.source_url) + "' target='_blank' rel='noreferrer' style='display:inline-flex;align-items:center;gap:5px;background:rgba(244,183,63,.1);border:1px solid rgba(244,183,63,.25);border-radius:7px;padding:7px 13px;color:var(--amber);font-size:12px;font-weight:800;text-decoration:none'>&#8659; Solicitation / eBuy</a>";
-    if(o.hg_url) b += "<a href='" + esc(o.hg_url) + "' target='_blank' rel='noreferrer' style='display:inline-flex;align-items:center;gap:5px;background:rgba(114,183,255,.08);border:1px solid rgba(114,183,255,.22);border-radius:7px;padding:7px 13px;color:var(--blue);font-size:12px;font-weight:800;text-decoration:none'>&#8599; HigherGov Profile</a>";
-    b += "</div><div style='font-size:11px;color:var(--quiet)'>Documents available on eBuy or HigherGov &middot; Upload below for AI analysis</div></section>";
+    b += "<div style='display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px'>";
+    if(o.source_url) b += "<a href='" + esc(o.source_url) + "' target='_blank' rel='noreferrer' style='display:inline-flex;align-items:center;gap:5px;background:rgba(244,183,63,.12);border:1px solid rgba(244,183,63,.3);border-radius:7px;padding:8px 14px;color:var(--amber);font-size:12px;font-weight:800;text-decoration:none'>&#8659; eBuy / GSA Solicitation</a>";
+    b += "<a href='" + samUrl + "' target='_blank' rel='noreferrer' style='display:inline-flex;align-items:center;gap:5px;background:rgba(88,214,141,.08);border:1px solid rgba(88,214,141,.25);border-radius:7px;padding:8px 14px;color:var(--green);font-size:12px;font-weight:800;text-decoration:none'>&#8599; SAM.gov</a>";
+    if(hgDocsUrl) b += "<a href='" + esc(hgDocsUrl) + "' target='_blank' rel='noreferrer' style='display:inline-flex;align-items:center;gap:5px;background:rgba(114,183,255,.08);border:1px solid rgba(114,183,255,.22);border-radius:7px;padding:8px 14px;color:var(--blue);font-size:12px;font-weight:800;text-decoration:none'>&#8599; HigherGov (+ attachments)</a>";
+    b += "</div><div style='font-size:11px;color:var(--quiet)'>HigherGov lists all attached PWS/SOW files on the profile page &middot; SAM.gov has official posted documents &middot; Upload below for AI analysis</div></section>";
   }
 
   // Controls
