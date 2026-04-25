@@ -1799,8 +1799,8 @@ const PAGES = {
       o.brian_win_theme ||
       o.stage >= 2
     ).sort((a,b)=>b.score-a.score);
-    return pageHead("Your pursuit radar","My Pursuits",`${myOpps.length} active pursuits you\'re watching or leading`) +
-      \`<div class="list-view">\${myOpps.length ? myOpps.map(o=>rowCard(o,"View")).join("") : emptyState("All clear","No active pursuits yet.")}</div>\`;
+    var myHead = pageHead("Your pursuit radar","My Pursuits", myOpps.length + " active pursuits you're watching or leading");
+    return myHead + '<div class="list-view">' + (myOpps.length ? myOpps.map(o=>rowCard(o,"View")).join("") : emptyState("All clear","No active pursuits yet.")) + '</div>';
   },
   submit(){
     return pageHead("Field intelligence","Submit an Opportunity","Add relationship-driven context that the automated feed may miss") + `
