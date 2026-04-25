@@ -777,18 +777,85 @@ body.light-mode {
   --ink:#1a1814;
   --muted:#5a5650;
   --quiet:#8a8680;
-  --paper:#faf8f3;
-  --panel:#f0ede4;
-  --panel-2:#e8e4da;
+  --paper:#faf8f4;
+  --panel:#ede9df;
+  --panel-2:#e4e0d5;
   --line:rgba(26,24,20,.1);
-  --line-strong:rgba(26,24,20,.18);
-  --shadow:0 24px 80px rgba(0,0,0,.12);
+  --line-strong:rgba(26,24,20,.2);
+  --shadow:0 24px 80px rgba(0,0,0,.1);
 }
-body.light-mode .topbar { background:rgba(240,237,228,.88); }
-body.light-mode .sidebar { background:var(--panel); border-color:var(--line); }
-body.light-mode .opp { background:var(--panel); }
-body.light-mode .auth-stage { background:#faf8f3; }
+/* Body */
+body.light-mode {
+  background:
+    linear-gradient(rgba(26,24,20,.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(26,24,20,.03) 1px, transparent 1px),
+    radial-gradient(1100px 620px at 52% -20%, rgba(244,183,63,.08), transparent 58%),
+    #faf8f4;
+  background-size:48px 48px,48px 48px,auto,auto;
+}
+/* Topbar */
+body.light-mode .topbar { background:rgba(237,233,223,.92); border-bottom-color:var(--line-strong); }
+/* Sidebar */
+body.light-mode .sidebar { background:var(--panel); border-color:var(--line-strong); }
+body.light-mode .nav-item { color:var(--muted); }
+body.light-mode .nav-item:hover,body.light-mode .nav-item.on { background:rgba(26,24,20,.07); color:var(--ink); }
+body.light-mode .nav-section { color:var(--quiet); }
+/* Main */
+body.light-mode .main { background:transparent; }
+/* Cards / opps */
+body.light-mode .opp { background:var(--panel); border-color:var(--line-strong); }
+body.light-mode .opp:hover { background:var(--panel-2); }
+body.light-mode .row-card { background:var(--panel); border-color:var(--line-strong); }
+body.light-mode .row-card:hover { background:var(--panel-2); }
+body.light-mode .metric { background:var(--panel); border-color:var(--line-strong); }
+body.light-mode .focus-panel { background:var(--panel); border-color:var(--line-strong); }
+body.light-mode .intel-card { background:var(--panel); }
+body.light-mode .stage-col { background:rgba(26,24,20,.04); border-color:var(--line); }
+body.light-mode .stage-head { background:rgba(26,24,20,.06); }
+/* Inputs */
+body.light-mode .input,body.light-mode .textarea,body.light-mode .select {
+  background:var(--paper); border-color:var(--line-strong); color:var(--ink);
+}
+body.light-mode .select option { background:var(--paper); color:var(--ink); }
+/* Drawer */
+body.light-mode .drawer { background:var(--panel); border-color:var(--line-strong); }
+body.light-mode .drawer-top { background:var(--panel); border-color:var(--line); }
+body.light-mode .drawer-foot { background:rgba(230,226,216,.8); }
+body.light-mode .drawer-bg { background:rgba(200,196,186,.5); }
+body.light-mode .detail-section { border-color:var(--line); }
+/* Score ring center */
+body.light-mode .score-ring:after { background:var(--paper); }
+/* Filter sheet */
+body.light-mode .filter-sheet { background:var(--panel); border-color:var(--line-strong); }
+body.light-mode .filter-sheet-head { border-color:var(--line); }
+/* Profile & notif dropdowns */
+body.light-mode .profile-menu,body.light-mode .notif-panel { background:var(--panel); border-color:var(--line-strong); }
+body.light-mode .profile-menu-item:hover { background:rgba(26,24,20,.07); }
+body.light-mode .theme-toggle { background:var(--paper); }
+body.light-mode .notif-item { border-color:var(--line); }
+/* Auth */
+body.light-mode .auth-stage { background:#faf8f4; }
+body.light-mode .auth-panel { background:var(--panel); }
 body.light-mode .auth-brand { background:linear-gradient(160deg,#f4b73f 0%,#e8a020 100%); }
+/* Chips */
+body.light-mode .chip { background:rgba(26,24,20,.08); color:var(--muted); }
+/* Command hero */
+body.light-mode .command-hero { background:linear-gradient(135deg, rgba(244,183,63,.12) 0%, rgba(237,233,223,0) 60%); border-color:var(--line); }
+body.light-mode .signal-node { background:var(--panel); border-color:var(--line-strong); }
+/* Life steps */
+body.light-mode .life-step { background:var(--panel); border-color:var(--line); }
+/* Agency strip */
+body.light-mode .agency-tile { background:var(--panel); border-color:var(--line-strong); }
+/* Callout */
+body.light-mode .callout { background:rgba(244,183,63,.08); border-color:rgba(244,183,63,.25); }
+/* Page head */
+body.light-mode .page-head { border-color:var(--line); }
+/* Mini note */
+body.light-mode .mini-note { color:var(--muted); }
+/* Topbar backdrop */
+body.light-mode .topbar { backdrop-filter:blur(24px); }
+/* Auth stage bg */
+body.light-mode .auth-shell { background:var(--paper); }
 
 /* ── Profile / notification dropdown ────────────────────────── */
 .topbar-actions { display:flex; align-items:center; gap:8px; position:relative; }
