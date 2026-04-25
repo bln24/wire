@@ -64,57 +64,179 @@ button{cursor:pointer}
   position:fixed;
   inset:0;
   z-index:20;
-  display:grid;
-  place-items:center;
-  padding:24px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:38px;
+  overflow:hidden;
   background:
-    linear-gradient(115deg, rgba(244,183,63,.08), transparent 38%),
-    linear-gradient(180deg, rgba(8,8,6,.92), rgba(8,8,6,.98));
+    linear-gradient(90deg, rgba(244,183,63,.04) 1px, transparent 1px),
+    linear-gradient(rgba(244,241,232,.032) 1px, transparent 1px),
+    linear-gradient(135deg, rgba(244,183,63,.12), transparent 26%),
+    linear-gradient(225deg, rgba(114,183,255,.055), transparent 34%),
+    #050504;
+  background-size:72px 72px,72px 72px,auto,auto,auto;
+}
+
+#auth:before{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  background:
+    linear-gradient(115deg, transparent 0 48%, rgba(244,183,63,.11) 49%, transparent 50% 100%),
+    linear-gradient(180deg, transparent, rgba(5,5,4,.72) 84%);
+  opacity:.65;
+}
+
+#auth:after{
+  content:"";
+  position:absolute;
+  left:8vw;
+  right:8vw;
+  top:50%;
+  height:1px;
+  background:linear-gradient(90deg, transparent, rgba(244,183,63,.42), transparent);
+  transform:translateY(-50%);
+  opacity:.55;
 }
 
 .auth-shell{
-  width:min(940px,100%);
-  min-height:520px;
+  position:relative;
+  z-index:1;
+  width:min(1180px,100%);
+  min-height:650px;
   display:grid;
-  grid-template-columns:1.15fr .85fr;
+  grid-template-columns:minmax(0,1fr) 390px;
+  gap:28px;
+  align-items:stretch;
+}
+
+.auth-stage{
+  position:relative;
   border:1px solid var(--line-strong);
   border-radius:8px;
   overflow:hidden;
-  background:rgba(17,16,13,.78);
+  background:linear-gradient(180deg, rgba(244,241,232,.052), rgba(244,241,232,.018));
   box-shadow:var(--shadow);
-  backdrop-filter:blur(22px);
+  backdrop-filter:blur(18px);
 }
 
 .auth-brand{
-  padding:52px;
+  position:absolute;
+  inset:0;
+  z-index:2;
+  padding:42px;
   display:flex;
   flex-direction:column;
   justify-content:space-between;
-  border-right:1px solid var(--line);
-  background:
-    linear-gradient(145deg, rgba(244,183,63,.12), transparent 42%),
-    linear-gradient(0deg, rgba(244,241,232,.035), transparent);
 }
 
-.wordmark{font-size:68px;line-height:.9;font-weight:900;letter-spacing:-5px}
+.wordmark{font-size:76px;line-height:.82;font-weight:900;letter-spacing:-5px;text-shadow:0 0 34px rgba(244,183,63,.18)}
 .wordmark span{color:var(--amber)}
-.kicker{margin-top:14px;color:var(--muted);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.24em}
-.auth-copy{max-width:560px}
-.auth-copy h1{margin:0;font-size:42px;line-height:1;letter-spacing:-2px}
-.auth-copy p{max-width:440px;color:var(--muted);line-height:1.65;font-size:14px}
-.signal-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:28px}
+.wordmark .infinity{display:inline-block;margin:0 -5px;color:#f7d889;transform:translateY(-1px) scale(.92)}
+.kicker{margin-top:14px;color:var(--muted);font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.32em}
+.auth-copy{max-width:610px}
+.auth-copy h1{margin:0;font-size:54px;line-height:.93;letter-spacing:-2.8px;max-width:720px}
+.auth-copy p{max-width:500px;color:var(--muted);line-height:1.7;font-size:14px;margin:18px 0 0}
+.signal-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:30px;max-width:620px}
 .signal{
   border:1px solid var(--line);
   border-radius:8px;
-  padding:14px;
-  background:rgba(244,241,232,.035);
+  padding:15px;
+  background:rgba(5,5,4,.72);
+  backdrop-filter:blur(12px);
 }
 .signal b{display:block;font-size:22px;letter-spacing:-1px}
 .signal span{display:block;color:var(--quiet);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-top:4px}
 
-.auth-panel{padding:52px 44px;align-self:center}
-.auth-panel h2{margin:0 0 8px;font-size:18px;letter-spacing:-.3px}
-.auth-panel p{margin:0 0 22px;color:var(--muted);font-size:13px;line-height:1.5}
+.auth-visual{
+  position:absolute;
+  inset:0;
+  background:
+    linear-gradient(90deg, transparent 49%, rgba(244,183,63,.16) 50%, transparent 51%),
+    linear-gradient(transparent 49%, rgba(244,183,63,.12) 50%, transparent 51%);
+  background-size:132px 132px;
+}
+
+.auth-visual:before{
+  content:"";
+  position:absolute;
+  inset:12%;
+  border:1px solid rgba(244,183,63,.16);
+  border-radius:8px;
+  transform:skewX(-8deg);
+  opacity:.62;
+}
+
+.auth-rail{
+  position:absolute;
+  left:50%;
+  top:8%;
+  bottom:8%;
+  width:1px;
+  background:linear-gradient(transparent, rgba(244,183,63,.58), transparent);
+  opacity:.7;
+}
+
+.auth-cardlet{
+  position:absolute;
+  width:168px;
+  border:1px solid var(--line);
+  border-radius:8px;
+  padding:12px;
+  background:rgba(5,5,4,.54);
+  box-shadow:0 18px 50px rgba(0,0,0,.24);
+  backdrop-filter:blur(10px);
+  opacity:.82;
+}
+.auth-cardlet.one{right:9%;top:14%}
+.auth-cardlet.two{right:23%;top:39%}
+.auth-cardlet.three{right:8%;bottom:28%}
+.cardlet-label{color:var(--quiet);font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.13em}
+.cardlet-value{margin-top:6px;font-size:19px;font-weight:900;letter-spacing:-.7px}
+.cardlet-rule{height:4px;margin-top:12px;border-radius:999px;background:rgba(244,241,232,.08);overflow:hidden}
+.cardlet-rule span{display:block;height:100%;background:linear-gradient(90deg,var(--amber),var(--green))}
+
+.auth-panel{
+  position:relative;
+  align-self:center;
+  padding:24px;
+  border:1px solid var(--line-strong);
+  border-radius:8px;
+  background:rgba(17,16,13,.82);
+  box-shadow:0 28px 78px rgba(0,0,0,.48);
+  backdrop-filter:blur(24px);
+}
+.auth-panel:before{
+  content:"";
+  position:absolute;
+  inset:0;
+  border-radius:8px;
+  pointer-events:none;
+  background:linear-gradient(180deg, rgba(244,183,63,.13), transparent 38%);
+  opacity:.68;
+}
+.auth-panel>*{position:relative;z-index:1}
+.auth-panel h2{margin:0 0 8px;font-size:23px;letter-spacing:-.8px}
+.auth-panel p{margin:0 0 22px;color:var(--muted);font-size:13px;line-height:1.55}
+.auth-status{
+  height:28px;
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding:0 10px;
+  margin-bottom:18px;
+  border:1px solid rgba(88,214,141,.24);
+  border-radius:999px;
+  background:var(--green-soft);
+  color:var(--green);
+  font-size:10px;
+  font-weight:900;
+  text-transform:uppercase;
+  letter-spacing:.12em;
+}
+.auth-status:before{content:"";width:7px;height:7px;border-radius:2px;background:var(--green);box-shadow:0 0 14px rgba(88,214,141,.8)}
 .field{margin-bottom:12px}
 .label{display:block;margin-bottom:7px;color:var(--quiet);font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.12em}
 .input,.select,.textarea{
@@ -257,6 +379,180 @@ button{cursor:pointer}
 .page-title{margin:0;font-size:34px;line-height:1;letter-spacing:-1.8px}
 .page-sub{margin:9px 0 0;color:var(--muted);font-size:13px}
 .head-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+
+.command-hero{
+  position:relative;
+  overflow:hidden;
+  min-height:360px;
+  margin-bottom:18px;
+  border:1px solid var(--line-strong);
+  border-radius:8px;
+  background:
+    linear-gradient(90deg, rgba(244,183,63,.055) 1px, transparent 1px),
+    linear-gradient(rgba(244,241,232,.035) 1px, transparent 1px),
+    radial-gradient(650px 420px at 72% 18%, rgba(244,183,63,.16), transparent 58%),
+    radial-gradient(520px 360px at 8% 88%, rgba(114,183,255,.08), transparent 58%),
+    rgba(244,241,232,.035);
+  background-size:70px 70px,70px 70px,auto,auto,auto;
+  box-shadow:0 26px 86px rgba(0,0,0,.28);
+}
+.command-hero:before{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:
+    linear-gradient(115deg, transparent 0 47%, rgba(244,183,63,.18) 48%, transparent 49%),
+    linear-gradient(180deg, transparent, rgba(5,5,4,.58));
+  opacity:.72;
+  pointer-events:none;
+}
+.hero-content{
+  position:relative;
+  z-index:1;
+  min-height:360px;
+  display:grid;
+  grid-template-columns:minmax(0,1.02fr) minmax(360px,.98fr);
+  gap:28px;
+  align-items:stretch;
+  padding:28px;
+}
+.hero-copy{align-self:end;padding:0 0 10px}
+.hero-copy h1{
+  margin:0;
+  max-width:720px;
+  font-size:58px;
+  line-height:.94;
+  letter-spacing:-3px;
+}
+.hero-copy p{
+  max-width:620px;
+  margin:18px 0 0;
+  color:#c8c0b2;
+  font-size:15px;
+  line-height:1.7;
+}
+.hero-kicker{color:var(--amber);font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.18em;margin-bottom:12px}
+.hero-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:24px}
+.hero-visual{
+  position:relative;
+  min-height:304px;
+  align-self:stretch;
+}
+.orbit{
+  position:absolute;
+  inset:8px;
+  border:1px solid rgba(244,183,63,.14);
+  border-radius:8px;
+  transform:skewX(-8deg);
+}
+.orbit:before,.orbit:after{
+  content:"";
+  position:absolute;
+  border:1px solid rgba(244,241,232,.1);
+  border-radius:8px;
+}
+.orbit:before{inset:38px 62px 34px 34px}
+.orbit:after{inset:84px 18px 78px 120px}
+.signal-node{
+  position:absolute;
+  min-width:168px;
+  border:1px solid var(--line);
+  border-radius:8px;
+  padding:12px;
+  background:rgba(5,5,4,.64);
+  backdrop-filter:blur(12px);
+  box-shadow:0 18px 48px rgba(0,0,0,.28);
+}
+.signal-node.one{top:22px;right:10px}
+.signal-node.two{top:132px;left:22px}
+.signal-node.three{right:66px;bottom:20px}
+.node-label{color:var(--quiet);font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.13em}
+.node-value{font-size:23px;font-weight:900;letter-spacing:-.8px;margin-top:6px}
+.node-copy{color:var(--muted);font-size:11px;line-height:1.45;margin-top:6px}
+.agency-cloud{
+  position:absolute;
+  left:52%;
+  top:49%;
+  transform:translate(-50%,-50%);
+  width:min(320px,72%);
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:8px;
+}
+.agency-mark{
+  aspect-ratio:1;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  border:1px solid rgba(244,241,232,.12);
+  border-radius:8px;
+  background:rgba(17,16,13,.72);
+  color:var(--ink);
+}
+.agency-mark b{font-size:19px;letter-spacing:-.8px}
+.agency-mark span{font-size:8px;color:var(--quiet);font-weight:900;letter-spacing:.12em;text-transform:uppercase}
+.lifecycle{
+  display:grid;
+  grid-template-columns:repeat(6,minmax(0,1fr));
+  gap:8px;
+  margin-bottom:18px;
+}
+.life-step{
+  position:relative;
+  min-height:108px;
+  border:1px solid var(--line);
+  border-radius:8px;
+  padding:14px;
+  background:linear-gradient(180deg,rgba(244,241,232,.055),rgba(244,241,232,.022));
+  overflow:hidden;
+}
+.life-step:before{
+  content:"";
+  position:absolute;
+  left:14px;
+  right:14px;
+  top:0;
+  height:2px;
+  background:var(--step-color,var(--amber));
+}
+.life-num{color:var(--step-color,var(--amber));font-size:11px;font-weight:900;letter-spacing:.12em}
+.life-title{margin-top:12px;font-weight:900;font-size:13px}
+.life-copy{margin-top:7px;color:var(--quiet);font-size:11px;line-height:1.45}
+.agency-strip{
+  display:grid;
+  grid-template-columns:repeat(6,minmax(0,1fr));
+  gap:8px;
+  margin-bottom:18px;
+}
+.agency-tile{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  min-width:0;
+  min-height:66px;
+  border:1px solid var(--line);
+  border-radius:8px;
+  padding:10px;
+  background:rgba(244,241,232,.035);
+}
+.agency-seal{
+  width:38px;
+  height:38px;
+  flex:0 0 auto;
+  border:1px solid rgba(244,183,63,.24);
+  border-radius:50%;
+  display:grid;
+  place-items:center;
+  background:radial-gradient(circle at 38% 28%, rgba(244,183,63,.28), rgba(244,183,63,.08) 58%, rgba(5,5,4,.72));
+  color:var(--amber);
+  font-size:11px;
+  font-weight:900;
+}
+.agency-tile div:last-child{min-width:0}
+.agency-tile b{display:block;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.agency-tile span{display:block;color:var(--quiet);font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;margin-top:3px}
 
 .insight-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:18px}
 .metric{
@@ -455,37 +751,62 @@ button{cursor:pointer}
 .live-dot{width:9px;height:9px;border-radius:50%;background:var(--green);box-shadow:0 0 18px var(--green)}
 
 @media(max-width:980px){
-  .auth-shell{grid-template-columns:1fr}.auth-brand{border-right:0;border-bottom:1px solid var(--line);padding:34px}.auth-panel{padding:34px}
+  #auth{padding:22px;align-items:flex-start;overflow:auto}
+  .auth-shell{grid-template-columns:1fr;min-height:0}
+  .auth-stage{min-height:560px}
+  .auth-brand{padding:34px}
+  .auth-panel{padding:24px}
   .shell{grid-template-columns:1fr}.sidebar{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line);display:flex;gap:6px;overflow:auto}.nav-title,.sidebar-meter{display:none}.nav-item{white-space:nowrap;width:auto}
-  .main{padding:22px 18px 110px}.top-search{display:none}.insight-grid{grid-template-columns:repeat(2,1fr)}.focus-strip{grid-template-columns:1fr}.board{grid-auto-columns:minmax(220px,80vw)}
+  .main{padding:22px 18px 110px}.top-search{display:none}.hero-content{grid-template-columns:1fr}.hero-copy h1{font-size:44px}.hero-visual{min-height:280px}.lifecycle{grid-template-columns:repeat(3,1fr)}.agency-strip{grid-template-columns:repeat(3,1fr)}.insight-grid{grid-template-columns:repeat(2,1fr)}.focus-strip{grid-template-columns:1fr}.board{grid-auto-columns:minmax(220px,80vw)}
 }
 @media(max-width:620px){
   .topbar{padding:0 14px}.user-chip{display:none}.page-head{display:block}.head-actions{justify-content:flex-start;margin-top:14px}.page-title{font-size:28px}
-  .insight-grid{grid-template-columns:1fr}.form-row{grid-template-columns:1fr}.command{display:none!important}.auth-brand{padding:28px 22px}.wordmark{font-size:52px}.auth-copy h1{font-size:32px}.signal-row{grid-template-columns:1fr}.auth-panel{padding:28px 22px}
+  .command-hero{min-height:0}.hero-content{padding:20px;min-height:0}.hero-copy h1{font-size:34px}.agency-cloud{position:relative;left:auto;top:auto;transform:none;width:100%;margin-top:20px}.signal-node,.orbit{display:none}.lifecycle,.agency-strip,.insight-grid{grid-template-columns:1fr}.form-row{grid-template-columns:1fr}.command{display:none!important}.auth-stage{min-height:590px}.auth-brand{padding:28px 22px}.wordmark{font-size:54px}.auth-copy h1{font-size:34px}.signal-row{grid-template-columns:1fr}.auth-panel{padding:22px}.auth-cardlet{display:none}
 }
 </style>
 </head>
 <body>
 <div id="auth">
   <div class="auth-shell">
-    <section class="auth-brand">
-      <div>
-        <div class="wordmark">W<span>I</span>RE</div>
-        <div class="kicker">BLN24 capture intelligence</div>
+    <section class="auth-stage">
+      <div class="auth-visual" aria-hidden="true">
+        <div class="auth-rail"></div>
+        <div class="auth-cardlet one">
+          <div class="cardlet-label">Fit signal</div>
+          <div class="cardlet-value">High</div>
+          <div class="cardlet-rule"><span style="width:86%"></span></div>
+        </div>
+        <div class="auth-cardlet two">
+          <div class="cardlet-label">CEO queue</div>
+          <div class="cardlet-value">11 open</div>
+          <div class="cardlet-rule"><span style="width:58%"></span></div>
+        </div>
+        <div class="auth-cardlet three">
+          <div class="cardlet-label">TCV scan</div>
+          <div class="cardlet-value">$241M+</div>
+          <div class="cardlet-rule"><span style="width:74%"></span></div>
+        </div>
       </div>
-      <div class="auth-copy">
-        <h1>Federal pipeline decisions, tightened into one command surface.</h1>
-        <p>WIRE ranks opportunities, exposes pursuit gaps, and turns CEO review into a fast go/no-go workflow.</p>
-        <div class="signal-row">
-          <div class="signal"><b>49</b><span>Live opps</span></div>
-          <div class="signal"><b>$144M+</b><span>Win TCV</span></div>
-          <div class="signal"><b>64%</b><span>Win rate signal</span></div>
+      <div class="auth-brand">
+        <div>
+          <div class="wordmark">W<span class="infinity">∞</span>RE</div>
+          <div class="kicker">BLN24 BD intelligence engine</div>
+        </div>
+        <div class="auth-copy">
+          <h1>The front door to pursuit command.</h1>
+          <p>Every login opens a ranked view of capture fit, relationship leverage, competitor pressure, and the next decision Brian needs to make.</p>
+          <div class="signal-row">
+            <div class="signal"><b>12</b><span>Live opps</span></div>
+            <div class="signal"><b>$241M+</b><span>Visible TCV</span></div>
+            <div class="signal"><b>7</b><span>Priority fits</span></div>
+          </div>
         </div>
       </div>
     </section>
     <section class="auth-panel">
-      <h2>Secure Access</h2>
-      <p>Choose your profile and enter the access code to open the intelligence workspace.</p>
+      <div class="auth-status">Encrypted workspace</div>
+      <h2>Enter WIRE</h2>
+      <p>Choose your profile and unlock the capture intelligence workspace.</p>
       <div class="field">
         <label class="label" for="au">Profile</label>
         <select class="select" id="au">
@@ -499,7 +820,7 @@ button{cursor:pointer}
       </div>
       <div class="field">
         <label class="label" for="ap">Access Code</label>
-        <input class="input" id="ap" type="password" placeholder="wire2026" autocomplete="current-password">
+        <input class="input" id="ap" type="password" placeholder="Access code" autocomplete="current-password">
       </div>
       <button class="btn btn-primary" style="width:100%;margin-top:4px" id="loginBtn">Enter WIRE</button>
       <div class="auth-error" id="ae"></div>
@@ -539,7 +860,6 @@ button{cursor:pointer}
   <div class="drawer-foot" id="drawerFoot"></div>
 </aside>
 
-
 <script src="opps-data.js"></script>
 <script>
 const PASS = "wire2026";
@@ -567,9 +887,9 @@ const STAGES = [
 ];
 const SMES = ["Favi Villa - UX/HCD","Drupal Engineer - TBD","Data Engineer - TBD","Comms Lead - TBD"];
 const LIVE = typeof LIVE_OPPS !== "undefined" ? LIVE_OPPS : [];
-const OPPS = LIVE.map((o,i)=>({...o,id:i+1,stage:o.stage||0,submitted_by:o.submitted_by||"AI",assigned_to:o.assigned_to||null,brian_win_theme:o.brian_win_theme||null})).concat([
-  {id:900,stage:1,agency:"Census Bureau",title:"CES ADRM Phase 2 Analytics",agency_full:"U.S. Census Bureau",value:"~$7M",set_aside:"SB",score:89,win_prob:"High (70-85%)",naics:"541511",due:"2026-06-15",notice:"FORECAST",tier_label:"Tier 2 ($5-20M)",what_they_need:"Analytics support for Census Center for Economic Studies ADRM program. Phase 2 follow-on.",rex_take:"Repeat client. BLN24 won Phase 1 ($7M, 2025). Census relationship spans 5 prior contracts. Incumbency advantage is decisive.",watch_notes:"Eric needs to call Jason Winings before solicitation drops.",recommendation:"Pursue",cm_fit:"Strong",cm_avg:3.8,cm_prime_count:2,cm_gap_count:0,cm_total_tasks:2,gonogo:[{label:"Set-Aside",answer:"Small Business set-aside",color:"green"},{label:"Capabilities",answer:"Strong match — analytics lane 4/4",color:"green"},{label:"Notice Type",answer:"Forecast — position before RFP",color:"yellow"},{label:"Contract Value",answer:"$7M — Tier 2 (BLN24 sweet spot)",color:"green"}],cm_tasks:[{task:"Data Analytics & BI",score:4,score_label:"4 — Highly Similar PP",status:"prime",pp_refs:["Census SRQA $4.1M","Census CES ADRM Phase 1 $7M"],note:"BLN24 prime — built and maintains the ADRM system"},{task:"Agile Delivery",score:4,score_label:"4 — Highly Similar PP",status:"prime",pp_refs:["Census DWS III $8.3M"],note:"Active Agile delivery across Census contracts"}],competitors:[{name:"AFS",why:"Active sub on Phase 1 — low prime risk but knows the program",url:""},{name:"Guidehouse",why:"$258M Census presence — large incumbent but can't prime SB",url:""}],partners:[],ci_score_delta:8,ci_score_reasons:["Repeat client — existing relationship +5pts","SB set-aside: large competitors eliminated +3pts"],ai_win_theme:"We built it. We own it. No competitor can claim four years of Census ADRM institutional knowledge.",brian_win_theme:"This is ours. Eric needs to call Jason Winings before solicitation drops.",assigned_to:"eric",submitted_by:"AI"},
-  {id:901,stage:5,agency:"NTIA",title:"Digital Outreach Phase 2",agency_full:"National Telecommunications & Information Administration",value:"~$3.5M",set_aside:"8(a)",score:95,win_prob:"High (80-90%)",naics:"541613",due:"2026-08-01",notice:"FORECAST",tier_label:"Tier 3 ($500K-5M)",what_they_need:"Follow-on outreach and engagement services for NTIA digital programs.",rex_take:"Repeat client. Exceptional CPARS on NTIA Outreach ($2.7M, final). Classic sole-source setup — push for direct award before posting.",watch_notes:"Brian has direct CO relationship. Push for sole source immediately.",recommendation:"Pursue — Sole Source",cm_fit:"Strong",cm_avg:4.0,cm_prime_count:2,cm_gap_count:0,cm_total_tasks:2,gonogo:[{label:"Set-Aside",answer:"8(a) — direct vehicle match",color:"green"},{label:"Capabilities",answer:"Strong — Exceptional CPARS on prior contract",color:"green"},{label:"Notice Type",answer:"Forecast — push sole source before posting",color:"green"},{label:"Contract Value",answer:"$3.5M — Tier 3 (BLN24 sweet spot)",color:"green"}],cm_tasks:[{task:"Strategic Communications",score:4,score_label:"4 — Highly Similar PP",status:"prime",pp_refs:["NTIA Outreach & Engagement $2.7M (Exceptional CPARS)"],note:"BLN24 prime — Exceptional CPARS is the strongest possible signal"},{task:"Content Development",score:4,score_label:"4 — Highly Similar PP",status:"prime",pp_refs:["CMS MNPS $16M","DHA Strategic Comms $9.9M"],note:"Active federal content at scale"}],competitors:[{name:"None if sole source",why:"Push CO for sole source before posting. Exceptional CPARS = warm invitation.",url:""}],partners:[],ci_score_delta:10,ci_score_reasons:["8(a) sole source path — large competition eliminated +5pts","Exceptional CPARS on prior NTIA contract +5pts"],ai_win_theme:"Exceptional CPARS is a direct invitation from the CO. The relationship is warm. Push for sole source.",brian_win_theme:"My relationship. Reaching out to CO this week.",assigned_to:"michael",submitted_by:"AI"}
+const OPPS = LIVE.map((o,i)=>({...o,id:i+1,stage:o.stage || 0,submitted_by:o.submitted_by || "AI",assigned_to:o.assigned_to || null,brian_win_theme:o.brian_win_theme || null})).concat([
+  {id:900,stage:1,agency:"Census Bureau",title:"CES ADRM Phase 2 Analytics",value:"~$7M",set_aside:"SB",score:89,due:"2026-06-15",source:"AI",what_they_need:"Analytics support for Census Center for Economic Studies ADRM program. Phase 2 follow-on.",rex_take:"Repeat client. BLN24 won Phase 1. Census relationship spans five prior contracts. Incumbency advantage is decisive.",recommendation:"Pursue",cm_fit:"Strong",cm_avg:3.8,cm_tasks:[{task:"Data Analytics",score:4,status:"prime",pp:"Census SRQA $4.1M"},{task:"Agile Delivery",score:4,status:"prime",pp:"Census DWS III $8.3M"}],competitors:[{name:"AFS",why:"Active sub on Phase 1",url:""},{name:"Guidehouse",why:"Large Census incumbent",url:""}],partners:[],ai_win_theme:"We built it. We own it. No competitor can claim four years of Census ADRM institutional knowledge.",brian_win_theme:"This is ours. Eric needs to call Jason Winings before solicitation drops.",assigned_to:"eric",submitted_by:"AI"},
+  {id:901,stage:5,agency:"NTIA",title:"Digital Outreach Phase 2",value:"~$3.5M",set_aside:"8(a)",score:95,due:"2026-08-01",source:"AI",what_they_need:"Follow-on outreach and engagement services for NTIA digital programs.",rex_take:"Repeat client. Exceptional CPARS on NTIA Outreach. Classic sole-source setup.",recommendation:"Pursue - Sole Source",cm_fit:"Strong",cm_avg:4,cm_tasks:[{task:"Strategic Communications",score:4,status:"prime",pp:"NTIA Outreach $2.7M"},{task:"Content Development",score:4,status:"prime",pp:"CMS MNPS $16M"}],competitors:[{name:"None if sole source",why:"Push CO before posting",url:""}],partners:[],ai_win_theme:"Exceptional CPARS is a direct invitation. The relationship is warm. Push for sole source before it posts.",brian_win_theme:"My relationship. Reaching out to CO this week.",assigned_to:"michael",submitted_by:"AI"}
 ]);
 
 const state = {user:null,page:"pipeline",opp:null,query:""};
@@ -603,6 +923,30 @@ function moneyValue(o){
   const raw = String(o.value || "");
   const num = Number(raw.replace(/[^0-9.]/g,""));
   return Number.isFinite(num) ? num : 0;
+}
+function agencyCode(name){
+  const n = String(name || "").toLowerCase();
+  if(n.includes("drug enforcement")) return "DEA";
+  if(n.includes("medicare") || n.includes("cms")) return "CMS";
+  if(n.includes("emergency") || n.includes("fema")) return "FEMA";
+  if(n.includes("homeland") || n.includes("cbp")) return "DHS";
+  if(n.includes("commerce") || n.includes("census")) return "CEN";
+  if(n.includes("transportation") || n.includes("highway")) return "DOT";
+  if(n.includes("defense")) return "DoD";
+  if(n.includes("ntia")) return "NTIA";
+  return String(name || "GOV").split(/\s+/).filter(Boolean).map(w=>w[0]).join("").slice(0,4).toUpperCase();
+}
+function agencyTitle(name){
+  const n = String(name || "").toLowerCase();
+  if(n.includes("drug enforcement")) return "DEA";
+  if(n.includes("medicare") || n.includes("cms")) return "CMS";
+  if(n.includes("emergency") || n.includes("fema")) return "FEMA";
+  if(n.includes("homeland") || n.includes("cbp")) return "DHS / CBP";
+  if(n.includes("commerce") || n.includes("census")) return "Commerce / Census";
+  if(n.includes("transportation") || n.includes("highway")) return "DOT";
+  if(n.includes("defense")) return "DoD";
+  if(n.includes("ntia")) return "NTIA";
+  return String(name || "Federal Agency").replace("Administratio","Administration").replace("Medicai","Medicaid").replace("Securit","Security");
 }
 
 function login(){
@@ -675,6 +1019,56 @@ function metric(value,label,copy,color,heights=[18,28,12,34,22]){
     <div class="mini-bars">${heights.map(h=>`<span style="height:${h}px"></span>`).join("")}</div>
   </div>`;
 }
+function commandHero(total,needs,high){
+  const agencies = topAgencies(6);
+  return `<section class="command-hero">
+    <div class="hero-content">
+      <div class="hero-copy">
+        <div class="hero-kicker">Full lifecycle BD operating system</div>
+        <h1>WIRE turns every pursuit into a compounding competitive edge.</h1>
+        <p>From market signal to win/loss learning, WIRE compresses BD judgment, agency relationship context, past performance fit, competitive pressure, capture strategy, and proposal readiness into one intelligence loop.</p>
+        <div class="hero-actions">
+          <button class="btn btn-primary" data-page="review"><span data-icon="review"></span>Work CEO Queue</button>
+          <button class="btn" data-page="winloss"><span data-icon="chart"></span>Review Loss Patterns</button>
+        </div>
+      </div>
+      <div class="hero-visual" aria-hidden="true">
+        <div class="orbit"></div>
+        <div class="agency-cloud">${agencies.map(a=>`<div class="agency-mark"><b>${esc(a.code)}</b><span>${esc(a.count)} opp${a.count > 1 ? "s" : ""}</span></div>`).join("")}</div>
+        <div class="signal-node one"><div class="node-label">Lifecycle coverage</div><div class="node-value">Source to debrief</div><div class="node-copy">No stage lives outside the intelligence layer.</div></div>
+        <div class="signal-node two"><div class="node-label">Known TCV</div><div class="node-value">$${Math.round(total)}M+</div><div class="node-copy">Mapped against fit, relationship, and capture risk.</div></div>
+        <div class="signal-node three"><div class="node-label">Action pressure</div><div class="node-value">${needs} decisions</div><div class="node-copy">${high} priority fits ready for sharper pursuit calls.</div></div>
+      </div>
+    </div>
+  </section>`;
+}
+function lifecycleRail(){
+  const steps = [
+    ["01","Sense","Find signal before the market notices.","var(--blue)"],
+    ["02","Qualify","Score fit, incumbency, value, and timing.","var(--amber)"],
+    ["03","Capture","Turn relationships into win themes.","var(--green)"],
+    ["04","Assemble","Match SMEs, partners, and past performance.","var(--violet)"],
+    ["05","Propose","Drive color teams from evidence, not vibes.","#ff9a62"],
+    ["06","Learn","Feed every debrief back into the next pursuit.","var(--red)"]
+  ];
+  return `<div class="lifecycle">${steps.map(([num,title,copy,color])=>`
+    <div class="life-step" style="--step-color:${color}"><div class="life-num">${num}</div><div class="life-title">${title}</div><div class="life-copy">${copy}</div></div>`).join("")}</div>`;
+}
+function topAgencies(limit=6){
+  const map = new Map();
+  OPPS.forEach(o => {
+    const code = agencyCode(o.agency);
+    const existing = map.get(code) || {code,name:agencyTitle(o.agency),count:0,max:0};
+    existing.count += 1;
+    existing.max = Math.max(existing.max, o.score || 0);
+    map.set(code, existing);
+  });
+  return [...map.values()].sort((a,b)=>b.count-a.count || b.max-a.max).slice(0,limit);
+}
+function agencyStrip(){
+  return `<div class="agency-strip">${topAgencies(6).map(a=>`
+    <div class="agency-tile"><div class="agency-seal">${esc(a.code)}</div><div><b>${esc(a.name)}</b><span>${a.count} active pursuit${a.count > 1 ? "s" : ""}</span></div></div>`).join("")}</div>`;
+}
 
 function oppCard(o){
   const sc = scoreColor(o.score);
@@ -714,18 +1108,20 @@ const PAGES = {
     const needs = OPPS.filter(o=>o.stage <= 1).length;
     const high = OPPS.filter(o=>o.score >= 70).length;
     const total = OPPS.reduce((sum,o)=>sum + moneyValue(o),0);
-    return pageHead("Executive command","Pipeline",`${ops.length} opportunities across capture and proposal gates`,
+    return commandHero(total, needs, high) + pageHead("Lifecycle command","Pipeline",`${ops.length} opportunities moving through WIRE's source-to-debrief BD engine`,
       `<button class="btn btn-primary" data-page="submit"><span data-icon="plus"></span>Submit Opp</button>`) + `
+      ${lifecycleRail()}
+      ${agencyStrip()}
       <div class="insight-grid">
         ${metric(OPPS.length,"Active opps","Tracked across the WIRE review surface","var(--amber)")}
-        ${metric(high,"Priority fits","Scores above the current pursuit threshold","var(--green)",[10,22,32,28,38])}
+        ${metric(high,"Priority fits","Innovation-weighted pursuits above threshold","var(--green)",[10,22,32,28,38])}
         ${metric(`$${Math.round(total)}M+`,"Visible TCV","Known values only; TBD excluded","var(--blue)",[30,14,26,40,18])}
-        ${metric(needs,"Need decision","Discovery and CEO review items waiting","var(--red)",[20,34,16,28,42])}
+        ${metric(needs,"Need decision","CEO gates where speed creates advantage","var(--red)",[20,34,16,28,42])}
       </div>
       <div class="focus-strip">
         <section class="focus-panel"><div class="focus-title">Priority stack</div><div class="priority-list">${priorities()}</div></section>
         <section class="focus-panel"><div class="focus-title">Decision brief</div>
-          <div class="callout">The board is overloaded at the front of the funnel. The next design move is ruthless review: approve only the warm-agency, high-fit work and push weak-fit items out before they absorb proposal energy.</div>
+          <div class="callout">WIRE is built to make BLN24 faster than larger competitors: sense earlier, qualify harder, capture with evidence, assemble the right partners, and recycle every debrief into the next pursuit.</div>
         </section>
       </div>
       <div class="stage-label">Capture pipeline</div>${board(STAGES.slice(0,6))}
@@ -827,144 +1223,20 @@ function openOpp(id){
   wireDrawer();
 }
 function drawerBody(o){
-  var b = "";
-
-  // Header grid
-  var fitColor = o.cm_fit==="Strong" ? "var(--green)" : o.cm_fit==="Pass" ? "var(--red)" : "var(--amber)";
-  b += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:18px">';
-  var gridFields = [
-    {l:"Agency", v: o.agency_full || o.agency},
-    {l:"Win Probability", v: o.win_prob || "Unknown", bold: true, color: (o.win_prob||"").includes("High") ? "var(--green)" : (o.win_prob||"").includes("Low") ? "var(--red)" : "var(--amber)"},
-    {l:"NAICS", v: o.naics || "—"},
-    {l:"Set-Aside", v: o.set_aside || "TBD"},
-    {l:"Est. Value", v: o.value || "TBD", color:"var(--green)"},
-    {l:"Due Date", v: o.due || "TBD"},
-    {l:"Capture Score", v: o.score + " pts", color:"var(--amber)"},
-    {l:"Tier", v: o.tier_label || ("Tier " + (o.tier || "?"))},
-    {l:"Notice Type", v: o.notice_type || o.notice || "—"},
-    {l:"Source", v: o.source_label || "HigherGov"},
-  ];
-  gridFields.forEach(function(f) {
-    b += '<div style="border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:rgba(244,241,232,.03)">';
-    b += '<div style="font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.14em;color:var(--quiet);margin-bottom:4px">' + f.l + "</div>";
-    b += '<div style="font-size:13px;font-weight:' + (f.bold ? "900" : "700") + ";" + (f.color ? "color:" + f.color : "") + '">' + esc(f.v) + "</div>";
-    b += "</div>";
-  });
-  b += "</div>";
-
-  // Rex fit badge
-  var fitBg = o.cm_fit==="Strong" ? "rgba(88,214,141,.1)" : o.cm_fit==="Moderate" ? "rgba(244,183,63,.1)" : "rgba(255,107,107,.1)";
-  b += '<div style="display:inline-flex;align-items:center;gap:6px;background:' + fitBg + ';border-radius:999px;padding:5px 14px;margin-bottom:16px;border:1px solid ' + fitColor + '33">';
-  b += '<span style="font-size:11px">⚡</span><span style="font-size:11px;font-weight:900;color:' + fitColor + '">REX: ' + esc(o.recommendation ? o.recommendation.toUpperCase() : "REVIEW") + "</span>";
-  b += "</div>";
-
-  // What they need
-  if(o.what_they_need) {
-    b += '<section class="detail-section"><div class="detail-label"><span data-icon="spark"></span>What They Need</div>';
-    b += '<p class="detail-copy">' + esc(o.what_they_need) + "</p></section>";
-  }
-
-  // Rex's Take
-  if(o.rex_take) {
-    b += '<section class="detail-section"><div class="detail-label">Rex\'s Take</div>';
-    b += '<div class="callout">' + esc(o.rex_take) + "</div></section>";
-  }
-
-  // Watch notes
-  if(o.watch_notes) {
-    b += '<section class="detail-section"><div class="detail-label">Watch / Action Notes</div>';
-    b += '<div style="border:1px solid var(--line);border-radius:8px;padding:11px;background:rgba(244,241,232,.03);color:var(--muted);font-size:13px;line-height:1.6">📌 ' + esc(o.watch_notes) + "</div></section>";
-  }
-
-  // CM summary + Go/No-Go
-  if(o.gonogo && o.gonogo.length) {
-    b += '<section class="detail-section"><div class="detail-label">Go / No-Go Factors</div>';
-    b += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">';
-    o.gonogo.forEach(function(g) {
-      var gc = g.color==="green" ? "rgba(88,214,141,.1)" : g.color==="red" ? "rgba(255,107,107,.1)" : "rgba(244,183,63,.1)";
-      var gtc = g.color==="green" ? "var(--green)" : g.color==="red" ? "var(--red)" : "var(--amber)";
-      b += '<div style="background:' + gc + ';border:1px solid ' + gtc + '33;border-radius:8px;padding:10px 12px">';
-      b += '<div style="font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.12em;color:' + gtc + ';margin-bottom:4px">' + esc(g.label) + "</div>";
-      b += '<div style="font-size:12px;color:var(--muted)">' + esc(g.answer) + "</div>";
-      b += "</div>";
-    });
-    b += "</div></section>";
-  }
-
-  // Capability matrix — full table
-  if(o.cm_tasks && o.cm_tasks.length) {
-    b += '<section class="detail-section"><div class="detail-label">Task Area Capability Matrix</div>';
-    b += '<div style="font-size:12px;color:var(--muted);margin-bottom:10px">Fit: <b style="color:' + fitColor + '">' + esc(o.cm_fit||"?") + "</b> · avg " + esc(o.cm_avg||0) + "/4 · " + (o.cm_prime_count||0) + " prime · " + (o.cm_gap_count||0) + " gap</div>";
-    o.cm_tasks.forEach(function(t) {
-      var tc = t.score>=4 ? "var(--green)" : t.score>=3 ? "var(--amber)" : t.score>=2 ? "#ff9a62" : "var(--red)";
-      var bw = Math.round((t.score||0)/4*100);
-      b += '<div class="matrix-row" style="--bar-color:' + tc + ';--bar-width:' + bw + '%;margin-bottom:12px">';
-      b += '<div class="matrix-top"><span class="matrix-name">' + esc(t.task) + '</span><span class="matrix-score">' + esc(t.score) + "/4 · " + esc(t.status) + "</span></div>";
-      b += '<div class="bar"><span></span></div>';
-      if(t.pp_refs && t.pp_refs.length) {
-        t.pp_refs.forEach(function(ref) {
-          b += '<div class="mini-note">PP: ' + esc(ref) + "</div>";
-        });
-      } else if(t.pp) {
-        b += '<div class="mini-note">PP: ' + esc(t.pp) + "</div>";
-      }
-      if(t.note) b += '<div class="mini-note" style="color:var(--quiet);margin-top:2px">' + esc(t.note) + "</div>";
-      b += "</div>";
-    });
-    b += '</section>';
-  }
-
-  // CI score adjustment
-  if(o.ci_score_delta && o.ci_score_reasons && o.ci_score_reasons.length) {
-    b += '<section class="detail-section"><div class="detail-label">Competitive Intelligence</div>';
-    b += '<div style="background:rgba(88,214,141,.06);border:1px solid rgba(88,214,141,.18);border-radius:8px;padding:11px;margin-bottom:12px">';
-    b += '<div style="font-size:12px;font-weight:900;color:var(--green);margin-bottom:6px">Score adjusted by +' + (o.ci_score_delta||0) + 'pts:</div>';
-    o.ci_score_reasons.forEach(function(r) { b += '<div style="font-size:11px;color:var(--muted);margin-bottom:3px">&bull; ' + esc(r) + "</div>"; });
-    b += "</div>";
-    // Competitors + Partners
-    b += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">';
-    b += "<div>";
-    if(o.competitors && o.competitors.length) {
-      b += '<div style="font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.12em;color:var(--red);margin-bottom:8px">Likely Competitors</div>';
-      o.competitors.forEach(function(c) {
-        b += '<div class="intel-card" style="border-left:2px solid var(--red)"><b>' + esc(c.name) + "</b><p>" + esc(c.why) + "</p>" + (c.url ? '<a href="' + esc(c.url) + '" target="_blank" rel="noreferrer">HigherGov ↗</a>' : "") + "</div>";
-      });
-    }
-    b += "</div><div>";
-    if(o.partners && o.partners.length) {
-      b += '<div style="font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.12em;color:var(--green);margin-bottom:8px">Recommended Partners</div>';
-      o.partners.forEach(function(p) {
-        b += '<div class="intel-card" style="border-left:2px solid var(--green)"><b>' + esc(p.name) + "</b>";
-        if(p.gap) b += '<div class="mini-note" style="color:var(--amber)">Fills: ' + esc(p.gap) + "</div>";
-        b += "<p>" + esc(p.why) + "</p>" + (p.url ? '<a href="' + esc(p.url) + '" target="_blank" rel="noreferrer">View ↗</a>' : "") + "</div>";
-      });
-    }
-    b += "</div></div></section>";
-  } else {
-    b += intelList("Competitors", o.competitors, "red");
-    b += intelList("Teaming partners", o.partners, "green");
-  }
-
-  // Win theme
-  b += '<section class="detail-section"><div class="detail-label">Win Theme</div>';
-  if(o.ai_win_theme) b += '<div class="callout" style="border-left-color:var(--violet)">🤖 ' + esc(o.ai_win_theme) + "</div>";
-  if(o.brian_win_theme) b += '<div class="callout" style="margin-top:8px">👤 ' + esc(o.brian_win_theme) + "</div>";
-  b += "</section>";
-
-  // Full scope description
-  if(o.description) {
-    b += '<section class="detail-section"><div class="detail-label">Full Scope</div>';
-    b += '<div class="callout" style="font-style:normal;color:var(--muted)">' + esc(o.description) + "</div></section>";
-  }
-
-  // Source link
-  if(o.source_url) b += '<section class="detail-section"><a href="' + esc(o.source_url) + '" target="_blank" rel="noreferrer" style="color:var(--amber);font-size:13px;font-weight:800">HigherGov ↗</a> &nbsp; <span style="font-size:11px;color:var(--quiet)">HigherGov · Federal opps only · Scored vs BLN24 PP</span></section>';
-
-  // CEO / AM controls
-  if(state.user.role === "ceo") b += ceoControls(o);
-  if(state.user.role !== "ceo" && state.user.key === o.assigned_to) b += amControls();
-
-  return b;
+  return `
+    <section class="detail-section"><div class="detail-label"><span data-icon="spark"></span>WIRE analysis</div>
+      ${o.what_they_need ? `<p class="detail-copy"><b style="color:var(--ink)">What they need:</b><br>${esc(o.what_they_need)}</p>` : ""}
+      ${o.rex_take ? `<div class="callout">${esc(o.rex_take)}</div>` : ""}
+    </section>
+    <section class="detail-section"><div class="detail-label">Win theme</div>
+      ${o.ai_win_theme ? `<div class="callout" style="border-left-color:var(--violet)">${esc(o.ai_win_theme)}</div>` : ""}
+      ${o.brian_win_theme ? `<div class="callout" style="margin-top:8px">${esc(o.brian_win_theme)}</div>` : ""}
+    </section>
+    ${capabilityMatrix(o)}
+    ${intelList("Competitors", o.competitors, "red")}
+    ${intelList("Teaming partners", o.partners, "green")}
+    ${state.user.role === "ceo" ? ceoControls(o) : ""}
+    ${state.user.role !== "ceo" && state.user.key === o.assigned_to ? amControls() : ""}`;
 }
 function capabilityMatrix(o){
   if(!o.cm_tasks || !o.cm_tasks.length) return "";
