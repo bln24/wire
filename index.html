@@ -1177,7 +1177,7 @@ body.light-mode .ac-list { background:var(--panel); border-color:var(--line-stro
         <option value="eric">Eric Ma - BD</option>
         <option value="favi">Favi Villa - UX Lead / SME</option>
       </select>
-      <button class="btn btn-primary" style="width:100%;margin-top:4px;display:flex;align-items:center;justify-content:center;gap:10px" id="loginBtn">
+      <button class="btn btn-primary" style="width:100%;margin-top:4px;display:flex;align-items:center;justify-content:center;gap:10px" id="loginBtn" onclick="login()">
         <svg width="18" height="18" viewBox="0 0 21 21" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="1" width="9" height="9" fill="#F25022"/><rect x="11" y="1" width="9" height="9" fill="#7FBA00"/><rect x="1" y="11" width="9" height="9" fill="#00A4EF"/><rect x="11" y="11" width="9" height="9" fill="#FFB900"/></svg>
         Sign in with Microsoft
       </button>
@@ -1599,13 +1599,18 @@ function signInWithMS() {
 }
 
 function login() {
+  console.log("WIRE: login() called, msalApp=", !!msalApp, "msal=", typeof msal);
   if(msalApp) {
     signInWithMS();
-  } else {
-    // MSAL not available - show error
+  } else if(typeof msal !== "undefined") {
+    // MSAL loaded but app not initialized yet — try again
     const ae = $("ae");
-    if(ae) ae.textContent = "Microsoft authentication unavailable. Please refresh and try again.";
-    console.warn("MSAL not loaded");
+    if(ae) ae.textContent = "Connecting to Microsoft…";
+    initMSAL().then(function(){ if(msalApp) signInWithMS(); });
+  } else {
+    const ae = $("ae");
+    if(ae) ae.textContent = "Auth library not loaded. Please hard-refresh (Cmd+Shift+R).";
+    console.warn("WIRE: MSAL not available");
   }
 }
 
