@@ -2129,18 +2129,30 @@ function intelList(title,items,tone,oppId){
       <b>${esc(item.name)}</b>${item.gap ? `<div class="mini-note">Fills gap: ${esc(item.gap)}</div>` : ""}<p>${truncateText(item.why||"", 160, "intel-" + tone + "-" + (oppId||0) + "-" + ii)}</p>${item.url ? `<a href="${esc(item.url)}" target="_blank" rel="noreferrer">View source</a>` : ""}
     </div>`).join("")}</section>`;
 }
+function teamMemberField(label, idKey, currentKey, acListId) {
+  const current = currentKey ? ORG_ROSTER.find(r=>r.key===currentKey) : null;
+  return `<div class="field" style="margin-bottom:8px">
+    <label class="label" style="font-size:10px;margin-bottom:4px">${label}</label>
+    <div class="ac-wrap">
+      <input class="input" id="${idKey}_name" placeholder="Search by name or title…" autocomplete="off"
+        value="${current ? esc(current.name) : currentKey || ""}"
+        oninput="acFilterMulti(this,'${idKey}','${acListId}')"
+        onfocus="acFilterMulti(this,'${idKey}','${acListId}')"
+        onblur="setTimeout(()=>acCloseId('${acListId}'),350)">
+      <input type="hidden" id="${idKey}_key" value="${currentKey || ""}">
+      <div class="ac-list" id="${acListId}"></div>
+    </div>
+  </div>`;
+}
 function ceoControls(o){
+  const team = o.pursuit_team || [];
   return `<section class="detail-section"><div class="detail-label">CEO decision</div>
     <div class="field"><label class="label">Your win theme</label><textarea class="textarea" id="ceoTheme">${esc(o.brian_win_theme || "")}</textarea></div>
-    <div class="field"><label class="label">Assign pursuit lead</label>
-      <div class="ac-wrap">
-        <input class="input" id="assignTo" placeholder="Search by name or title…" autocomplete="off"
-          value="${o.assigned_to && ORG_ROSTER.find(r=>r.key===o.assigned_to) ? ORG_ROSTER.find(r=>r.key===o.assigned_to).name : o.assigned_to || ""}"
-          oninput="acFilter(this)" onfocus="acFilter(this)" onblur="setTimeout(()=>acClose(),350)">
-        <input type="hidden" id="assignToKey" value="${o.assigned_to || ""}">
-        <div class="ac-list" id="acList"></div>
-      </div>
-    </div>
+    <div class="detail-label" style="font-size:11px;margin-bottom:8px;margin-top:4px">Pursuit Team</div>
+    ${teamMemberField("Lead", "assignTo", o.assigned_to || "", "acList")}
+    ${teamMemberField("2nd", "assignTo2", team[0] || "", "acList2")}
+    ${teamMemberField("3rd", "assignTo3", team[1] || "", "acList3")}
+    ${teamMemberField("4th", "assignTo4", team[2] || "", "acList4")}
     <div class="field"><label class="label">Challenge WIRE</label><textarea class="textarea" id="challenge" placeholder="What did the model miss?"></textarea></div>
     <div class="message" id="decisionMsg"></div>
   </section>`;
@@ -2199,7 +2211,7 @@ function approveOpp(){
   const msg = $("decisionMsg");
   if(msg){
     msg.style.cssText = "color:var(--green);font-weight:700;padding:10px 12px;background:rgba(88,214,141,.08);border:1px solid rgba(88,214,141,.2);border-radius:8px;margin-top:8px;display:block";
-    msg.innerHTML = "✓ Approved &amp; assigned to <b>" + esc(assigneeName) + "</b>. Moving to Capture stage.";
+    var tStr = (typeof teamNames !== "undefined" && teamNames.length) ? " (+ " + teamNames.join(", ") + ")" : ""; msg.innerHTML = "✓ Assigned to <b>" + esc(assigneeName) + "</b>" + esc(tStr) + ". Moving to Capture stage.";
   }
 
   // Toast notification
