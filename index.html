@@ -1,0 +1,1223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WIRE — BLN24 BD Intelligence</title>
+<style>
+  :root {
+    --black: #0d0d0d;
+    --dark: #141414;
+    --card: #1a1a1a;
+    --border: #2a2a2a;
+    --gold: #C9A84C;
+    --gold-dim: #8a6f2e;
+    --white: #f5f5f5;
+    --muted: #666;
+    --green: #27ae60;
+    --red: #e74c3c;
+    --blue: #2980b9;
+    --purple: #8e44ad;
+    --orange: #e67e22;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--black);
+    color: var(--white);
+    min-height: 100vh;
+  }
+
+  /* AUTH */
+  #auth {
+    position: fixed; inset: 0;
+    background: var(--black);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 9999;
+    flex-direction: column;
+    gap: 40px;
+  }
+  #auth.hidden { display: none; }
+
+  .auth-logo {
+    font-size: 3.5rem;
+    font-weight: 800;
+    letter-spacing: -2px;
+    color: var(--white);
+  }
+  .auth-logo span { color: var(--gold); }
+
+  .auth-tagline {
+    font-size: .85rem;
+    color: var(--muted);
+    letter-spacing: .15em;
+    text-transform: uppercase;
+  }
+
+  .auth-box {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 40px;
+    width: 360px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .auth-box label {
+    font-size: .75rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: .1em;
+  }
+
+  .auth-box select, .auth-box input {
+    width: 100%;
+    padding: 12px 16px;
+    background: var(--dark);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--white);
+    font-size: .9rem;
+    font-family: inherit;
+    outline: none;
+    transition: border-color .2s;
+  }
+  .auth-box select:focus, .auth-box input:focus { border-color: var(--gold); }
+  .auth-box select option { background: var(--dark); }
+
+  .auth-btn {
+    width: 100%;
+    padding: 14px;
+    background: var(--gold);
+    color: var(--black);
+    border: none;
+    border-radius: 8px;
+    font-size: .9rem;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    letter-spacing: .05em;
+    transition: opacity .2s;
+  }
+  .auth-btn:hover { opacity: .9; }
+
+  .auth-err { color: var(--red); font-size: .75rem; min-height: 18px; }
+
+  /* APP */
+  #app { display: none; }
+  #app.visible { display: block; }
+
+  /* TOPBAR */
+  .topbar {
+    height: 56px;
+    background: var(--dark);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 24px;
+    gap: 24px;
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+  }
+  .topbar-logo {
+    font-size: 1.3rem;
+    font-weight: 800;
+    letter-spacing: -1px;
+    color: var(--white);
+  }
+  .topbar-logo span { color: var(--gold); }
+
+  .topbar-role {
+    background: var(--border);
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: .7rem;
+    font-weight: 700;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+  }
+  .role-ceo { background: rgba(201,168,76,.15); color: var(--gold); }
+  .role-am { background: rgba(39,174,96,.15); color: var(--green); }
+  .role-sme { background: rgba(41,128,185,.15); color: var(--blue); }
+
+  .topbar-user { font-size: .8rem; color: var(--muted); margin-left: auto; }
+
+  .topbar-notify {
+    width: 32px; height: 32px;
+    background: var(--border);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    font-size: .8rem;
+    position: relative;
+  }
+  .notify-badge {
+    position: absolute;
+    top: -2px; right: -2px;
+    width: 14px; height: 14px;
+    background: var(--red);
+    border-radius: 50%;
+    font-size: .55rem;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700;
+  }
+
+  /* SIDEBAR */
+  .layout { display: flex; padding-top: 56px; min-height: 100vh; }
+
+  .sidebar {
+    width: 220px;
+    background: var(--dark);
+    border-right: 1px solid var(--border);
+    padding: 24px 0;
+    position: fixed;
+    top: 56px; bottom: 0;
+    overflow-y: auto;
+  }
+
+  .sidebar-section {
+    padding: 0 16px;
+    margin-bottom: 8px;
+  }
+  .sidebar-label {
+    font-size: .62rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: .12em;
+    margin-bottom: 6px;
+    padding: 0 8px;
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: .82rem;
+    color: var(--muted);
+    transition: all .15s;
+    text-decoration: none;
+  }
+  .nav-item:hover { background: var(--border); color: var(--white); }
+  .nav-item.active { background: rgba(201,168,76,.12); color: var(--gold); }
+  .nav-item .icon { font-size: .95rem; width: 18px; text-align: center; }
+  .nav-badge {
+    margin-left: auto;
+    background: var(--red);
+    color: #fff;
+    font-size: .6rem;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 10px;
+    min-width: 18px;
+    text-align: center;
+  }
+  .nav-badge.gold { background: var(--gold); color: var(--black); }
+
+  /* MAIN */
+  .main {
+    margin-left: 220px;
+    padding: 32px;
+    flex: 1;
+  }
+
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* PAGE HEADERS */
+  .page-hdr {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 28px;
+  }
+  .page-title {
+    font-size: 1.4rem;
+    font-weight: 700;
+    letter-spacing: -.5px;
+  }
+  .page-sub { font-size: .8rem; color: var(--muted); margin-top: 2px; }
+
+  /* CARDS */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+  .card-hdr {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .card-title { font-size: .85rem; font-weight: 700; }
+
+  /* STATS ROW */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  .stat-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+  }
+  .stat-val { font-size: 1.8rem; font-weight: 800; }
+  .stat-lbl { font-size: .72rem; color: var(--muted); margin-top: 2px; }
+  .stat-sub { font-size: .75rem; color: var(--green); margin-top: 4px; }
+
+  /* PIPELINE */
+  .pipeline-stages {
+    display: flex;
+    gap: 0;
+    margin-bottom: 24px;
+    overflow-x: auto;
+  }
+  .stage-col {
+    min-width: 200px;
+    flex: 1;
+    border-right: 1px solid var(--border);
+    padding: 0 12px 12px;
+  }
+  .stage-col:last-child { border-right: none; }
+  .stage-hdr {
+    font-size: .65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    padding: 10px 0 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .stage-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+  }
+  .stage-count {
+    margin-left: auto;
+    font-size: .65rem;
+    background: var(--border);
+    padding: 2px 6px;
+    border-radius: 10px;
+  }
+
+  .opp-card {
+    background: var(--dark);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: border-color .15s;
+  }
+  .opp-card:hover { border-color: var(--gold-dim); }
+  .opp-agency { font-size: .65rem; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+  .opp-title { font-size: .78rem; font-weight: 600; margin: 3px 0; line-height: 1.3; }
+  .opp-meta { display: flex; gap: 6px; margin-top: 5px; flex-wrap: wrap; }
+  .badge {
+    font-size: .6rem;
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-weight: 600;
+  }
+  .b-gold { background: rgba(201,168,76,.15); color: var(--gold); }
+  .b-green { background: rgba(39,174,96,.15); color: var(--green); }
+  .b-red { background: rgba(231,76,60,.15); color: var(--red); }
+  .b-blue { background: rgba(41,128,185,.15); color: var(--blue); }
+  .b-purple { background: rgba(142,68,173,.15); color: var(--purple); }
+  .b-orange { background: rgba(230,126,34,.15); color: var(--orange); }
+  .b-gray { background: var(--border); color: var(--muted); }
+
+  /* OPP DETAIL MODAL */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,.7);
+    z-index: 200;
+    display: none;
+    align-items: flex-start;
+    justify-content: flex-end;
+    padding-top: 56px;
+  }
+  .modal-overlay.open { display: flex; }
+
+  .modal-panel {
+    width: 520px;
+    height: calc(100vh - 56px);
+    background: var(--dark);
+    border-left: 1px solid var(--border);
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .modal-hdr {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    background: var(--dark);
+    z-index: 1;
+  }
+  .modal-agency { font-size: .68rem; color: var(--muted); text-transform: uppercase; letter-spacing: .1em; }
+  .modal-title { font-size: 1rem; font-weight: 700; margin: 4px 0 8px; line-height: 1.3; }
+  .modal-close {
+    position: absolute;
+    top: 20px; right: 20px;
+    background: none; border: none;
+    color: var(--muted); font-size: 1.1rem;
+    cursor: pointer;
+  }
+
+  .modal-body { padding: 20px 24px; flex: 1; }
+
+  .modal-section { margin-bottom: 20px; }
+  .modal-section-title {
+    font-size: .68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    color: var(--gold);
+    margin-bottom: 8px;
+  }
+  .modal-text { font-size: .82rem; line-height: 1.6; color: #ccc; }
+
+  .input-field {
+    width: 100%;
+    background: var(--black);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    color: var(--white);
+    font-size: .82rem;
+    font-family: inherit;
+    outline: none;
+    resize: vertical;
+    transition: border-color .2s;
+    margin-top: 6px;
+  }
+  .input-field:focus { border-color: var(--gold); }
+
+  .action-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .btn {
+    padding: 9px 18px;
+    border-radius: 7px;
+    font-size: .78rem;
+    font-weight: 700;
+    cursor: pointer;
+    border: none;
+    font-family: inherit;
+    transition: opacity .15s;
+  }
+  .btn:hover { opacity: .85; }
+  .btn-gold { background: var(--gold); color: var(--black); }
+  .btn-outline { background: none; border: 1px solid var(--border); color: var(--white); }
+  .btn-green { background: var(--green); color: #fff; }
+  .btn-red { background: var(--red); color: #fff; }
+  .btn-sm { padding: 6px 12px; font-size: .72rem; }
+
+  /* SUBMIT OPP FORM */
+  .form-group { margin-bottom: 16px; }
+  .form-label { font-size: .75rem; color: var(--muted); margin-bottom: 6px; display: block; }
+  .form-input {
+    width: 100%;
+    background: var(--dark);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    color: var(--white);
+    font-size: .85rem;
+    font-family: inherit;
+    outline: none;
+    transition: border-color .2s;
+  }
+  .form-input:focus { border-color: var(--gold); }
+  .form-select {
+    width: 100%;
+    background: var(--dark);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    color: var(--white);
+    font-size: .85rem;
+    font-family: inherit;
+    outline: none;
+  }
+
+  /* DIVIDER */
+  .divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+
+  /* EMPTY STATE */
+  .empty {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--muted);
+    font-size: .8rem;
+  }
+  .empty-icon { font-size: 2rem; margin-bottom: 8px; }
+
+  /* TABS */
+  .tabs { display: flex; gap: 4px; margin-bottom: 20px; }
+  .tab-btn {
+    padding: 7px 16px;
+    border-radius: 7px;
+    font-size: .78rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: none;
+    color: var(--muted);
+    font-family: inherit;
+    transition: all .15s;
+  }
+  .tab-btn.active { background: var(--gold); color: var(--black); border-color: var(--gold); }
+
+  /* WIRE MARK */
+  .wire-mark {
+    position: fixed;
+    bottom: 16px; right: 16px;
+    font-size: .65rem;
+    color: var(--border);
+    letter-spacing: .1em;
+    text-transform: uppercase;
+  }
+</style>
+</head>
+<body>
+
+<!-- AUTH -->
+<div id="auth">
+  <div style="text-align:center">
+    <div class="auth-logo">W<span>∞</span>RE</div>
+    <div class="auth-tagline" style="margin-top:6px">BLN24 BD Intelligence Engine</div>
+  </div>
+  <div class="auth-box">
+    <div>
+      <label>Who are you?</label>
+      <select id="auth-user" style="margin-top:6px">
+        <option value="">Select your name...</option>
+        <option value="brian">Brian Nguyen — CEO</option>
+        <option value="hayk">Hayk — Account Manager</option>
+        <option value="michael">Michael — Account Manager</option>
+        <option value="gabe">Gabe — Account Manager</option>
+        <option value="eric">Eric Ma — BD</option>
+        <option value="favi">Favi Villa — UX Lead / SME</option>
+        <option value="sme">SME / Reviewer</option>
+      </select>
+    </div>
+    <div>
+      <label>Access Code</label>
+      <input type="password" id="auth-pass" placeholder="••••••" onkeydown="if(event.key==='Enter')doAuth()">
+    </div>
+    <button class="auth-btn" onclick="doAuth()">Enter WIRE</button>
+    <div class="auth-err" id="auth-err"></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topbar-logo">W<span>∞</span>RE</div>
+    <div class="topbar-role" id="role-badge">CEO</div>
+    <div style="flex:1"></div>
+    <div class="topbar-user" id="topbar-user"></div>
+    <div class="topbar-notify" onclick="alert('Notifications coming soon')">
+      🔔
+      <div class="notify-badge" id="notify-count">3</div>
+    </div>
+    <button class="btn btn-outline btn-sm" onclick="signOut()">Sign Out</button>
+  </div>
+
+  <div class="layout">
+    <!-- SIDEBAR -->
+    <div class="sidebar" id="sidebar">
+      <!-- CEO nav injected by JS -->
+    </div>
+
+    <!-- MAIN -->
+    <div class="main" id="main-content">
+      <!-- Pages injected by JS -->
+    </div>
+  </div>
+</div>
+
+<!-- OPP DETAIL PANEL -->
+<div class="modal-overlay" id="opp-modal">
+  <div class="modal-panel">
+    <div class="modal-hdr">
+      <div class="modal-agency" id="modal-agency"></div>
+      <div class="modal-title" id="modal-title"></div>
+      <div id="modal-badges" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+  </div>
+</div>
+
+<div class="wire-mark">WIRE v0.1 — BLN24 Internal</div>
+
+<script>
+// ─────────────────────────────────────────────────────────────────
+// DATA
+// ─────────────────────────────────────────────────────────────────
+const USERS = {
+  brian:   { name: 'Brian Nguyen', role: 'ceo',  pass: 'wire2026', label: 'CEO' },
+  hayk:    { name: 'Hayk',         role: 'am',   pass: 'wire2026', label: 'Account Manager' },
+  michael: { name: 'Michael',      role: 'am',   pass: 'wire2026', label: 'Account Manager' },
+  gabe:    { name: 'Gabe',         role: 'am',   pass: 'wire2026', label: 'Account Manager' },
+  eric:    { name: 'Eric Ma',      role: 'am',   pass: 'wire2026', label: 'BD' },
+  favi:    { name: 'Favi Villa',   role: 'sme',  pass: 'wire2026', label: 'SME' },
+  sme:     { name: 'SME',          role: 'sme',  pass: 'wire2026', label: 'SME / Reviewer' },
+};
+
+// Sample opportunity pipeline
+const OPPS = [
+  {
+    id: 1, stage: 0, agency: 'DEA', title: 'Web Developer / Content Services',
+    value: 'TBD', set_aside: '8(a)', score: 102, source: 'HigherGov',
+    ref: 'RFI1807179', due: null,
+    ai_analysis: 'Strong fit. MBDA.gov Drupal prime is direct analog. No confirmed incumbent for DEA web/content. 8(a) eligible — BLN24 can prime directly. DHA DoD comms experience maps well to restricted federal communications environment.',
+    ai_win_theme: 'BLN24 is the only 8(a) firm with active Drupal development at Department of Commerce scale (MBDA.gov, 60,000+ pages) AND federal content management at 100M+ audience scale (CMS MNPS). We are the only firm that can honestly say: we already do what DEA needs, at greater scale, right now.',
+    brian_win_theme: null, assigned_to: null, stage_name: 'AI Discovery',
+    competitors: ['Arctic Slope $77M DEA IT', 'ASRC Federal $28M DEA IT'],
+  },
+  {
+    id: 2, stage: 2, agency: 'Census Bureau', title: 'CES ADRM Phase 2 Analytics',
+    value: '$7M', set_aside: 'SB', score: 89, source: 'HigherGov',
+    ref: 'TBD', due: '2026-06-15',
+    ai_analysis: 'Repeat client. BLN24 won CES ADRM Phase 1 ($7M, 2025). Census relationship strong — 5 prior BLN24 contracts. Analytics capability lane at 4/4. Moderate competition expected on SB set-aside.',
+    ai_win_theme: 'Incumbent advantage. BLN24 built and maintains the ADRM system. We know the data architecture, the stakeholders, and the mission. No competitor can match 4 years of Census institutional knowledge.',
+    brian_win_theme: 'We ARE the incumbent. This is ours to lose. Eric needs to be on this by EOW.',
+    assigned_to: 'eric', stage_name: 'CEO Review',
+    competitors: ['AFS (current sub)', 'Guidehouse', 'Booz Allen'],
+  },
+  {
+    id: 3, stage: 3, agency: 'HHS/CMS', title: 'QMARS III Quality Management',
+    value: '$12M', set_aside: '8(a)', score: 74, source: 'Employee Submission',
+    ref: 'RFQ TBD', due: '2026-07-01',
+    ai_analysis: 'CMS relationship active (MNPS $16M prime). QMARS is quality management / review system — adjacent to BLN24 data analytics lane. 8(a) path possible. Dynanet is known Phase 1 competitor from 2025.',
+    ai_win_theme: 'Active CMS relationship + 8(a) sole source path. BLN24 holds Exceptional CPARS on CMS MNPS. Leverage that relationship to sole source before it goes competitive.',
+    brian_win_theme: null, assigned_to: 'hayk', stage_name: 'Capture + Strategy',
+    competitors: ['Dynanet (Phase 1 2025)', 'Vibrantech', 'Cognosante'],
+    submitted_by: 'Hayk',
+  },
+  {
+    id: 4, stage: 6, agency: 'NTIA', title: 'Digital Outreach Phase 2',
+    value: '$3.5M', set_aside: '8(a)', score: 95, source: 'HigherGov',
+    ref: 'Pre-solicitation', due: '2026-08-01',
+    ai_analysis: 'NTIA is a repeat client. BLN24 holds Exceptional CPARS on NTIA Outreach ($2.7M, final). Classic sole source setup — Exceptional rating + relationship = strong position for follow-on.',
+    ai_win_theme: 'Exceptional CPARS is your golden ticket. NTIA CO already knows BLN24 delivers. Push for sole source before solicitation opens.',
+    brian_win_theme: 'My relationship. Direct outreach to CO before they post.',
+    assigned_to: 'michael', stage_name: 'Brian Go/No-Go',
+    competitors: ['None expected if sole source'],
+  },
+];
+
+let currentUser = null;
+let currentOpp = null;
+let currentPage = 'pipeline';
+
+// ─────────────────────────────────────────────────────────────────
+// AUTH
+// ─────────────────────────────────────────────────────────────────
+function doAuth() {
+  const userKey = document.getElementById('auth-user').value;
+  const pass = document.getElementById('auth-pass').value;
+  const err = document.getElementById('auth-err');
+  if (!userKey) { err.textContent = 'Select your name.'; return; }
+  const user = USERS[userKey];
+  if (!user || pass !== user.pass) { err.textContent = 'Incorrect access code.'; return; }
+  currentUser = { key: userKey, ...user };
+  document.getElementById('auth').classList.add('hidden');
+  document.getElementById('app').classList.add('visible');
+  document.getElementById('topbar-user').textContent = currentUser.name;
+  const badge = document.getElementById('role-badge');
+  badge.textContent = currentUser.label;
+  badge.className = 'topbar-role role-' + currentUser.role;
+  buildNav();
+  showPage('pipeline');
+}
+
+function signOut() {
+  currentUser = null;
+  document.getElementById('app').classList.remove('visible');
+  document.getElementById('auth').classList.remove('hidden');
+  document.getElementById('auth-pass').value = '';
+  document.getElementById('auth-err').textContent = '';
+}
+
+// ─────────────────────────────────────────────────────────────────
+// NAV
+// ─────────────────────────────────────────────────────────────────
+function buildNav() {
+  const sidebar = document.getElementById('sidebar');
+  const isCEO = currentUser.role === 'ceo';
+  const isAM = currentUser.role === 'am';
+  const isSME = currentUser.role === 'sme';
+
+  const myQueue = OPPS.filter(o => o.assigned_to === currentUser.key).length;
+  const aiDiscover = OPPS.filter(o => o.stage === 0 || o.stage === 1).length;
+
+  const ceoNav = `
+    <div class="sidebar-section">
+      <div class="sidebar-label">Command</div>
+      <a class="nav-item active" onclick="showPage('pipeline')" id="nav-pipeline">
+        <span class="icon">⚡</span> Pipeline
+        <span class="nav-badge gold">${OPPS.length}</span>
+      </a>
+      <a class="nav-item" onclick="showPage('discover')" id="nav-discover">
+        <span class="icon">🔍</span> AI Discovery
+        <span class="nav-badge">${aiDiscover}</span>
+      </a>
+      <a class="nav-item" onclick="showPage('submit')" id="nav-submit">
+        <span class="icon">➕</span> Submit Opp
+      </a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Review</div>
+      <a class="nav-item" onclick="showPage('review')" id="nav-review">
+        <span class="icon">📋</span> My Review Queue
+        <span class="nav-badge">2</span>
+      </a>
+      <a class="nav-item" onclick="showPage('proposals')" id="nav-proposals">
+        <span class="icon">📄</span> Proposals
+      </a>
+      <a class="nav-item" onclick="showPage('winloss')" id="nav-winloss">
+        <span class="icon">📊</span> Win / Loss
+      </a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Settings</div>
+      <a class="nav-item" onclick="showPage('team')" id="nav-team">
+        <span class="icon">👥</span> Team Roster
+      </a>
+    </div>`;
+
+  const amNav = `
+    <div class="sidebar-section">
+      <div class="sidebar-label">My Work</div>
+      <a class="nav-item active" onclick="showPage('myqueue')" id="nav-myqueue">
+        <span class="icon">📥</span> My Queue
+        <span class="nav-badge gold">${myQueue}</span>
+      </a>
+      <a class="nav-item" onclick="showPage('pipeline')" id="nav-pipeline">
+        <span class="icon">⚡</span> All Pipeline
+      </a>
+      <a class="nav-item" onclick="showPage('submit')" id="nav-submit">
+        <span class="icon">➕</span> Submit Opp
+      </a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Proposals</div>
+      <a class="nav-item" onclick="showPage('proposals')" id="nav-proposals">
+        <span class="icon">📄</span> Active Proposals
+      </a>
+    </div>`;
+
+  const smeNav = `
+    <div class="sidebar-section">
+      <div class="sidebar-label">Assigned to Me</div>
+      <a class="nav-item active" onclick="showPage('myqueue')" id="nav-myqueue">
+        <span class="icon">📥</span> My Reviews
+        <span class="nav-badge gold">1</span>
+      </a>
+    </div>`;
+
+  sidebar.innerHTML = isCEO ? ceoNav : isAM ? amNav : smeNav;
+}
+
+function showPage(page) {
+  currentPage = page;
+  // Update nav active state
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  const nav = document.getElementById('nav-' + page);
+  if (nav) nav.classList.add('active');
+  // Render page
+  const main = document.getElementById('main-content');
+  main.innerHTML = PAGES[page] ? PAGES[page]() : `<div class="card"><p style="color:var(--muted)">Page coming soon.</p></div>`;
+}
+
+// ─────────────────────────────────────────────────────────────────
+// STAGE CONFIG
+// ─────────────────────────────────────────────────────────────────
+const STAGES = [
+  { id: 0, name: 'AI Discovery', color: '#666', short: 'Discovered' },
+  { id: 1, name: 'AI Analysis', color: '#8e44ad', short: 'Analyzed' },
+  { id: 2, name: 'CEO Review', color: '#C9A84C', short: 'CEO Review' },
+  { id: 3, name: 'Capture', color: '#2980b9', short: 'Capture' },
+  { id: 4, name: 'SME Review', color: '#16a085', short: 'SME Review' },
+  { id: 5, name: 'AM Sign-off', color: '#27ae60', short: 'AM Sign-off' },
+  { id: 6, name: 'Go / No-Go', color: '#C9A84C', short: 'Go/No-Go' },
+  { id: 7, name: 'Pink Team', color: '#e67e22', short: 'Pink Team' },
+  { id: 8, name: 'Red Team', color: '#e74c3c', short: 'Red Team' },
+  { id: 9, name: 'Gold Team', color: '#f39c12', short: 'Gold Team' },
+  { id: 10, name: 'Black Hat', color: '#2c3e50', short: 'Black Hat' },
+  { id: 11, name: 'Final Gate', color: '#27ae60', short: 'Final Gate' },
+];
+
+function stageColor(stageId) { return STAGES[stageId]?.color || '#666'; }
+function stageName(stageId) { return STAGES[stageId]?.short || 'Unknown'; }
+
+// ─────────────────────────────────────────────────────────────────
+// PAGES
+// ─────────────────────────────────────────────────────────────────
+const PAGES = {
+
+  pipeline: () => {
+    const isCEO = currentUser.role === 'ceo';
+    // Group opps by stage (show stages 0-6 for capture, 7-11 for proposal)
+    const captureStages = STAGES.slice(0, 7);
+    const proposalStages = STAGES.slice(7);
+
+    let html = `
+      <div class="page-hdr">
+        <div>
+          <div class="page-title">⚡ Pipeline</div>
+          <div class="page-sub">${OPPS.length} active opportunities across ${STAGES.length} stages</div>
+        </div>
+        <button class="btn btn-gold" onclick="showPage('submit')">+ Submit Opp</button>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-val" style="color:var(--gold)">${OPPS.length}</div>
+          <div class="stat-lbl">Active Opportunities</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val" style="color:var(--blue)">${OPPS.filter(o=>o.stage<=6).length}</div>
+          <div class="stat-lbl">In Capture</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val" style="color:var(--orange)">${OPPS.filter(o=>o.stage>=7).length}</div>
+          <div class="stat-lbl">In Proposal</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val" style="color:var(--green)">${isCEO ? '2' : '0'}</div>
+          <div class="stat-lbl">Awaiting My Action</div>
+          <div class="stat-sub">↑ Review needed</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-hdr">
+          <span class="card-title">Capture Stage</span>
+          <span style="font-size:.72rem;color:var(--muted)">Stages 0–6</span>
+        </div>
+        <div class="pipeline-stages">`;
+
+    captureStages.forEach(stage => {
+      const stageOpps = OPPS.filter(o => o.stage === stage.id);
+      html += `
+          <div class="stage-col">
+            <div class="stage-hdr">
+              <div class="stage-dot" style="background:${stage.color}"></div>
+              ${stage.short}
+              <span class="stage-count">${stageOpps.length}</span>
+            </div>`;
+      if (stageOpps.length === 0) {
+        html += `<div style="font-size:.7rem;color:var(--muted);padding:8px 0">Empty</div>`;
+      }
+      stageOpps.forEach(opp => {
+        html += `
+            <div class="opp-card" onclick="openOpp(${opp.id})">
+              <div class="opp-agency">${opp.agency}</div>
+              <div class="opp-title">${opp.title}</div>
+              <div class="opp-meta">
+                <span class="badge b-gold">${opp.score}pts</span>
+                <span class="badge b-gray">${opp.set_aside}</span>
+                ${opp.value !== 'TBD' ? `<span class="badge b-green">${opp.value}</span>` : ''}
+                ${opp.assigned_to ? `<span class="badge b-blue">${opp.assigned_to}</span>` : ''}
+              </div>
+            </div>`;
+      });
+      html += `</div>`;
+    });
+
+    html += `</div></div>`;
+
+    // Proposal stages
+    const proposalOpps = OPPS.filter(o => o.stage >= 7);
+    if (proposalOpps.length > 0) {
+      html += `
+      <div class="card">
+        <div class="card-hdr">
+          <span class="card-title">Proposal Stage</span>
+          <span style="font-size:.72rem;color:var(--muted)">Color Teams</span>
+        </div>
+        <div style="font-size:.8rem;color:var(--muted);padding:20px;text-align:center">No proposals in color team review yet.</div>
+      </div>`;
+    }
+
+    return html;
+  },
+
+  submit: () => `
+    <div class="page-hdr">
+      <div>
+        <div class="page-title">➕ Submit an Opportunity</div>
+        <div class="page-sub">HigherGov misses things. You don't.</div>
+      </div>
+    </div>
+    <div class="card" style="max-width:600px">
+      <div class="card-title" style="margin-bottom:20px">New Opportunity</div>
+      <div class="form-group">
+        <label class="form-label">Agency *</label>
+        <input class="form-input" id="sub-agency" placeholder="e.g. DEA, Census Bureau, HHS/CMS...">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Opportunity Title *</label>
+        <input class="form-input" id="sub-title" placeholder="e.g. Web Developer and Content Services">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Source / Where you heard about it</label>
+        <input class="form-input" id="sub-source" placeholder="e.g. CO meeting, eBuy, colleague tip, relationship...">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Estimated Value</label>
+        <input class="form-input" id="sub-value" placeholder="e.g. $5M, $500K, Unknown">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Set-Aside</label>
+        <select class="form-select" id="sub-setaside">
+          <option value="">Unknown</option>
+          <option value="8(a) Sole Source">8(a) Sole Source</option>
+          <option value="8(a) Competitive">8(a) Competitive</option>
+          <option value="SB">Small Business</option>
+          <option value="Full & Open">Full & Open</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Why should BLN24 pursue this? *</label>
+        <textarea class="form-input" id="sub-why" rows="3" placeholder="Your read on why this is a good fit — relationships, PP match, inside track..."></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Solicitation / Reference Number (if known)</label>
+        <input class="form-input" id="sub-ref" placeholder="e.g. RFI1807179, SAM notice ID...">
+      </div>
+      <div class="action-row">
+        <button class="btn btn-gold" onclick="submitOpp()">Submit to WIRE</button>
+        <button class="btn btn-outline" onclick="showPage('pipeline')">Cancel</button>
+      </div>
+      <div id="submit-msg" style="margin-top:10px;font-size:.8rem;color:var(--green)"></div>
+    </div>`,
+
+  myqueue: () => {
+    const myOpps = OPPS.filter(o =>
+      o.assigned_to === currentUser.key ||
+      (currentUser.role === 'ceo' && (o.stage === 0 || o.stage === 2 || o.stage === 6))
+    );
+    let html = `
+      <div class="page-hdr">
+        <div>
+          <div class="page-title">📥 ${currentUser.role === 'ceo' ? 'Review Queue' : 'My Queue'}</div>
+          <div class="page-sub">${myOpps.length} opportunities need your attention</div>
+        </div>
+      </div>`;
+
+    if (myOpps.length === 0) {
+      html += `<div class="card"><div class="empty"><div class="empty-icon">✅</div>All clear — nothing waiting for you.</div></div>`;
+    } else {
+      myOpps.forEach(opp => {
+        const stage = STAGES[opp.stage];
+        html += `
+      <div class="card" style="cursor:pointer;border-left:3px solid ${stage.color}" onclick="openOpp(${opp.id})">
+        <div style="display:flex;justify-content:space-between;align-items:start">
+          <div>
+            <div style="font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em">${opp.agency}</div>
+            <div style="font-weight:700;margin:4px 0">${opp.title}</div>
+            <div class="opp-meta">
+              <span class="badge b-gold">${opp.score}pts</span>
+              <span class="badge" style="background:rgba(${hexToRgb(stage.color)},.15);color:${stage.color}">${stage.short}</span>
+              ${opp.value !== 'TBD' ? `<span class="badge b-green">${opp.value}</span>` : ''}
+            </div>
+          </div>
+          <button class="btn btn-gold btn-sm" onclick="event.stopPropagation();openOpp(${opp.id})">Review →</button>
+        </div>
+      </div>`;
+      });
+    }
+    return html;
+  },
+
+  discover: () => `
+    <div class="page-hdr">
+      <div>
+        <div class="page-title">🔍 AI Discovery</div>
+        <div class="page-sub">Live feed from HigherGov + USASpending + SAM.gov</div>
+      </div>
+      <button class="btn btn-outline" onclick="alert('Refreshing from HigherGov API...')">🔄 Refresh</button>
+    </div>
+    <div class="card">
+      <div style="text-align:center;padding:40px;color:var(--muted)">
+        <div style="font-size:2rem;margin-bottom:12px">🤖</div>
+        <div style="font-weight:700;margin-bottom:6px">WIRE is scanning...</div>
+        <div style="font-size:.8rem">Connected to HigherGov, USASpending, and SAM.gov<br>New opportunities will appear here as they're discovered</div>
+        <button class="btn btn-gold" style="margin-top:20px" onclick="showPage('pipeline')">View Pipeline →</button>
+      </div>
+    </div>`,
+
+  winloss: () => `
+    <div class="page-hdr">
+      <div>
+        <div class="page-title">📊 Win / Loss Intelligence</div>
+        <div class="page-sub">28 government debrief letters · 2023–2026</div>
+      </div>
+    </div>
+    <div class="card">
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px">
+        <div style="background:rgba(39,174,96,.08);border:1px solid rgba(39,174,96,.2);border-radius:8px;padding:14px;text-align:center">
+          <div style="font-size:1.8rem;font-weight:800;color:var(--green)">23</div>
+          <div style="font-size:.72rem;color:var(--muted)">Total Wins · $144.4M</div>
+        </div>
+        <div style="background:rgba(231,76,60,.08);border:1px solid rgba(231,76,60,.2);border-radius:8px;padding:14px;text-align:center">
+          <div style="font-size:1.8rem;font-weight:800;color:var(--red)">13</div>
+          <div style="font-size:.72rem;color:var(--muted)">Losses · $66.4M missed</div>
+        </div>
+        <div style="background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.2);border-radius:8px;padding:14px;text-align:center">
+          <div style="font-size:1.8rem;font-weight:800;color:var(--gold)">64%</div>
+          <div style="font-size:.72rem;color:var(--muted)">Win Rate (by TCV)</div>
+        </div>
+      </div>
+      <div style="font-size:.8rem;color:var(--muted);text-align:center;padding:12px">
+        Full win/loss intelligence available in the CEO Dashboard →
+        <a href="https://bln24.github.io/bln24-dashboard/" target="_blank" style="color:var(--gold)">Open Dashboard</a>
+      </div>
+    </div>`,
+
+  team: () => `
+    <div class="page-hdr">
+      <div>
+        <div class="page-title">👥 Team Roster</div>
+        <div class="page-sub">BLN24 capture and proposal team</div>
+      </div>
+    </div>
+    <div class="card">
+      ${['Brian Nguyen — CEO / Final Gate','Hayk — Account Manager','Michael — Account Manager','Gabe — Account Manager','Eric Ma — BD / WIRE Manager','Favi Villa — UX Lead / SME'].map(m => `
+      <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)">
+        <div style="width:36px;height:36px;background:var(--border);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.85rem;font-weight:700">${m[0]}</div>
+        <div>
+          <div style="font-size:.85rem;font-weight:600">${m.split('—')[0].trim()}</div>
+          <div style="font-size:.72rem;color:var(--muted)">${m.split('—')[1]?.trim() || ''}</div>
+        </div>
+      </div>`).join('')}
+    </div>`,
+
+  proposals: () => `
+    <div class="page-hdr">
+      <div>
+        <div class="page-title">📄 Proposals</div>
+        <div class="page-sub">Active proposal development</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="empty">
+        <div class="empty-icon">📝</div>
+        No proposals in color team review yet.<br>
+        <span style="font-size:.75rem">Opportunities advance here after CEO Go/No-Go.</span>
+      </div>
+    </div>`,
+
+  review: () => PAGES.myqueue(),
+};
+
+// ─────────────────────────────────────────────────────────────────
+// OPP MODAL
+// ─────────────────────────────────────────────────────────────────
+function openOpp(id) {
+  const opp = OPPS.find(o => o.id === id);
+  if (!opp) return;
+  currentOpp = opp;
+  const stage = STAGES[opp.stage];
+  const isCEO = currentUser.role === 'ceo';
+
+  document.getElementById('modal-agency').textContent = opp.agency;
+  document.getElementById('modal-title').textContent = opp.title;
+  document.getElementById('modal-badges').innerHTML = `
+    <span class="badge b-gold">${opp.score}pts</span>
+    <span class="badge" style="background:rgba(${hexToRgb(stage.color)},.2);color:${stage.color}">${stage.short}</span>
+    <span class="badge b-gray">${opp.set_aside}</span>
+    ${opp.value !== 'TBD' ? `<span class="badge b-green">${opp.value}</span>` : ''}
+    ${opp.source === 'Employee Submission' ? `<span class="badge b-purple">Employee Submission</span>` : ''}
+  `;
+
+  let body = `
+    <div class="modal-section">
+      <div class="modal-section-title">AI Analysis</div>
+      <div class="modal-text">${opp.ai_analysis}</div>
+    </div>
+
+    <div class="modal-section">
+      <div class="modal-section-title">🤖 AI Win Theme</div>
+      <div class="modal-text" style="border-left:3px solid var(--purple);padding-left:12px;font-style:italic">${opp.ai_win_theme}</div>
+    </div>`;
+
+  if (opp.brian_win_theme) {
+    body += `
+    <div class="modal-section">
+      <div class="modal-section-title">👤 Brian's Win Theme</div>
+      <div class="modal-text" style="border-left:3px solid var(--gold);padding-left:12px;font-style:italic">${opp.brian_win_theme}</div>
+    </div>`;
+  }
+
+  if (opp.competitors) {
+    body += `
+    <div class="modal-section">
+      <div class="modal-section-title">⚔️ Expected Competitors</div>
+      <div class="modal-text">${opp.competitors.join(' · ')}</div>
+    </div>`;
+  }
+
+  // CEO actions
+  if (isCEO) {
+    body += `<hr class="divider">
+    <div class="modal-section">
+      <div class="modal-section-title">Your Win Theme (optional — override or add to AI's)</div>
+      <textarea class="input-field" id="ceo-theme" rows="3" placeholder="Add your strategic framing here...">${opp.brian_win_theme || ''}</textarea>
+    </div>
+    <div class="modal-section">
+      <div class="modal-section-title">Assign To</div>
+      <select class="input-field" id="assign-to" style="resize:none">
+        <option value="">Select account manager...</option>
+        <option value="hayk" ${opp.assigned_to==='hayk'?'selected':''}>Hayk</option>
+        <option value="michael" ${opp.assigned_to==='michael'?'selected':''}>Michael</option>
+        <option value="gabe" ${opp.assigned_to==='gabe'?'selected':''}>Gabe</option>
+        <option value="eric" ${opp.assigned_to==='eric'?'selected':''}>Eric</option>
+      </select>
+    </div>
+    <div class="modal-section">
+      <div class="modal-section-title">Challenge AI (optional)</div>
+      <textarea class="input-field" id="ceo-challenge" rows="2" placeholder="What did AI get wrong or miss?"></textarea>
+    </div>
+    <div class="action-row">
+      <button class="btn btn-gold" onclick="ceoApprove()">✓ Approve & Assign</button>
+      <button class="btn btn-red" onclick="ceoPass()">✕ Pass</button>
+      <button class="btn btn-outline" onclick="closeModal()">Close</button>
+    </div>
+    <div id="modal-msg" style="margin-top:8px;font-size:.78rem;color:var(--green)"></div>`;
+  }
+
+  // AM actions
+  if (currentUser.role === 'am' && opp.assigned_to === currentUser.key) {
+    body += `<hr class="divider">
+    <div class="modal-section">
+      <div class="modal-section-title">Your Capture Strategy</div>
+      <textarea class="input-field" id="am-strategy" rows="3" placeholder="Agree with AI win theme, or write your own approach..."></textarea>
+    </div>
+    <div class="modal-section">
+      <div class="modal-section-title">Prompt AI to Improve (optional)</div>
+      <textarea class="input-field" id="am-prompt" rows="2" placeholder="e.g. 'The agency relationship angle is stronger than the tech angle. Reweight the win theme.'"></textarea>
+    </div>
+    <div class="modal-section">
+      <div class="modal-section-title">Tag SME for Technical Review</div>
+      <select class="input-field" id="sme-tag" style="resize:none">
+        <option value="">Select SME...</option>
+        <option value="favi">Favi Villa — UX / HCD</option>
+        <option value="drupal">Drupal Engineer (TBD)</option>
+        <option value="data">Data Engineer (TBD)</option>
+        <option value="comms">Comms Lead (TBD)</option>
+      </select>
+    </div>
+    <div class="action-row">
+      <button class="btn btn-gold" onclick="amSubmit()">Submit Strategy</button>
+      <button class="btn btn-outline" onclick="closeModal()">Close</button>
+    </div>
+    <div id="modal-msg" style="margin-top:8px;font-size:.78rem;color:var(--green)"></div>`;
+  }
+
+  document.getElementById('modal-body').innerHTML = body;
+  document.getElementById('opp-modal').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('opp-modal').classList.remove('open');
+  currentOpp = null;
+}
+
+function ceoApprove() {
+  const theme = document.getElementById('ceo-theme')?.value;
+  const assignTo = document.getElementById('assign-to')?.value;
+  if (!assignTo) { document.getElementById('modal-msg').textContent = 'Please assign to someone first.'; return; }
+  if (currentOpp) {
+    currentOpp.brian_win_theme = theme || currentOpp.brian_win_theme;
+    currentOpp.assigned_to = assignTo;
+    currentOpp.stage = Math.max(currentOpp.stage, 2);
+  }
+  document.getElementById('modal-msg').textContent = `✓ Approved and assigned to ${assignTo}. They'll be notified.`;
+}
+
+function ceoPass() {
+  if (currentOpp) currentOpp.stage = -1;
+  document.getElementById('modal-msg').textContent = '✕ Passed. Removed from pipeline.';
+  setTimeout(closeModal, 1500);
+}
+
+function amSubmit() {
+  const strategy = document.getElementById('am-strategy')?.value;
+  const prompt = document.getElementById('am-prompt')?.value;
+  const sme = document.getElementById('sme-tag')?.value;
+  document.getElementById('modal-msg').textContent = `✓ Strategy submitted. ${sme ? `${sme} tagged for SME review.` : ''} Brian can see your input.`;
+}
+
+function submitOpp() {
+  const agency = document.getElementById('sub-agency')?.value;
+  const title = document.getElementById('sub-title')?.value;
+  const why = document.getElementById('sub-why')?.value;
+  if (!agency || !title || !why) {
+    document.getElementById('submit-msg').textContent = 'Agency, title, and rationale are required.';
+    document.getElementById('submit-msg').style.color = 'var(--red)';
+    return;
+  }
+  const newOpp = {
+    id: OPPS.length + 1,
+    stage: 0,
+    agency: agency,
+    title: title,
+    value: document.getElementById('sub-value')?.value || 'TBD',
+    set_aside: document.getElementById('sub-setaside')?.value || 'Unknown',
+    score: 0,
+    source: 'Employee Submission',
+    ref: document.getElementById('sub-ref')?.value || '',
+    due: null,
+    ai_analysis: '⏳ AI analysis in progress...',
+    ai_win_theme: '⏳ Generating win theme...',
+    brian_win_theme: null,
+    assigned_to: null,
+    stage_name: 'AI Discovery',
+    submitted_by: currentUser.name,
+    why_pursue: why,
+  };
+  OPPS.push(newOpp);
+  document.getElementById('submit-msg').style.color = 'var(--green)';
+  document.getElementById('submit-msg').textContent = `✓ Submitted. AI is analyzing now. Brian will see it in his review queue.`;
+  setTimeout(() => showPage('pipeline'), 2000);
+}
+
+// ─────────────────────────────────────────────────────────────────
+// UTILITIES
+// ─────────────────────────────────────────────────────────────────
+function hexToRgb(hex) {
+  const r = parseInt(hex.slice(1,3),16);
+  const g = parseInt(hex.slice(3,5),16);
+  const b = parseInt(hex.slice(5,7),16);
+  return `${r},${g},${b}`;
+}
+</script>
+</body>
+</html>
