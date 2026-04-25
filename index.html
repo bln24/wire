@@ -1506,7 +1506,7 @@ const MSAL_CONFIG = {
   auth: {
     clientId: "c1ab9244-fd91-468d-ba13-736c9783809c",
     authority: "https://login.microsoftonline.com/bce59a38-0a4f-42df-8ff2-8d40797d61f1",
-    redirectUri: window.location.origin + "/",
+    redirectUri: window.location.origin + window.location.pathname.replace(/index\.html$/, "").replace(/\/?$/, "/"),
   },
   cache: { cacheLocation: "sessionStorage", storeAuthStateInCookie: true },
 };
