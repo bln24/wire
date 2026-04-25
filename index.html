@@ -5,41 +5,41 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WIRE - BLN24 Capture Intelligence</title>
 <script>
+var _msalReady = false;
 function wireLogin() {
   var btn = document.getElementById("loginBtn");
   var ae = document.getElementById("ae");
   if(btn) { btn.textContent = "Connecting..."; btn.disabled = true; }
   
   function doLogin() {
-    var app = (typeof msalApp !== "undefined" && msalApp) ? msalApp : null;
-    if(!app) {
-      if(ae) ae.textContent = "Auth not ready. Please wait a moment and try again.";
+    if(!msalApp) {
+      if(ae) ae.textContent = "Auth not ready. Refresh and try again.";
       if(btn) { btn.textContent = "Sign in with Microsoft"; btn.disabled = false; }
       return;
     }
-    app.loginRedirect({ scopes: ["User.Read"], prompt: "select_account" }).catch(function(e) {
+    // Clear any stuck interaction state in sessionStorage
+    try {
+      Object.keys(sessionStorage).filter(function(k){
+        return k.indexOf("msal.")===0 && (k.indexOf("interaction")>=0 || k.indexOf("request")>=0);
+      }).forEach(function(k){sessionStorage.removeItem(k);});
+    } catch(e) {}
+    
+    msalApp.loginRedirect({ scopes: ["User.Read"], prompt: "select_account" }).catch(function(e) {
       if(ae) ae.textContent = e.message || "Login failed. Try again.";
       if(btn) { btn.textContent = "Sign in with Microsoft"; btn.disabled = false; }
     });
   }
   
-  // If msalApp already initialized by initMSAL, use it directly
-  if(typeof msalApp !== "undefined" && msalApp) {
-    doLogin();
-  } else {
-    // Wait up to 3 seconds for initMSAL to complete
-    var waited = 0;
-    var interval = setInterval(function() {
-      waited += 200;
-      if(typeof msalApp !== "undefined" && msalApp) {
-        clearInterval(interval);
-        doLogin();
-      } else if(waited >= 3000) {
-        clearInterval(interval);
-        if(ae) ae.textContent = "Auth library not ready. Hard-refresh (Cmd+Shift+R).";
-        if(btn) { btn.textContent = "Sign in with Microsoft"; btn.disabled = false; }
+  if(msalApp) { doLogin(); }
+  else {
+    var t=0; var iv=setInterval(function(){
+      t+=100;
+      if(msalApp){clearInterval(iv);doLogin();}
+      else if(t>=5000){clearInterval(iv);
+        if(ae) ae.textContent="Auth timeout. Hard-refresh (Cmd+Shift+R).";
+        if(btn){btn.textContent="Sign in with Microsoft";btn.disabled=false;}
       }
-    }, 200);
+    },100);
   }
 }
 </script>
@@ -1566,13 +1566,15 @@ async function initMSAL() {
     await app.initialize();
     msalApp = app;
     console.log("WIRE: MSAL initialized OK");
-    // Handle redirect after login
+    // Only handle redirect result - never start a new login
     const result = await app.handleRedirectPromise();
     if(result && result.account) { setMSUser(result.account); return; }
+    // Check for existing session silently
     const accounts = app.getAllAccounts();
     if(accounts.length > 0) { setMSUser(accounts[0]); }
   } catch(e) {
     console.error("MSAL init error:", e);
+    // Don't show error - wireLogin will handle user-initiated auth
   }
 }
 initMSAL();
