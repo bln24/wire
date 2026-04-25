@@ -138,8 +138,8 @@ button{cursor:pointer}
 /* infinity removed */
 .kicker{margin-top:14px;color:var(--muted);font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.32em}
 .auth-copy{max-width:610px}
-.auth-copy h1{margin:0;font-size:54px;line-height:.93;letter-spacing:-2.8px;max-width:720px}
-.auth-copy p{max-width:500px;color:var(--muted);line-height:1.7;font-size:14px;margin:18px 0 0}
+.auth-copy h1{margin:0;font-size:54px;line-height:.93;letter-spacing:-2.8px;max-width:720px;text-shadow:0 2px 20px rgba(0,0,0,.6)}
+.auth-copy p{max-width:500px;color:rgba(244,241,232,.85);line-height:1.7;font-size:14px;margin:18px 0 0;text-shadow:0 1px 8px rgba(0,0,0,.5)}
 .signal-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:30px;max-width:620px}
 .signal{
   border:1px solid var(--line);
@@ -1593,12 +1593,14 @@ function signInWithMS() {
     return;
   }
   ae.textContent = "Redirecting to Microsoft...";
-  msalApp.loginRedirect({
+  msalApp.loginPopup({
     scopes:["User.Read","User.ReadBasic.All"],
     prompt: "select_account"
-  }).catch(err => {
-    console.error("WIRE loginRedirect error:", err);
-    ae.textContent = err.message || "Sign-in failed. Check console for details.";
+  }).then(function(result) {
+    if(result && result.account) { setMSUser(result.account); }
+  }).catch(function(err) {
+    console.error("WIRE loginPopup error:", err);
+    ae.textContent = err.message || "Sign-in failed. Try allowing popups for this site.";
   });
 }
 
