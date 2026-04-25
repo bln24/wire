@@ -2206,13 +2206,23 @@ function approveOpp(){
   // Browser notification
   sendBrowserNotification("WIRE: Opp Approved", oppTitle + " has been assigned to " + assigneeName);
 
-  // Teams webhook notification (via worker)
-  notifyTeams({
-    title: "WIRE: Opp Approved → " + assigneeName,
-    body: oppTitle,
-    assignee: assigneeName,
-    opp_id: state.opp.id,
-    assigned_by: state.user ? state.user.name : "CEO"
+  // Full notification suite (email + Teams DM + channel)
+  getGraphToken().then(function(tok) {
+    notifyAll({
+      title: "WIRE: Opp Approved → " + assigneeName,
+      body: oppTitle,
+      assignee: assigneeName,
+      assignee_email: (ORG_ROSTER.find(r=>r.key===assignee)||{}).email || "",
+      opp_id: state.opp.id,
+      opp_hg_url: (state.opp && state.opp.hg_url) || "",
+      assigned_by: state.user ? state.user.name : "CEO",
+      assigned_by_email: state.user ? state.user.email : "brian@bln24.com",
+      delegated_token: tok || ""
+    });
+  }).catch(function() {
+    notifyAll({ title: "WIRE: Opp Approved → " + assigneeName, body: oppTitle,
+      assignee: assigneeName, assignee_email: (ORG_ROSTER.find(r=>r.key===assignee)||{}).email || "",
+      opp_id: state.opp.id, assigned_by: (state.user||{}).name||"CEO", delegated_token: "" });
   });
 
   setTimeout(()=>{ closeDrawer(); go(state.page); }, 1200);
@@ -2557,14 +2567,15 @@ function sendBrowserNotification(title, body) {
   }
 }
 
-// ── Teams notification via worker ─────────────────────────────────────────
-function notifyTeams(payload) {
-  fetch("https://bln24-hg-proxy.bln24.workers.dev/notify-teams", {
+// ── Full notification suite via worker ──────────────────────────────────────
+function notifyAll(payload) {
+  fetch("https://bln24-hg-proxy.bln24.workers.dev/notify-all", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload)
-  }).catch(() => {}); // silent fail
+  }).catch(() => {});
 }
+function notifyTeams(payload) { notifyAll(payload); }
 
 // Request browser notification permission on login
 function requestNotifPermission() {
