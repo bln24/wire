@@ -771,6 +771,93 @@ button{cursor:pointer}
   .topbar{padding:0 14px}.user-chip{display:none}.page-head{display:block}.head-actions{justify-content:flex-start;margin-top:14px}.page-title{font-size:28px}
   .command-hero{min-height:0}.hero-content{padding:20px;min-height:0}.hero-copy h1{font-size:34px}.agency-cloud{position:relative;left:auto;top:auto;transform:none;width:100%;margin-top:20px}.signal-node,.orbit{display:none}.lifecycle,.agency-strip,.insight-grid{grid-template-columns:1fr}.form-row{grid-template-columns:1fr}.command{display:none!important}.auth-stage{min-height:590px}.auth-brand{padding:28px 22px}.wordmark{font-size:54px}.auth-copy h1{font-size:34px}.signal-row{grid-template-columns:1fr}.auth-panel{padding:22px}.auth-cardlet{display:none}
 }
+
+/* ── Light mode ──────────────────────────────────────────────── */
+body.light-mode {
+  --ink:#1a1814;
+  --muted:#5a5650;
+  --quiet:#8a8680;
+  --paper:#faf8f3;
+  --panel:#f0ede4;
+  --panel-2:#e8e4da;
+  --line:rgba(26,24,20,.1);
+  --line-strong:rgba(26,24,20,.18);
+  --shadow:0 24px 80px rgba(0,0,0,.12);
+}
+body.light-mode .topbar { background:rgba(240,237,228,.88); }
+body.light-mode .sidebar { background:var(--panel); border-color:var(--line); }
+body.light-mode .opp { background:var(--panel); }
+body.light-mode .auth-stage { background:#faf8f3; }
+body.light-mode .auth-brand { background:linear-gradient(160deg,#f4b73f 0%,#e8a020 100%); }
+
+/* ── Profile / notification dropdown ────────────────────────── */
+.topbar-actions { display:flex; align-items:center; gap:8px; position:relative; }
+.notif-btn { position:relative; }
+.notif-badge {
+  position:absolute; top:4px; right:4px; width:8px; height:8px;
+  background:var(--red); border-radius:50%; border:2px solid var(--paper);
+  display:none;
+}
+.notif-badge.on { display:block; }
+.profile-menu {
+  position:absolute; top:calc(100% + 10px); right:0;
+  width:240px; background:var(--panel-2);
+  border:1px solid var(--line-strong); border-radius:12px;
+  box-shadow:var(--shadow); z-index:50;
+  display:none; flex-direction:column; overflow:hidden;
+}
+.profile-menu.on { display:flex; }
+.profile-menu-head {
+  padding:16px; border-bottom:1px solid var(--line);
+  display:flex; align-items:center; gap:12px;
+}
+.profile-avatar {
+  width:38px; height:38px; border-radius:50%;
+  background:var(--amber); color:#11100d;
+  display:grid; place-items:center; font-weight:900; font-size:15px; flex-shrink:0;
+}
+.profile-name { font-weight:700; font-size:13px; }
+.profile-role { font-size:11px; color:var(--quiet); margin-top:2px; }
+.profile-menu-item {
+  display:flex; align-items:center; gap:10px; padding:11px 16px;
+  font-size:13px; font-weight:600; cursor:pointer; transition:background .15s;
+  border:none; background:transparent; color:var(--ink); width:100%; text-align:left;
+}
+.profile-menu-item:hover { background:var(--line); }
+.profile-menu-item .pm-icon { width:18px; text-align:center; opacity:.6; font-size:14px; }
+.profile-menu-divider { height:1px; background:var(--line); margin:4px 0; }
+.theme-row { display:flex; align-items:center; gap:8px; padding:10px 16px; }
+.theme-label { font-size:12px; font-weight:700; color:var(--quiet); flex:1; }
+.theme-toggle {
+  display:flex; background:var(--panel); border:1px solid var(--line-strong);
+  border-radius:20px; overflow:hidden;
+}
+.theme-opt {
+  padding:5px 10px; font-size:11px; font-weight:700; cursor:pointer;
+  border:none; background:transparent; color:var(--quiet); transition:all .15s;
+}
+.theme-opt.on { background:var(--amber); color:#11100d; }
+
+/* ── Notifications panel ─────────────────────────────────────── */
+.notif-panel {
+  position:absolute; top:calc(100% + 10px); right:44px;
+  width:300px; background:var(--panel-2);
+  border:1px solid var(--line-strong); border-radius:12px;
+  box-shadow:var(--shadow); z-index:50;
+  display:none; flex-direction:column; overflow:hidden; max-height:400px;
+}
+.notif-panel.on { display:flex; }
+.notif-head { padding:14px 16px 10px; font-size:13px; font-weight:800; border-bottom:1px solid var(--line); }
+.notif-list { overflow-y:auto; }
+.notif-item {
+  padding:12px 16px; border-bottom:1px solid var(--line);
+  font-size:12px; display:flex; flex-direction:column; gap:3px;
+}
+.notif-item:last-child { border-bottom:none; }
+.notif-title { font-weight:700; }
+.notif-body { color:var(--muted); }
+.notif-time { font-size:10px; color:var(--quiet); }
+.notif-empty { padding:24px; text-align:center; color:var(--quiet); font-size:12px; }
 </style>
 <script src="msal-browser.min.js"></script>
 </head>
@@ -844,9 +931,45 @@ button{cursor:pointer}
       <input id="globalSearch" placeholder="Search agencies, titles, fit, partners">
     </label>
     <div class="spacer"></div>
-    <button class="btn btn-icon" title="Notifications"><span data-icon="bell"></span></button>
-    <div class="user-chip" id="userName"></div>
-    <button class="btn btn-ghost" id="logoutBtn"><span data-icon="logout"></span>Sign out</button>
+    <div class="topbar-actions" id="topbarActions">
+      <!-- Notifications -->
+      <div style="position:relative">
+        <button class="btn btn-icon notif-btn" id="notifBtn" title="Notifications">
+          <span data-icon="bell"></span>
+          <span class="notif-badge" id="notifBadge"></span>
+        </button>
+        <div class="notif-panel" id="notifPanel">
+          <div class="notif-head">Notifications</div>
+          <div class="notif-list" id="notifList">
+            <div class="notif-empty">All caught up &#10003;</div>
+          </div>
+        </div>
+      </div>
+      <!-- Profile -->
+      <div style="position:relative">
+        <button class="profile-avatar" id="profileBtn" style="cursor:pointer;border:none" title="Profile & Settings">
+          <span id="profileInitial">?</span>
+        </button>
+        <div class="profile-menu" id="profileMenu">
+          <div class="profile-menu-head">
+            <div class="profile-avatar" id="profileAvatarLarge"><span id="profileInitialLarge">?</span></div>
+            <div><div class="profile-name" id="profileName">—</div><div class="profile-role" id="profileRoleLabel">—</div></div>
+          </div>
+          <div class="theme-row">
+            <span class="theme-label">Theme</span>
+            <div class="theme-toggle">
+              <button class="theme-opt" id="themeDark" onclick="setTheme('dark')">&#9790; Dark</button>
+              <button class="theme-opt" id="themeLight" onclick="setTheme('light')">&#9728; Light</button>
+            </div>
+          </div>
+          <div class="profile-menu-divider"></div>
+          <button class="profile-menu-item" data-page="submit"><span class="pm-icon">+</span>Submit Opp</button>
+          <button class="profile-menu-item" data-page="winloss"><span class="pm-icon">&#128200;</span>Win / Loss</button>
+          <div class="profile-menu-divider"></div>
+          <button class="profile-menu-item" id="logoutBtn"><span class="pm-icon">&#8594;</span>Sign out</button>
+        </div>
+      </div>
+    </div>
   </header>
   <div class="shell">
     <aside class="sidebar" id="sidebar"></aside>
@@ -1028,8 +1151,17 @@ function setMSUser(account) {
   state.user = {key, name, role, label, email, msalAccount: account};
   $("auth").classList.add("hidden");
   $("app").classList.add("on");
-  $("userName").textContent = name;
+  $("userName") && ($("userName").textContent = name);
   $("rolePill").textContent = label;
+  // Hydrate profile menu
+  const initials = name.split(" ").map(w=>w[0]).join("").toUpperCase().slice(0,2);
+  [$("profileInitial"),$("profileInitialLarge")].forEach(el=>{if(el) el.textContent=initials;});
+  if($("profileName")) $("profileName").textContent = name;
+  if($("profileRoleLabel")) $("profileRoleLabel").textContent = role==="ceo"?"CEO · Full Access":role==="am"?"Account Manager":"SME";
+  // Apply saved theme
+  setTheme(localStorage.getItem("wire_theme")||"dark");
+  // Seed notifications
+  seedNotifications(role);
   buildNav();
   go("pipeline");
 }
@@ -1613,7 +1745,9 @@ function submitOpp(){
 }
 
 $("loginBtn").addEventListener("click",login);
-$("logoutBtn").addEventListener("click",logout);
+document.addEventListener("click", e=>{
+  if(e.target.closest("#logoutBtn")) logout();
+});
 $("drawerBg").addEventListener("click",closeDrawer);
 $("filterSheetBg").addEventListener("click",e=>{if(e.target===$("filterSheetBg"))closeFilterSheet();});
 $("drawerClose").addEventListener("click",closeDrawer);
@@ -1683,6 +1817,81 @@ function closeFilterSheet() {
   // Don't clear search query here — user may want to refine
 }
 
+
+// ── Theme ─────────────────────────────────────────────────────────────────
+function setTheme(t){
+  document.body.classList.toggle("light-mode", t==="light");
+  localStorage.setItem("wire_theme", t);
+  const d=$("themeDark"), l=$("themeLight");
+  if(d){ d.classList.toggle("on", t==="dark"); }
+  if(l){ l.classList.toggle("on", t==="light"); }
+}
+
+// ── Profile menu toggle ───────────────────────────────────────────────────
+document.addEventListener("click", e=>{
+  const pm = $("profileMenu"), pb = $("profileBtn");
+  const np = $("notifPanel"), nb = $("notifBtn");
+  if(pb && pb.contains(e.target)){
+    pm && pm.classList.toggle("on");
+    np && np.classList.remove("on");
+    return;
+  }
+  if(nb && nb.contains(e.target)){
+    np && np.classList.toggle("on");
+    pm && pm.classList.remove("on");
+    return;
+  }
+  if(pm && !pm.contains(e.target)) pm.classList.remove("on");
+  if(np && !np.contains(e.target)) np.classList.remove("on");
+});
+
+// Close profile menu nav items
+document.addEventListener("click", e=>{
+  const item = e.target.closest(".profile-menu-item[data-page]");
+  if(item){ $("profileMenu")?.classList.remove("on"); go(item.dataset.page); }
+});
+
+// ── Notifications ─────────────────────────────────────────────────────────
+const NOTIFS = [];
+function seedNotifications(role){
+  NOTIFS.length = 0;
+  const now = Date.now();
+  if(role==="ceo"){
+    NOTIFS.push(
+      {title:"DEA RFI due soon", body:"DOJ DEA Web Developer RFI closes May 9. Qualtrics form not submitted.", time: now - 3600000, unread:true},
+      {title:"NTIA Phase 2 — Michael's strategy pending", body:"Michael hasn't submitted capture strategy yet. Nudge him.", time: now - 7200000, unread:true},
+      {title:"Census ADRM — CEO review needed", body:"New opp scored 89pts. Assigned to Eric. Awaiting your go/no-go.", time: now - 86400000, unread:false}
+    );
+  } else {
+    NOTIFS.push(
+      {title:"New opp assigned", body:"Brian assigned you to an opportunity. Check My Queue.", time: now - 3600000, unread:true}
+    );
+  }
+  renderNotifications();
+}
+function renderNotifications(){
+  const list = $("notifList");
+  const badge = $("notifBadge");
+  if(!list) return;
+  const unread = NOTIFS.filter(n=>n.unread).length;
+  if(badge) badge.classList.toggle("on", unread > 0);
+  if(!NOTIFS.length){
+    list.innerHTML = "<div class='notif-empty'>All caught up ✓</div>";
+    return;
+  }
+  list.innerHTML = NOTIFS.map(n=>`
+    <div class="notif-item" style="${n.unread ? 'border-left:3px solid var(--amber)' : ''}">
+      <div class="notif-title">${esc(n.title)}</div>
+      <div class="notif-body">${esc(n.body)}</div>
+      <div class="notif-time">${timeAgo(n.time)}</div>
+    </div>`).join("");
+}
+function timeAgo(ts){
+  const diff = Date.now() - ts;
+  if(diff < 3600000) return Math.round(diff/60000) + "m ago";
+  if(diff < 86400000) return Math.round(diff/3600000) + "h ago";
+  return Math.round(diff/86400000) + "d ago";
+}
 </script>
 </body>
 </html>
