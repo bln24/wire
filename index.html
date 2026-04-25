@@ -2159,8 +2159,20 @@ function ceoControls(o){
 }
 function amControls(){
   return `<section class="detail-section"><div class="detail-label">Capture strategy</div>
-    <div class="field"><label class="label">Your capture strategy</label><textarea class="textarea" id="amStrategy"></textarea></div>
-    <div class="field"><label class="label">Tag technical SME</label><select class="select" id="tagSme"><option value="">Select SME</option>${SMES.map(s=>`<option>${s}</option>`).join("")}</select></div>
+    <div class="field"><label class="label">Your capture strategy</label><textarea class="textarea" id="amStrategy" placeholder="What\'s your approach? Relationships, win themes, competitive angle, risks you see…"></textarea></div>
+    <div class="field">
+      <label class="label" style="display:flex;justify-content:space-between">
+        <span>Tag a technical SME <span style="color:var(--quiet);font-weight:400">(optional — you may be the SME)</span></span>
+      </label>
+      <div class="ac-wrap">
+        <input class="input" id="tagSme_name" placeholder="Search by name, title, or skill…" autocomplete="off"
+          oninput="acFilterMulti(this,'tagSme','acListSme')"
+          onfocus="acFilterMulti(this,'tagSme','acListSme')"
+          onblur="setTimeout(()=>acCloseId('acListSme'),350)">
+        <input type="hidden" id="tagSme_key" value="">
+        <div class="ac-list" id="acListSme"></div>
+      </div>
+    </div>
     <div class="message" id="decisionMsg"></div>
   </section>`;
 }
