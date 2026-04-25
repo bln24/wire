@@ -583,26 +583,28 @@ const STAGES=[
   {id:11,name:'Final Gate',color:'#34D399',sh:'Final Gate'},
 ];
 const SMES=['Favi Villa — UX/HCD','Drupal Engineer — TBD','Data Engineer — TBD','Comms Lead — TBD'];
-const OPPS=[
-  {id:1,stage:0,agency:'DEA',title:'Web Developer / Content Services',value:'TBD',set_aside:'8(a)',score:102,source:'HigherGov',ref:'RFI1807179',
-   ai_analysis:'Strong fit. MBDA.gov Drupal prime (5-agency Commerce multitenant CMS) maps directly to DEA\'s 5-site portfolio requirement. No confirmed web/content incumbent at DEA. 8(a) eligible — BLN24 primes directly. DHA experience mirrors DEA\'s restricted CP communications environment.',
-   ai_win_theme:'BLN24 is the only 8(a) firm operating a Drupal CMS at Commerce-scale (MBDA.gov, 60K+ pages) while simultaneously managing federal content for 100M+ beneficiaries (CMS MNPS). We don\'t match the requirement — we exceed it, in production, right now.',
-   brian_win_theme:null,assigned_to:null,competitors:['Arctic Slope ($77M DEA IT)','ASRC Federal ($28M DEA IT)','No incumbent for web/content'],submitted_by:'AI'},
-  {id:2,stage:1,agency:'Census Bureau',title:'CES ADRM Phase 2 Analytics',value:'~$7M',set_aside:'SB',score:89,source:'HigherGov',ref:'Pre-solicitation',
-   ai_analysis:'Repeat client. BLN24 won Phase 1 ($7M, 2025). Census relationship spans 5 prior contracts. Analytics lane 4/4. SB competitive — incumbency advantage is decisive.',
-   ai_win_theme:'We built it. We own it. No competitor can claim 4 years of Census ADRM institutional knowledge. Phase 2 is BLN24\'s to lose.',
-   brian_win_theme:'This is ours. Eric needs to call Jason Winings before the solicitation drops.',
-   assigned_to:'eric',competitors:['AFS (current sub)','Guidehouse ($258M Census)'],submitted_by:'AI'},
-  {id:3,stage:2,agency:'HHS/CMS',title:'QMARS III Quality Management',value:'~$12M',set_aside:'8(a)',score:74,source:'Employee Submission',ref:'RFQ TBD',
-   ai_analysis:'CMS relationship active via MNPS (Exceptional CPARS). QMARS is quality management adjacent to BLN24 analytics lane. 8(a) sole source path exists.',
-   ai_win_theme:'Exceptional CPARS on CMS MNPS + 8(a) = push for sole source before this goes competitive. The COR already knows BLN24 delivers.',
-   brian_win_theme:null,assigned_to:'hayk',competitors:['Dynanet (Phase 1 2025)','Vibrantech'],submitted_by:'Hayk'},
-  {id:4,stage:5,agency:'NTIA',title:'Digital Outreach Phase 2',value:'~$3.5M',set_aside:'8(a)',score:95,source:'HigherGov',ref:'Pre-solicitation',
-   ai_analysis:'NTIA repeat client. Exceptional CPARS on Outreach ($2.7M, final). Classic sole source setup.',
-   ai_win_theme:'Exceptional CPARS is a direct invitation. The relationship is warm. Push for sole source.',
-   brian_win_theme:'My relationship. Reaching out to the CO this week.',
-   assigned_to:'michael',competitors:['None if sole source'],submitted_by:'AI'},
-];
+const OPPS = (typeof LIVE_OPPS !== 'undefined' ? LIVE_OPPS.map((o,i)=>({...o,id:i+1,stage:o.stage||0,submitted_by:o.submitted_by||'AI',brian_win_theme:o.brian_win_theme||null,assigned_to:o.assigned_to||null})) : []).concat([
+  {id:900,stage:1,agency:'Census Bureau',title:'CES ADRM Phase 2 Analytics',value:'~$7M',set_aside:'SB',score:89,
+   what_they_need:'Analytics support for Census Center for Economic Studies ADRM program. Phase 2 follow-on.',
+   rex_take:'Repeat client. BLN24 won Phase 1 (M, 2025). Census relationship spans 5 prior contracts. Incumbency advantage decisive.',
+   recommendation:'Pursue',cm_fit:'Strong',cm_avg:3.8,
+   cm_tasks:[{task:'Data Analytics',score:4,status:'prime',pp:'Census SRQA $4.1M'},{task:'Agile Delivery',score:4,status:'prime',pp:'Census DWS III $8.3M'}],
+   competitors:[{name:'AFS (current sub)',why:'Active sub on Phase 1',url:''},{name:'Guidehouse',why:'$258M Census — large incumbent',url:''}],
+   partners:[],
+   ai_win_theme:'We built it. We own it. No competitor can claim 4 years of Census ADRM institutional knowledge. Phase 2 is BLN24 to lose.',
+   brian_win_theme:'This is ours. Eric needs to call Jason Winings before solicitation drops.',
+   assigned_to:'eric',submitted_by:'AI',stage:1,due:'2026-06-15'},
+  {id:901,stage:5,agency:'NTIA',title:'Digital Outreach Phase 2',value:'~$3.5M',set_aside:'8(a)',score:95,
+   what_they_need:'Follow-on outreach and engagement services for NTIA digital programs.',
+   rex_take:'Repeat client. Exceptional CPARS on NTIA Outreach (.7M). Classic sole source setup.',
+   recommendation:'Pursue — Sole Source',cm_fit:'Strong',cm_avg:4.0,
+   cm_tasks:[{task:'Strategic Communications',score:4,status:'prime',pp:'NTIA Outreach $2.7M'},{task:'Content Development',score:4,status:'prime',pp:'CMS MNPS $16M'}],
+   competitors:[{name:'None if sole source',why:'Push CO for sole source before posting',url:''}],
+   partners:[],
+   ai_win_theme:'Exceptional CPARS is a direct invitation. The relationship is warm. Push for sole source before it posts.',
+   brian_win_theme:'My relationship. Reaching out to CO this week.',
+   assigned_to:'michael',submitted_by:'AI',stage:5,due:'2026-08-01'},
+]);
 
 let G={user:null,opp:null,page:'pipeline'};
 
@@ -849,20 +851,73 @@ function openOpp(id){
     o.source==='Employee Submission'?`<span class="chip ch-p">Submitted by ${o.submitted_by}</span>`:'',
   ].join('');
 
-  let body=`
-    <div class="psect"><div class="psect-label">🤖 AI Analysis</div><div class="psect-body">${o.ai_analysis}</div></div>
-    <div class="psect">
-      <div class="psect-label">🤖 AI Win Theme</div>
-      <div class="theme-box" style="border-left:2px solid var(--purple)">${o.ai_win_theme}</div>
-    </div>`;
-  if(o.brian_win_theme)body+=`<div class="psect">
-    <div class="psect-label">👤 Brian's Win Theme</div>
-    <div class="theme-box" style="border-left:2px solid var(--gold)">${o.brian_win_theme}</div>
-  </div>`;
-  if(o.competitors?.length)body+=`<div class="psect">
-    <div class="psect-label">⚔️ Competitors</div>
-    <div class="psect-body">${o.competitors.map(c=>`• ${c}`).join('<br>')}</div>
-  </div>`;
+  // Full capture intelligence panel
+  var body = '';
+
+  // WIRE Analysis
+  if(o.rex_take || o.what_they_need) {
+    body += '<div class="psect"><div class="psect-label">&#9889; WIRE\'s Analysis</div>';
+    if(o.what_they_need) body += '<div class="psect-body" style="margin-bottom:10px"><strong style="color:var(--white);font-size:.72rem">What They Need:</strong><br>' + o.what_they_need + '</div>';
+    if(o.rex_take) body += '<div class="theme-box" style="border-left:2px solid var(--gold);font-style:normal;color:rgba(248,248,255,.8)">' + o.rex_take + '</div>';
+    body += '</div>';
+  }
+
+  // Win Themes
+  body += '<div class="psect"><div class="psect-label">&#127919; Win Theme</div>';
+  if(o.ai_win_theme) body += '<div class="theme-box" style="border-left:2px solid var(--purple)">&#129302; ' + o.ai_win_theme + '</div>';
+  if(o.brian_win_theme) body += '<div class="theme-box" style="border-left:2px solid var(--gold);margin-top:8px">&#128100; ' + o.brian_win_theme + '</div>';
+  body += '</div>';
+
+  // Capability Matrix
+  if(o.cm_tasks && o.cm_tasks.length) {
+    var fitColor = o.cm_fit==='Strong' ? 'var(--green)' : o.cm_fit==='Moderate' ? 'var(--gold)' : 'var(--red)';
+    body += '<div class="psect"><div class="psect-label">&#128202; Capability Matrix</div>';
+    body += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">';
+    body += '<span style="font-size:.72rem;color:var(--muted)">Overall Fit:</span>';
+    body += '<span style="font-weight:700;color:' + fitColor + '">' + (o.cm_fit||'?') + '</span>';
+    body += '<span style="font-size:.68rem;color:var(--muted)">Avg: ' + (o.cm_avg||0) + '/4</span></div>';
+    o.cm_tasks.forEach(function(t) {
+      var sc = t.score>=4 ? 'var(--green)' : t.score>=3 ? 'var(--gold)' : t.score>=2 ? 'var(--orange)' : 'var(--red)';
+      var barW = Math.round(t.score/4*100);
+      body += '<div style="margin-bottom:9px">';
+      body += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px">';
+      body += '<span style="font-size:.75rem;font-weight:600">' + t.task + '</span>';
+      body += '<span style="font-size:.7rem;font-weight:700;color:' + sc + '">' + t.score + '/4 &middot; ' + t.status + '</span></div>';
+      body += '<div style="background:rgba(255,255,255,.06);border-radius:3px;height:4px;margin-bottom:3px">';
+      body += '<div style="background:' + sc + ';border-radius:3px;height:4px;width:' + barW + '%"></div></div>';
+      if(t.pp) body += '<div style="font-size:.65rem;color:var(--muted)">PP: ' + t.pp + '</div>';
+      body += '</div>';
+    });
+    body += '</div>';
+  }
+
+  // Competitors
+  if(o.competitors && o.competitors.length) {
+    body += '<div class="psect"><div class="psect-label">&#9876;&#65039; Competitors</div>';
+    o.competitors.forEach(function(c) {
+      body += '<div style="background:rgba(248,113,113,.05);border:1px solid rgba(248,113,113,.12);border-radius:8px;padding:9px 11px;margin-bottom:6px">';
+      body += '<div style="font-weight:700;font-size:.78rem;color:var(--red)">' + c.name + '</div>';
+      body += '<div style="font-size:.72rem;color:rgba(248,248,255,.55);margin-top:3px;line-height:1.4">' + c.why + '</div>';
+      if(c.url) body += '<a href="' + c.url + '" target="_blank" style="font-size:.65rem;color:var(--gold);text-decoration:none">View on HigherGov &#8594;</a>';
+      body += '</div>';
+    });
+    body += '</div>';
+  }
+
+  // Teaming Partners
+  if(o.partners && o.partners.length) {
+    body += '<div class="psect"><div class="psect-label">&#129309; Teaming Partners</div>';
+    o.partners.forEach(function(p) {
+      body += '<div style="background:rgba(52,211,153,.05);border:1px solid rgba(52,211,153,.12);border-radius:8px;padding:9px 11px;margin-bottom:6px">';
+      body += '<div style="font-weight:700;font-size:.78rem;color:var(--green)">' + p.name + '</div>';
+      if(p.gap) body += '<div style="font-size:.65rem;color:var(--gold);margin-top:2px">Fills gap: ' + p.gap + '</div>';
+      body += '<div style="font-size:.72rem;color:rgba(248,248,255,.55);margin-top:3px;line-height:1.4">' + p.why + '</div>';
+      body += '</div>';
+    });
+    body += '</div>';
+  }
+
+  var _unused_old_panel = '';
 
   let foot='';
   if(isCEO){
@@ -941,5 +996,6 @@ function hr(hex){
   return`${parseInt(hex.slice(1,3),16)},${parseInt(hex.slice(3,5),16)},${parseInt(hex.slice(5,7),16)}`;
 }
 </script>
+<script src="opps-data.js"></script>
 </body>
 </html>
