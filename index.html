@@ -5,1217 +5,1419 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WIRE — BLN24 BD Intelligence</title>
 <style>
-  :root {
-    --black: #0d0d0d;
-    --dark: #141414;
-    --card: #1a1a1a;
-    --border: #2a2a2a;
-    --gold: #C9A84C;
-    --gold-dim: #8a6f2e;
-    --white: #f5f5f5;
-    --muted: #666;
-    --green: #27ae60;
-    --red: #e74c3c;
-    --blue: #2980b9;
-    --purple: #8e44ad;
-    --orange: #e67e22;
-  }
+:root {
+  --black: #080808;
+  --surface: #111;
+  --card: #161616;
+  --border: #222;
+  --gold: #C9A84C;
+  --gold-glow: rgba(201,168,76,.18);
+  --gold-dim: rgba(201,168,76,.06);
+  --white: #F2F2F2;
+  --muted: #555;
+  --faint: #2a2a2a;
+  --green: #2ecc71;
+  --red: #e74c3c;
+  --blue: #3498db;
+  --purple: #9b59b6;
+  --orange: #e67e22;
+  --teal: #1abc9c;
+}
 
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    background: var(--black);
-    color: var(--white);
-    min-height: 100vh;
-  }
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
-  /* AUTH */
-  #auth {
-    position: fixed; inset: 0;
-    background: var(--black);
-    display: flex; align-items: center; justify-content: center;
-    z-index: 9999;
-    flex-direction: column;
-    gap: 40px;
-  }
-  #auth.hidden { display: none; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+  background: var(--black);
+  color: var(--white);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
 
-  .auth-logo {
-    font-size: 3.5rem;
-    font-weight: 800;
-    letter-spacing: -2px;
-    color: var(--white);
-  }
-  .auth-logo span { color: var(--gold); }
+/* ── GRAIN OVERLAY ─────────────────────────────────────────── */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 9998;
+  opacity: .4;
+}
 
-  .auth-tagline {
-    font-size: .85rem;
-    color: var(--muted);
-    letter-spacing: .15em;
-    text-transform: uppercase;
-  }
+/* ── AUTH ──────────────────────────────────────────────────── */
+#auth {
+  position: fixed; inset: 0;
+  background: var(--black);
+  display: flex; align-items: center; justify-content: center;
+  flex-direction: column;
+  gap: 48px;
+  z-index: 9999;
+}
+#auth.hidden { display: none; }
 
-  .auth-box {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 40px;
-    width: 360px;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-  }
+.auth-hero {
+  text-align: center;
+}
 
-  .auth-box label {
-    font-size: .75rem;
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: .1em;
-  }
+.wire-wordmark {
+  font-size: 5rem;
+  font-weight: 900;
+  letter-spacing: -4px;
+  line-height: 1;
+  background: linear-gradient(135deg, #fff 0%, var(--gold) 50%, #fff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
 
-  .auth-box select, .auth-box input {
-    width: 100%;
-    padding: 12px 16px;
-    background: var(--dark);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    color: var(--white);
-    font-size: .9rem;
-    font-family: inherit;
-    outline: none;
-    transition: border-color .2s;
-  }
-  .auth-box select:focus, .auth-box input:focus { border-color: var(--gold); }
-  .auth-box select option { background: var(--dark); }
+.wire-infinity {
+  font-size: 5rem;
+  font-weight: 200;
+  letter-spacing: -4px;
+  background: linear-gradient(135deg, var(--gold) 0%, #fff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
 
-  .auth-btn {
-    width: 100%;
-    padding: 14px;
-    background: var(--gold);
-    color: var(--black);
-    border: none;
-    border-radius: 8px;
-    font-size: .9rem;
-    font-weight: 700;
-    cursor: pointer;
-    font-family: inherit;
-    letter-spacing: .05em;
-    transition: opacity .2s;
-  }
-  .auth-btn:hover { opacity: .9; }
+.auth-sub {
+  font-size: .72rem;
+  color: var(--muted);
+  letter-spacing: .3em;
+  text-transform: uppercase;
+  margin-top: 10px;
+}
 
-  .auth-err { color: var(--red); font-size: .75rem; min-height: 18px; }
+.auth-form {
+  width: 340px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
 
-  /* APP */
-  #app { display: none; }
-  #app.visible { display: block; }
+.auth-select, .auth-input {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 18px;
+  color: var(--white);
+  font-size: .88rem;
+  font-family: inherit;
+  outline: none;
+  transition: border-color .2s, box-shadow .2s;
+  -webkit-appearance: none;
+}
+.auth-select:focus, .auth-input:focus {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px var(--gold-glow);
+}
+.auth-select option { background: #1a1a1a; }
 
-  /* TOPBAR */
-  .topbar {
-    height: 56px;
-    background: var(--dark);
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    padding: 0 24px;
-    gap: 24px;
-    position: fixed;
-    top: 0; left: 0; right: 0;
-    z-index: 100;
-  }
-  .topbar-logo {
-    font-size: 1.3rem;
-    font-weight: 800;
-    letter-spacing: -1px;
-    color: var(--white);
-  }
-  .topbar-logo span { color: var(--gold); }
+.auth-btn {
+  width: 100%;
+  padding: 15px;
+  background: var(--gold);
+  color: #000;
+  border: none;
+  border-radius: 10px;
+  font-size: .9rem;
+  font-weight: 800;
+  cursor: pointer;
+  font-family: inherit;
+  letter-spacing: .05em;
+  transition: all .2s;
+  position: relative;
+  overflow: hidden;
+}
+.auth-btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,.15) 0%, transparent 60%);
+}
+.auth-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(201,168,76,.3); }
+.auth-err { color: var(--red); font-size: .75rem; min-height: 18px; text-align: center; }
 
-  .topbar-role {
-    background: var(--border);
-    padding: 4px 12px;
-    border-radius: 20px;
-    font-size: .7rem;
-    font-weight: 700;
-    letter-spacing: .1em;
-    text-transform: uppercase;
-  }
-  .role-ceo { background: rgba(201,168,76,.15); color: var(--gold); }
-  .role-am { background: rgba(39,174,96,.15); color: var(--green); }
-  .role-sme { background: rgba(41,128,185,.15); color: var(--blue); }
+/* ── APP SHELL ─────────────────────────────────────────────── */
+#app { display: none; }
+#app.visible { display: block; }
 
-  .topbar-user { font-size: .8rem; color: var(--muted); margin-left: auto; }
+/* ── TOP BAR ───────────────────────────────────────────────── */
+.topbar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 52px;
+  background: rgba(8,8,8,.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  gap: 16px;
+  z-index: 100;
+}
 
-  .topbar-notify {
-    width: 32px; height: 32px;
-    background: var(--border);
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    cursor: pointer;
-    font-size: .8rem;
-    position: relative;
-  }
-  .notify-badge {
-    position: absolute;
-    top: -2px; right: -2px;
-    width: 14px; height: 14px;
-    background: var(--red);
-    border-radius: 50%;
-    font-size: .55rem;
-    display: flex; align-items: center; justify-content: center;
-    font-weight: 700;
-  }
+.topbar-wordmark {
+  font-size: 1.1rem;
+  font-weight: 900;
+  letter-spacing: -1px;
+  background: linear-gradient(135deg, #fff 0%, var(--gold) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  flex-shrink: 0;
+}
 
-  /* SIDEBAR */
-  .layout { display: flex; padding-top: 56px; min-height: 100vh; }
+.topbar-pill {
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: .62rem;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+.pill-ceo { background: rgba(201,168,76,.15); color: var(--gold); border: 1px solid rgba(201,168,76,.3); }
+.pill-am { background: rgba(46,204,113,.1); color: var(--green); border: 1px solid rgba(46,204,113,.25); }
+.pill-sme { background: rgba(52,152,219,.1); color: var(--blue); border: 1px solid rgba(52,152,219,.25); }
 
-  .sidebar {
-    width: 220px;
-    background: var(--dark);
-    border-right: 1px solid var(--border);
-    padding: 24px 0;
-    position: fixed;
-    top: 56px; bottom: 0;
-    overflow-y: auto;
-  }
+.topbar-spacer { flex: 1; }
 
-  .sidebar-section {
-    padding: 0 16px;
-    margin-bottom: 8px;
-  }
-  .sidebar-label {
-    font-size: .62rem;
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: .12em;
-    margin-bottom: 6px;
-    padding: 0 8px;
-  }
+.topbar-username { font-size: .78rem; color: var(--muted); }
 
-  .nav-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 9px 12px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: .82rem;
-    color: var(--muted);
-    transition: all .15s;
-    text-decoration: none;
-  }
-  .nav-item:hover { background: var(--border); color: var(--white); }
-  .nav-item.active { background: rgba(201,168,76,.12); color: var(--gold); }
-  .nav-item .icon { font-size: .95rem; width: 18px; text-align: center; }
-  .nav-badge {
-    margin-left: auto;
-    background: var(--red);
-    color: #fff;
-    font-size: .6rem;
-    font-weight: 700;
-    padding: 2px 6px;
-    border-radius: 10px;
-    min-width: 18px;
-    text-align: center;
-  }
-  .nav-badge.gold { background: var(--gold); color: var(--black); }
+.topbar-icon-btn {
+  width: 34px; height: 34px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  font-size: .85rem;
+  transition: all .15s;
+  position: relative;
+}
+.topbar-icon-btn:hover { background: var(--faint); border-color: var(--gold-dim); }
 
-  /* MAIN */
-  .main {
-    margin-left: 220px;
-    padding: 32px;
-    flex: 1;
-  }
+.notif-dot {
+  position: absolute;
+  top: 4px; right: 4px;
+  width: 7px; height: 7px;
+  background: var(--red);
+  border-radius: 50%;
+  border: 1px solid var(--black);
+}
 
-  .page { display: none; }
-  .page.active { display: block; }
+.signout-btn {
+  padding: 6px 14px;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  color: var(--muted);
+  font-size: .72rem;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all .15s;
+}
+.signout-btn:hover { color: var(--white); border-color: var(--faint); }
 
-  /* PAGE HEADERS */
-  .page-hdr {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 28px;
-  }
-  .page-title {
-    font-size: 1.4rem;
-    font-weight: 700;
-    letter-spacing: -.5px;
-  }
-  .page-sub { font-size: .8rem; color: var(--muted); margin-top: 2px; }
+/* ── LAYOUT ────────────────────────────────────────────────── */
+.layout {
+  display: flex;
+  padding-top: 52px;
+  min-height: 100vh;
+}
 
-  /* CARDS */
-  .card {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 20px;
-    margin-bottom: 16px;
-  }
-  .card-hdr {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 14px;
-  }
-  .card-title { font-size: .85rem; font-weight: 700; }
+/* ── SIDEBAR ───────────────────────────────────────────────── */
+.sidebar {
+  width: 200px;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  padding: 20px 0;
+  position: fixed;
+  top: 52px; bottom: 0;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
 
-  /* STATS ROW */
-  .stats-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 12px;
-    margin-bottom: 24px;
-  }
-  .stat-card {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 16px;
-  }
-  .stat-val { font-size: 1.8rem; font-weight: 800; }
-  .stat-lbl { font-size: .72rem; color: var(--muted); margin-top: 2px; }
-  .stat-sub { font-size: .75rem; color: var(--green); margin-top: 4px; }
+.nav-section { padding: 0 12px; margin-bottom: 6px; }
+.nav-section-label {
+  font-size: .58rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .14em;
+  padding: 0 8px;
+  margin-bottom: 4px;
+}
 
-  /* PIPELINE */
-  .pipeline-stages {
-    display: flex;
-    gap: 0;
-    margin-bottom: 24px;
-    overflow-x: auto;
-  }
-  .stage-col {
-    min-width: 200px;
-    flex: 1;
-    border-right: 1px solid var(--border);
-    padding: 0 12px 12px;
-  }
-  .stage-col:last-child { border-right: none; }
-  .stage-hdr {
-    font-size: .65rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: .1em;
-    padding: 10px 0 8px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-  .stage-dot {
-    width: 8px; height: 8px;
-    border-radius: 50%;
-  }
-  .stage-count {
-    margin-left: auto;
-    font-size: .65rem;
-    background: var(--border);
-    padding: 2px 6px;
-    border-radius: 10px;
-  }
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: .8rem;
+  color: var(--muted);
+  transition: all .15s;
+  position: relative;
+}
+.nav-item:hover { color: var(--white); background: var(--faint); }
+.nav-item.active {
+  color: var(--gold);
+  background: var(--gold-dim);
+}
+.nav-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 50%; transform: translateY(-50%);
+  width: 3px; height: 16px;
+  background: var(--gold);
+  border-radius: 0 3px 3px 0;
+}
 
-  .opp-card {
-    background: var(--dark);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 10px 12px;
-    margin-bottom: 8px;
-    cursor: pointer;
-    transition: border-color .15s;
-  }
-  .opp-card:hover { border-color: var(--gold-dim); }
-  .opp-agency { font-size: .65rem; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
-  .opp-title { font-size: .78rem; font-weight: 600; margin: 3px 0; line-height: 1.3; }
-  .opp-meta { display: flex; gap: 6px; margin-top: 5px; flex-wrap: wrap; }
-  .badge {
-    font-size: .6rem;
-    padding: 2px 7px;
-    border-radius: 4px;
-    font-weight: 600;
-  }
-  .b-gold { background: rgba(201,168,76,.15); color: var(--gold); }
-  .b-green { background: rgba(39,174,96,.15); color: var(--green); }
-  .b-red { background: rgba(231,76,60,.15); color: var(--red); }
-  .b-blue { background: rgba(41,128,185,.15); color: var(--blue); }
-  .b-purple { background: rgba(142,68,173,.15); color: var(--purple); }
-  .b-orange { background: rgba(230,126,34,.15); color: var(--orange); }
-  .b-gray { background: var(--border); color: var(--muted); }
+.nav-icon { font-size: .8rem; width: 16px; text-align: center; flex-shrink: 0; }
+.nav-badge {
+  margin-left: auto;
+  font-size: .6rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 10px;
+  background: var(--red);
+  color: #fff;
+  min-width: 18px;
+  text-align: center;
+}
+.nav-badge.g { background: rgba(201,168,76,.2); color: var(--gold); }
 
-  /* OPP DETAIL MODAL */
-  .modal-overlay {
-    position: fixed; inset: 0;
-    background: rgba(0,0,0,.7);
-    z-index: 200;
-    display: none;
-    align-items: flex-start;
-    justify-content: flex-end;
-    padding-top: 56px;
-  }
-  .modal-overlay.open { display: flex; }
+/* ── MAIN ──────────────────────────────────────────────────── */
+.main {
+  margin-left: 200px;
+  flex: 1;
+  padding: 28px 32px 100px;
+  min-width: 0;
+}
 
-  .modal-panel {
-    width: 520px;
-    height: calc(100vh - 56px);
-    background: var(--dark);
-    border-left: 1px solid var(--border);
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-  }
+/* ── PAGE HEADER ───────────────────────────────────────────── */
+.page-hdr {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 28px;
+  gap: 16px;
+}
+.page-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -.7px;
+  line-height: 1.1;
+}
+.page-sub { font-size: .78rem; color: var(--muted); margin-top: 4px; }
 
-  .modal-hdr {
-    padding: 20px 24px;
-    border-bottom: 1px solid var(--border);
-    position: sticky;
-    top: 0;
-    background: var(--dark);
-    z-index: 1;
-  }
-  .modal-agency { font-size: .68rem; color: var(--muted); text-transform: uppercase; letter-spacing: .1em; }
-  .modal-title { font-size: 1rem; font-weight: 700; margin: 4px 0 8px; line-height: 1.3; }
-  .modal-close {
-    position: absolute;
-    top: 20px; right: 20px;
-    background: none; border: none;
-    color: var(--muted); font-size: 1.1rem;
-    cursor: pointer;
-  }
+/* ── STAT GRID ─────────────────────────────────────────────── */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(4,1fr);
+  gap: 12px;
+  margin-bottom: 28px;
+}
+.stat-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px;
+  position: relative;
+  overflow: hidden;
+  transition: border-color .2s;
+}
+.stat-card:hover { border-color: var(--gold-glow); }
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gold-glow), transparent);
+}
+.stat-val {
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -1px;
+  line-height: 1;
+}
+.stat-lbl { font-size: .7rem; color: var(--muted); margin-top: 4px; }
+.stat-trend { font-size: .72rem; margin-top: 6px; }
 
-  .modal-body { padding: 20px 24px; flex: 1; }
+/* ── PIPELINE ──────────────────────────────────────────────── */
+.pipeline-header {
+  font-size: .65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  color: var(--muted);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.pipeline-header::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
 
-  .modal-section { margin-bottom: 20px; }
-  .modal-section-title {
-    font-size: .68rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: .1em;
-    color: var(--gold);
-    margin-bottom: 8px;
-  }
-  .modal-text { font-size: .82rem; line-height: 1.6; color: #ccc; }
+.pipeline-scroll {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  margin-bottom: 24px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
 
-  .input-field {
-    width: 100%;
-    background: var(--black);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 10px 14px;
-    color: var(--white);
-    font-size: .82rem;
-    font-family: inherit;
-    outline: none;
-    resize: vertical;
-    transition: border-color .2s;
-    margin-top: 6px;
-  }
-  .input-field:focus { border-color: var(--gold); }
+.stage-column {
+  min-width: 190px;
+  flex-shrink: 0;
+}
 
-  .action-row {
-    display: flex;
-    gap: 8px;
-    margin-top: 10px;
-  }
-  .btn {
-    padding: 9px 18px;
-    border-radius: 7px;
-    font-size: .78rem;
-    font-weight: 700;
-    cursor: pointer;
-    border: none;
-    font-family: inherit;
-    transition: opacity .15s;
-  }
-  .btn:hover { opacity: .85; }
-  .btn-gold { background: var(--gold); color: var(--black); }
-  .btn-outline { background: none; border: 1px solid var(--border); color: var(--white); }
-  .btn-green { background: var(--green); color: #fff; }
-  .btn-red { background: var(--red); color: #fff; }
-  .btn-sm { padding: 6px 12px; font-size: .72rem; }
+.stage-label {
+  font-size: .6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+.stage-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.stage-count-badge {
+  margin-left: auto;
+  font-size: .6rem;
+  color: var(--muted);
+}
 
-  /* SUBMIT OPP FORM */
-  .form-group { margin-bottom: 16px; }
-  .form-label { font-size: .75rem; color: var(--muted); margin-bottom: 6px; display: block; }
-  .form-input {
-    width: 100%;
-    background: var(--dark);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 10px 14px;
-    color: var(--white);
-    font-size: .85rem;
-    font-family: inherit;
-    outline: none;
-    transition: border-color .2s;
-  }
-  .form-input:focus { border-color: var(--gold); }
-  .form-select {
-    width: 100%;
-    background: var(--dark);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 10px 14px;
-    color: var(--white);
-    font-size: .85rem;
-    font-family: inherit;
-    outline: none;
-  }
+/* ── OPP CARDS ─────────────────────────────────────────────── */
+.opp-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: all .2s;
+  position: relative;
+  overflow: hidden;
+}
+.opp-card::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 2px;
+  background: transparent;
+  transition: background .2s;
+}
+.opp-card:hover {
+  border-color: rgba(201,168,76,.3);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(0,0,0,.4);
+}
+.opp-card:hover::before { background: var(--gold); }
 
-  /* DIVIDER */
-  .divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+.opp-agency {
+  font-size: .6rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  margin-bottom: 3px;
+}
+.opp-name {
+  font-size: .78rem;
+  font-weight: 600;
+  line-height: 1.3;
+  margin-bottom: 8px;
+}
 
-  /* EMPTY STATE */
-  .empty {
-    text-align: center;
-    padding: 40px 20px;
-    color: var(--muted);
-    font-size: .8rem;
-  }
-  .empty-icon { font-size: 2rem; margin-bottom: 8px; }
+.score-ring-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+}
+.score-ring {
+  width: 32px; height: 32px;
+  flex-shrink: 0;
+}
+.score-ring-bg { fill: none; stroke: var(--faint); stroke-width: 3; }
+.score-ring-fill { fill: none; stroke-width: 3; stroke-linecap: round; transition: stroke-dashoffset .4s; }
 
-  /* TABS */
-  .tabs { display: flex; gap: 4px; margin-bottom: 20px; }
-  .tab-btn {
-    padding: 7px 16px;
-    border-radius: 7px;
-    font-size: .78rem;
-    font-weight: 600;
-    cursor: pointer;
-    border: 1px solid var(--border);
-    background: none;
-    color: var(--muted);
-    font-family: inherit;
-    transition: all .15s;
-  }
-  .tab-btn.active { background: var(--gold); color: var(--black); border-color: var(--gold); }
+.opp-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+}
+.tag {
+  font-size: .58rem;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+.t-gold { background: rgba(201,168,76,.12); color: var(--gold); }
+.t-green { background: rgba(46,204,113,.1); color: var(--green); }
+.t-blue { background: rgba(52,152,219,.1); color: var(--blue); }
+.t-purple { background: rgba(155,89,182,.1); color: var(--purple); }
+.t-red { background: rgba(231,76,60,.1); color: var(--red); }
+.t-dim { background: var(--faint); color: var(--muted); }
 
-  /* WIRE MARK */
-  .wire-mark {
-    position: fixed;
-    bottom: 16px; right: 16px;
-    font-size: .65rem;
-    color: var(--border);
-    letter-spacing: .1em;
-    text-transform: uppercase;
-  }
+/* ── BUTTONS ───────────────────────────────────────────────── */
+.btn {
+  padding: 9px 18px;
+  border-radius: 8px;
+  font-size: .78rem;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+  font-family: inherit;
+  transition: all .15s;
+  letter-spacing: .02em;
+}
+.btn:hover { opacity: .88; transform: translateY(-1px); }
+.btn-gold { background: var(--gold); color: #000; }
+.btn-outline { background: none; border: 1px solid var(--border); color: var(--white); }
+.btn-outline:hover { border-color: var(--gold); color: var(--gold); }
+.btn-green { background: var(--green); color: #000; }
+.btn-red { background: var(--red); color: #fff; }
+.btn-sm { padding: 6px 12px; font-size: .7rem; }
+.btn-ghost { background: none; border: none; color: var(--muted); cursor: pointer; font-family: inherit; font-size: .75rem; }
+.btn-ghost:hover { color: var(--white); }
+
+/* ── SLIDE PANEL ───────────────────────────────────────────── */
+.panel-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.5);
+  z-index: 200;
+  display: none;
+  backdrop-filter: blur(4px);
+}
+.panel-overlay.open { display: block; }
+
+.slide-panel {
+  position: fixed;
+  top: 52px; right: 0; bottom: 0;
+  width: 480px;
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+  z-index: 201;
+  transform: translateX(100%);
+  transition: transform .3s cubic-bezier(.4,0,.2,1);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.slide-panel.open { transform: translateX(0); }
+
+.panel-hdr {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  position: relative;
+}
+.panel-close {
+  position: absolute; top: 18px; right: 18px;
+  background: var(--faint);
+  border: none; cursor: pointer;
+  color: var(--muted);
+  width: 28px; height: 28px;
+  border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: .85rem;
+  transition: all .15s;
+}
+.panel-close:hover { color: var(--white); background: var(--border); }
+
+.panel-agency { font-size: .62rem; color: var(--muted); text-transform: uppercase; letter-spacing: .12em; }
+.panel-title { font-size: 1rem; font-weight: 700; margin: 5px 0 8px; line-height: 1.3; }
+
+.panel-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 24px;
+}
+
+.panel-section { margin-bottom: 20px; }
+.panel-section-title {
+  font-size: .6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .14em;
+  color: var(--gold);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.panel-text {
+  font-size: .82rem;
+  line-height: 1.7;
+  color: #bbb;
+}
+
+.win-theme-box {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-left: 3px solid;
+  border-radius: 8px;
+  padding: 12px 14px;
+  font-size: .82rem;
+  line-height: 1.6;
+  color: #ccc;
+  font-style: italic;
+}
+
+.panel-input {
+  width: 100%;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  color: var(--white);
+  font-size: .82rem;
+  font-family: inherit;
+  outline: none;
+  resize: vertical;
+  transition: border-color .2s, box-shadow .2s;
+  margin-top: 6px;
+}
+.panel-input:focus {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px var(--gold-glow);
+}
+
+.panel-select {
+  width: 100%;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  color: var(--white);
+  font-size: .82rem;
+  font-family: inherit;
+  outline: none;
+  margin-top: 6px;
+}
+
+.panel-footer {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+  background: var(--surface);
+}
+
+.msg-box {
+  margin-top: 10px;
+  font-size: .78rem;
+  padding: 8px 12px;
+  border-radius: 6px;
+  display: none;
+}
+.msg-box.ok { display: block; background: rgba(46,204,113,.1); color: var(--green); }
+.msg-box.err { display: block; background: rgba(231,76,60,.1); color: var(--red); }
+
+/* ── COMMAND BAR (CEO only) ────────────────────────────────── */
+.command-bar {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(22,22,22,.9);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  padding: 10px 24px;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  z-index: 99;
+  box-shadow: 0 8px 32px rgba(0,0,0,.5);
+}
+.cb-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+}
+.cb-val { font-size: .95rem; font-weight: 800; letter-spacing: -.5px; }
+.cb-lbl { font-size: .55rem; color: var(--muted); text-transform: uppercase; letter-spacing: .1em; }
+.cb-div { width: 1px; height: 24px; background: var(--border); }
+.cb-pulse {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 8px var(--green);
+  animation: pulse 2s infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 8px var(--green); }
+  50% { opacity: .5; box-shadow: 0 0 16px var(--green); }
+}
+
+/* ── FORM ──────────────────────────────────────────────────── */
+.form-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 24px;
+  max-width: 580px;
+}
+.form-title { font-size: 1rem; font-weight: 700; margin-bottom: 20px; }
+.form-group { margin-bottom: 16px; }
+.form-label { font-size: .72rem; color: var(--muted); display: block; margin-bottom: 5px; text-transform: uppercase; letter-spacing: .08em; }
+.form-input, .form-select, .form-textarea {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 11px 14px;
+  color: var(--white);
+  font-size: .85rem;
+  font-family: inherit;
+  outline: none;
+  transition: border-color .2s, box-shadow .2s;
+}
+.form-input:focus, .form-select:focus, .form-textarea:focus {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px var(--gold-glow);
+}
+.form-textarea { resize: vertical; }
+.form-row { display: flex; gap: 12px; }
+.form-row .form-group { flex: 1; }
+.form-actions { display: flex; gap: 8px; margin-top: 20px; }
+.form-msg { margin-top: 10px; font-size: .78rem; }
+.form-msg.ok { color: var(--green); }
+.form-msg.err { color: var(--red); }
+
+/* ── MISC ──────────────────────────────────────────────────── */
+.divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
+.empty-state {
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--muted);
+}
+.empty-icon { font-size: 2.2rem; margin-bottom: 12px; }
+.empty-title { font-size: .9rem; font-weight: 700; color: var(--white); margin-bottom: 6px; }
+.empty-sub { font-size: .78rem; line-height: 1.5; }
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 14px;
+}
+.card-hdr { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.card-title { font-size: .82rem; font-weight: 700; }
+
+/* scrollbar */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 5px; }
 </style>
 </head>
 <body>
 
-<!-- AUTH -->
+<!-- ── AUTH ─────────────────────────────────────────────────── -->
 <div id="auth">
-  <div style="text-align:center">
-    <div class="auth-logo">W<span>∞</span>RE</div>
-    <div class="auth-tagline" style="margin-top:6px">BLN24 BD Intelligence Engine</div>
+  <div class="auth-hero">
+    <div>
+      <span class="wire-wordmark">W</span><span class="wire-infinity">∞</span><span class="wire-wordmark">RE</span>
+    </div>
+    <div class="auth-sub">BLN24 · BD Intelligence Engine</div>
   </div>
-  <div class="auth-box">
-    <div>
-      <label>Who are you?</label>
-      <select id="auth-user" style="margin-top:6px">
-        <option value="">Select your name...</option>
-        <option value="brian">Brian Nguyen — CEO</option>
-        <option value="hayk">Hayk — Account Manager</option>
-        <option value="michael">Michael — Account Manager</option>
-        <option value="gabe">Gabe — Account Manager</option>
-        <option value="eric">Eric Ma — BD</option>
-        <option value="favi">Favi Villa — UX Lead / SME</option>
-        <option value="sme">SME / Reviewer</option>
-      </select>
-    </div>
-    <div>
-      <label>Access Code</label>
-      <input type="password" id="auth-pass" placeholder="••••••" onkeydown="if(event.key==='Enter')doAuth()">
-    </div>
+  <div class="auth-form">
+    <select class="auth-select" id="auth-user">
+      <option value="">Select your name...</option>
+      <option value="brian">Brian Nguyen — CEO</option>
+      <option value="hayk">Hayk — Account Manager</option>
+      <option value="michael">Michael — Account Manager</option>
+      <option value="gabe">Gabe — Account Manager</option>
+      <option value="eric">Eric Ma — BD</option>
+      <option value="favi">Favi Villa — UX Lead / SME</option>
+    </select>
+    <input class="auth-input" type="password" id="auth-pass" placeholder="Access code" onkeydown="if(event.key==='Enter')doAuth()">
     <button class="auth-btn" onclick="doAuth()">Enter WIRE</button>
     <div class="auth-err" id="auth-err"></div>
   </div>
 </div>
 
-<!-- APP -->
+<!-- ── APP ──────────────────────────────────────────────────── -->
 <div id="app">
 
-  <!-- TOPBAR -->
   <div class="topbar">
-    <div class="topbar-logo">W<span>∞</span>RE</div>
-    <div class="topbar-role" id="role-badge">CEO</div>
-    <div style="flex:1"></div>
-    <div class="topbar-user" id="topbar-user"></div>
-    <div class="topbar-notify" onclick="alert('Notifications coming soon')">
-      🔔
-      <div class="notify-badge" id="notify-count">3</div>
+    <div class="topbar-wordmark">W∞RE</div>
+    <div class="topbar-pill" id="role-pill">CEO</div>
+    <div class="topbar-spacer"></div>
+    <div class="topbar-username" id="topbar-name"></div>
+    <div class="topbar-icon-btn" title="Notifications">
+      🔔<div class="notif-dot"></div>
     </div>
-    <button class="btn btn-outline btn-sm" onclick="signOut()">Sign Out</button>
+    <button class="signout-btn" onclick="signOut()">Sign out</button>
   </div>
 
   <div class="layout">
-    <!-- SIDEBAR -->
-    <div class="sidebar" id="sidebar">
-      <!-- CEO nav injected by JS -->
-    </div>
+    <nav class="sidebar" id="sidebar"></nav>
+    <main class="main" id="main"></main>
+  </div>
 
-    <!-- MAIN -->
-    <div class="main" id="main-content">
-      <!-- Pages injected by JS -->
+  <!-- CEO Command Bar -->
+  <div class="command-bar" id="cmd-bar" style="display:none">
+    <div class="cb-item">
+      <div class="cb-pulse"></div>
+    </div>
+    <div class="cb-div"></div>
+    <div class="cb-item">
+      <div class="cb-val" style="color:var(--gold)" id="cb-tcv">$28M</div>
+      <div class="cb-lbl">Pipeline TCV</div>
+    </div>
+    <div class="cb-div"></div>
+    <div class="cb-item">
+      <div class="cb-val" style="color:var(--red)" id="cb-action">2</div>
+      <div class="cb-lbl">Need Action</div>
+    </div>
+    <div class="cb-div"></div>
+    <div class="cb-item">
+      <div class="cb-val" id="cb-opps">4</div>
+      <div class="cb-lbl">Active Opps</div>
+    </div>
+    <div class="cb-div"></div>
+    <div class="cb-item">
+      <div class="cb-val" style="color:var(--green)" id="cb-stage">Capture</div>
+      <div class="cb-lbl">Furthest Stage</div>
     </div>
   </div>
 </div>
 
-<!-- OPP DETAIL PANEL -->
-<div class="modal-overlay" id="opp-modal">
-  <div class="modal-panel">
-    <div class="modal-hdr">
-      <div class="modal-agency" id="modal-agency"></div>
-      <div class="modal-title" id="modal-title"></div>
-      <div id="modal-badges" style="display:flex;gap:6px;flex-wrap:wrap"></div>
-      <button class="modal-close" onclick="closeModal()">✕</button>
-    </div>
-    <div class="modal-body" id="modal-body"></div>
+<!-- ── OPP PANEL ─────────────────────────────────────────────── -->
+<div class="panel-overlay" id="panel-overlay" onclick="closePanel()"></div>
+<div class="slide-panel" id="slide-panel">
+  <div class="panel-hdr" id="panel-hdr">
+    <button class="panel-close" onclick="closePanel()">✕</button>
+    <div class="panel-agency" id="panel-agency"></div>
+    <div class="panel-title" id="panel-title"></div>
+    <div id="panel-tags" style="display:flex;gap:5px;flex-wrap:wrap"></div>
   </div>
+  <div class="panel-body" id="panel-body"></div>
+  <div class="panel-footer" id="panel-footer"></div>
 </div>
-
-<div class="wire-mark">WIRE v0.1 — BLN24 Internal</div>
 
 <script>
 // ─────────────────────────────────────────────────────────────────
-// DATA
+// CONFIG
 // ─────────────────────────────────────────────────────────────────
+const PASS = 'wire2026';
 const USERS = {
-  brian:   { name: 'Brian Nguyen', role: 'ceo',  pass: 'wire2026', label: 'CEO' },
-  hayk:    { name: 'Hayk',         role: 'am',   pass: 'wire2026', label: 'Account Manager' },
-  michael: { name: 'Michael',      role: 'am',   pass: 'wire2026', label: 'Account Manager' },
-  gabe:    { name: 'Gabe',         role: 'am',   pass: 'wire2026', label: 'Account Manager' },
-  eric:    { name: 'Eric Ma',      role: 'am',   pass: 'wire2026', label: 'BD' },
-  favi:    { name: 'Favi Villa',   role: 'sme',  pass: 'wire2026', label: 'SME' },
-  sme:     { name: 'SME',          role: 'sme',  pass: 'wire2026', label: 'SME / Reviewer' },
+  brian:   { name: 'Brian Nguyen', role: 'ceo',  label: 'CEO' },
+  hayk:    { name: 'Hayk',         role: 'am',   label: 'Account Manager' },
+  michael: { name: 'Michael',      role: 'am',   label: 'Account Manager' },
+  gabe:    { name: 'Gabe',         role: 'am',   label: 'Account Manager' },
+  eric:    { name: 'Eric Ma',      role: 'am',   label: 'BD' },
+  favi:    { name: 'Favi Villa',   role: 'sme',  label: 'SME' },
 };
 
-// Sample opportunity pipeline
-const OPPS = [
-  {
-    id: 1, stage: 0, agency: 'DEA', title: 'Web Developer / Content Services',
-    value: 'TBD', set_aside: '8(a)', score: 102, source: 'HigherGov',
-    ref: 'RFI1807179', due: null,
-    ai_analysis: 'Strong fit. MBDA.gov Drupal prime is direct analog. No confirmed incumbent for DEA web/content. 8(a) eligible — BLN24 can prime directly. DHA DoD comms experience maps well to restricted federal communications environment.',
-    ai_win_theme: 'BLN24 is the only 8(a) firm with active Drupal development at Department of Commerce scale (MBDA.gov, 60,000+ pages) AND federal content management at 100M+ audience scale (CMS MNPS). We are the only firm that can honestly say: we already do what DEA needs, at greater scale, right now.',
-    brian_win_theme: null, assigned_to: null, stage_name: 'AI Discovery',
-    competitors: ['Arctic Slope $77M DEA IT', 'ASRC Federal $28M DEA IT'],
-  },
-  {
-    id: 2, stage: 2, agency: 'Census Bureau', title: 'CES ADRM Phase 2 Analytics',
-    value: '$7M', set_aside: 'SB', score: 89, source: 'HigherGov',
-    ref: 'TBD', due: '2026-06-15',
-    ai_analysis: 'Repeat client. BLN24 won CES ADRM Phase 1 ($7M, 2025). Census relationship strong — 5 prior BLN24 contracts. Analytics capability lane at 4/4. Moderate competition expected on SB set-aside.',
-    ai_win_theme: 'Incumbent advantage. BLN24 built and maintains the ADRM system. We know the data architecture, the stakeholders, and the mission. No competitor can match 4 years of Census institutional knowledge.',
-    brian_win_theme: 'We ARE the incumbent. This is ours to lose. Eric needs to be on this by EOW.',
-    assigned_to: 'eric', stage_name: 'CEO Review',
-    competitors: ['AFS (current sub)', 'Guidehouse', 'Booz Allen'],
-  },
-  {
-    id: 3, stage: 3, agency: 'HHS/CMS', title: 'QMARS III Quality Management',
-    value: '$12M', set_aside: '8(a)', score: 74, source: 'Employee Submission',
-    ref: 'RFQ TBD', due: '2026-07-01',
-    ai_analysis: 'CMS relationship active (MNPS $16M prime). QMARS is quality management / review system — adjacent to BLN24 data analytics lane. 8(a) path possible. Dynanet is known Phase 1 competitor from 2025.',
-    ai_win_theme: 'Active CMS relationship + 8(a) sole source path. BLN24 holds Exceptional CPARS on CMS MNPS. Leverage that relationship to sole source before it goes competitive.',
-    brian_win_theme: null, assigned_to: 'hayk', stage_name: 'Capture + Strategy',
-    competitors: ['Dynanet (Phase 1 2025)', 'Vibrantech', 'Cognosante'],
-    submitted_by: 'Hayk',
-  },
-  {
-    id: 4, stage: 6, agency: 'NTIA', title: 'Digital Outreach Phase 2',
-    value: '$3.5M', set_aside: '8(a)', score: 95, source: 'HigherGov',
-    ref: 'Pre-solicitation', due: '2026-08-01',
-    ai_analysis: 'NTIA is a repeat client. BLN24 holds Exceptional CPARS on NTIA Outreach ($2.7M, final). Classic sole source setup — Exceptional rating + relationship = strong position for follow-on.',
-    ai_win_theme: 'Exceptional CPARS is your golden ticket. NTIA CO already knows BLN24 delivers. Push for sole source before solicitation opens.',
-    brian_win_theme: 'My relationship. Direct outreach to CO before they post.',
-    assigned_to: 'michael', stage_name: 'Brian Go/No-Go',
-    competitors: ['None expected if sole source'],
-  },
+const STAGES = [
+  { id:0,  name:'AI Discovery',    color:'#555',    short:'Discovery' },
+  { id:1,  name:'CEO Review',      color:'#C9A84C', short:'CEO Review' },
+  { id:2,  name:'Capture',         color:'#3498db', short:'Capture' },
+  { id:3,  name:'SME Review',      color:'#1abc9c', short:'SME Review' },
+  { id:4,  name:'AM Sign-off',     color:'#2ecc71', short:'Sign-off' },
+  { id:5,  name:'Go / No-Go',      color:'#C9A84C', short:'Go/No-Go' },
+  { id:6,  name:'Team Assembly',   color:'#9b59b6', short:'Team' },
+  { id:7,  name:'Pink Team',       color:'#e67e22', short:'Pink Team' },
+  { id:8,  name:'Red Team',        color:'#e74c3c', short:'Red Team' },
+  { id:9,  name:'Gold Team',       color:'#f1c40f', short:'Gold Team' },
+  { id:10, name:'Black Hat',       color:'#444',    short:'Black Hat' },
+  { id:11, name:'Final Gate',      color:'#2ecc71', short:'Final Gate' },
 ];
 
-let currentUser = null;
-let currentOpp = null;
-let currentPage = 'pipeline';
+const TEAM_MEMBERS = ['Brian Nguyen','Hayk','Michael','Gabe','Eric Ma','Favi Villa'];
+const SMES = ['Favi Villa — UX/HCD','Drupal Engineer — TBD','Data Engineer — TBD','Comms Lead — TBD','Accessibility SME — TBD'];
+
+const OPPS = [
+  { id:1, stage:0, agency:'DEA', title:'Web Developer / Content Services', value:'TBD',
+    set_aside:'8(a)', score:102, source:'HigherGov', ref:'RFI1807179', due:null,
+    ai_analysis:'Strong fit. MBDA.gov Drupal prime is the direct analog — 5-agency Commerce multitenant CMS maps directly to DEA\'s 5-site portfolio. No confirmed web/content incumbent at DEA. 8(a) eligible — BLN24 can prime directly. DHA DoD comms experience mirrors the restricted CP communications environment.',
+    ai_win_theme:'BLN24 is the only 8(a) firm operating a Drupal CMS at Commerce-scale (MBDA.gov, 60,000+ pages) while simultaneously managing federal content for 100M+ beneficiaries (CMS MNPS). We don\'t just match the requirement — we exceed it in production right now.',
+    brian_win_theme:null, assigned_to:null, competitors:['Arctic Slope ($77M DEA IT)','ASRC Federal ($28M DEA IT)','No incumbent for web/content specifically'],
+    submitted_by:'AI' },
+  { id:2, stage:1, agency:'Census Bureau', title:'CES ADRM Phase 2 Analytics', value:'~$7M',
+    set_aside:'SB', score:89, source:'HigherGov', ref:'Pre-solicitation', due:'2026-06-15',
+    ai_analysis:'Repeat client. BLN24 won Phase 1 ($7M, 2025). Census relationship spans 5 prior contracts. Analytics capability is 4/4. SB competitive — expect 5–8 competitors but BLN24 holds incumbency advantage.',
+    ai_win_theme:'We built it. We own it. No competitor can claim 4 years of Census ADRM institutional knowledge. The Phase 2 win is BLN24\'s to lose — not theirs to win.',
+    brian_win_theme:'This is ours. Eric needs to have a call with Jason Winings this week before the solicitation drops.',
+    assigned_to:'eric', competitors:['AFS (current sub — low prime risk)','Guidehouse ($258M Census — watch)'],
+    submitted_by:'AI' },
+  { id:3, stage:2, agency:'HHS/CMS', title:'QMARS III Quality Management', value:'~$12M',
+    set_aside:'8(a)', score:74, source:'Employee Submission', ref:'RFQ TBD', due:'2026-07-01',
+    ai_analysis:'CMS relationship active via MNPS ($16M Exceptional CPARS). QMARS is quality management adjacent to BLN24 data analytics lane. 8(a) path possible. Dynanet was Phase 1 Phase 1 competitor — watch them.',
+    ai_win_theme:'Exceptional CPARS on CMS MNPS + 8(a) status = push for sole source before this goes competitive. The COR already knows BLN24 delivers.',
+    brian_win_theme:null, assigned_to:'hayk', competitors:['Dynanet (Phase 1 competitor 2025)','Vibrantech ($13M CMS)'],
+    submitted_by:'Hayk' },
+  { id:4, stage:5, agency:'NTIA', title:'Digital Outreach Phase 2', value:'~$3.5M',
+    set_aside:'8(a)', score:95, source:'HigherGov', ref:'Pre-solicitation', due:'2026-08-01',
+    ai_analysis:'NTIA repeat client. BLN24 holds Exceptional CPARS on NTIA Outreach ($2.7M, final). Classic sole source setup. Direct CO outreach before posting is the play.',
+    ai_win_theme:'Exceptional CPARS is a direct invitation from the CO. The relationship is warm. Push for sole source — don\'t let this go competitive.',
+    brian_win_theme:'My relationship. I\'ll reach out to the CO directly this week.',
+    assigned_to:'michael', competitors:['None if sole source'],
+    submitted_by:'AI' },
+];
+
+let G = { user: null, opp: null, page: 'pipeline' };
 
 // ─────────────────────────────────────────────────────────────────
 // AUTH
 // ─────────────────────────────────────────────────────────────────
 function doAuth() {
-  const userKey = document.getElementById('auth-user').value;
+  const key = document.getElementById('auth-user').value;
   const pass = document.getElementById('auth-pass').value;
   const err = document.getElementById('auth-err');
-  if (!userKey) { err.textContent = 'Select your name.'; return; }
-  const user = USERS[userKey];
-  if (!user || pass !== user.pass) { err.textContent = 'Incorrect access code.'; return; }
-  currentUser = { key: userKey, ...user };
+  if (!key) { err.textContent = 'Select your name.'; return; }
+  if (pass !== PASS) { err.textContent = 'Incorrect access code.'; return; }
+  G.user = { key, ...USERS[key] };
   document.getElementById('auth').classList.add('hidden');
-  document.getElementById('app').classList.add('visible');
-  document.getElementById('topbar-user').textContent = currentUser.name;
-  const badge = document.getElementById('role-badge');
-  badge.textContent = currentUser.label;
-  badge.className = 'topbar-role role-' + currentUser.role;
+  document.getElementById('app').style.display = 'block';
+  document.getElementById('topbar-name').textContent = G.user.name;
+  const pill = document.getElementById('role-pill');
+  pill.textContent = G.user.label;
+  pill.className = 'topbar-pill pill-' + G.user.role;
+  if (G.user.role === 'ceo') document.getElementById('cmd-bar').style.display = 'flex';
   buildNav();
-  showPage('pipeline');
+  nav('pipeline');
 }
 
 function signOut() {
-  currentUser = null;
-  document.getElementById('app').classList.remove('visible');
+  G.user = null;
+  document.getElementById('app').style.display = 'none';
   document.getElementById('auth').classList.remove('hidden');
   document.getElementById('auth-pass').value = '';
-  document.getElementById('auth-err').textContent = '';
+  document.getElementById('cmd-bar').style.display = 'none';
 }
 
 // ─────────────────────────────────────────────────────────────────
 // NAV
 // ─────────────────────────────────────────────────────────────────
 function buildNav() {
-  const sidebar = document.getElementById('sidebar');
-  const isCEO = currentUser.role === 'ceo';
-  const isAM = currentUser.role === 'am';
-  const isSME = currentUser.role === 'sme';
+  const isCEO = G.user.role === 'ceo';
+  const isAM = G.user.role === 'am';
+  const myOpps = OPPS.filter(o => o.assigned_to === G.user.key).length;
+  const actionNeeded = OPPS.filter(o => o.stage === 0 || (isCEO && o.stage === 1)).length;
 
-  const myQueue = OPPS.filter(o => o.assigned_to === currentUser.key).length;
-  const aiDiscover = OPPS.filter(o => o.stage === 0 || o.stage === 1).length;
+  const ceoNav = [
+    { id:'pipeline', icon:'⚡', label:'Pipeline', badge: OPPS.length, badgeClass:'g' },
+    { id:'review', icon:'📋', label:'Review Queue', badge: actionNeeded, badgeClass:'' },
+    { id:'submit', icon:'＋', label:'Submit Opp', badge:null },
+    null,
+    { id:'proposals', icon:'📄', label:'Proposals', badge:null },
+    { id:'winloss', icon:'📊', label:'Win / Loss', badge:null },
+    null,
+    { id:'team', icon:'👥', label:'Team', badge:null },
+  ];
 
-  const ceoNav = `
-    <div class="sidebar-section">
-      <div class="sidebar-label">Command</div>
-      <a class="nav-item active" onclick="showPage('pipeline')" id="nav-pipeline">
-        <span class="icon">⚡</span> Pipeline
-        <span class="nav-badge gold">${OPPS.length}</span>
-      </a>
-      <a class="nav-item" onclick="showPage('discover')" id="nav-discover">
-        <span class="icon">🔍</span> AI Discovery
-        <span class="nav-badge">${aiDiscover}</span>
-      </a>
-      <a class="nav-item" onclick="showPage('submit')" id="nav-submit">
-        <span class="icon">➕</span> Submit Opp
-      </a>
-    </div>
-    <div class="sidebar-section">
-      <div class="sidebar-label">Review</div>
-      <a class="nav-item" onclick="showPage('review')" id="nav-review">
-        <span class="icon">📋</span> My Review Queue
-        <span class="nav-badge">2</span>
-      </a>
-      <a class="nav-item" onclick="showPage('proposals')" id="nav-proposals">
-        <span class="icon">📄</span> Proposals
-      </a>
-      <a class="nav-item" onclick="showPage('winloss')" id="nav-winloss">
-        <span class="icon">📊</span> Win / Loss
-      </a>
-    </div>
-    <div class="sidebar-section">
-      <div class="sidebar-label">Settings</div>
-      <a class="nav-item" onclick="showPage('team')" id="nav-team">
-        <span class="icon">👥</span> Team Roster
-      </a>
-    </div>`;
+  const amNav = [
+    { id:'myqueue', icon:'📥', label:'My Queue', badge: myOpps, badgeClass:'g' },
+    { id:'pipeline', icon:'⚡', label:'All Pipeline', badge:null },
+    { id:'submit', icon:'＋', label:'Submit Opp', badge:null },
+    null,
+    { id:'proposals', icon:'📄', label:'Proposals', badge:null },
+  ];
 
-  const amNav = `
-    <div class="sidebar-section">
-      <div class="sidebar-label">My Work</div>
-      <a class="nav-item active" onclick="showPage('myqueue')" id="nav-myqueue">
-        <span class="icon">📥</span> My Queue
-        <span class="nav-badge gold">${myQueue}</span>
-      </a>
-      <a class="nav-item" onclick="showPage('pipeline')" id="nav-pipeline">
-        <span class="icon">⚡</span> All Pipeline
-      </a>
-      <a class="nav-item" onclick="showPage('submit')" id="nav-submit">
-        <span class="icon">➕</span> Submit Opp
-      </a>
-    </div>
-    <div class="sidebar-section">
-      <div class="sidebar-label">Proposals</div>
-      <a class="nav-item" onclick="showPage('proposals')" id="nav-proposals">
-        <span class="icon">📄</span> Active Proposals
-      </a>
-    </div>`;
+  const smeNav = [
+    { id:'myqueue', icon:'📥', label:'My Reviews', badge: 1, badgeClass:'g' },
+  ];
 
-  const smeNav = `
-    <div class="sidebar-section">
-      <div class="sidebar-label">Assigned to Me</div>
-      <a class="nav-item active" onclick="showPage('myqueue')" id="nav-myqueue">
-        <span class="icon">📥</span> My Reviews
-        <span class="nav-badge gold">1</span>
-      </a>
-    </div>`;
-
-  sidebar.innerHTML = isCEO ? ceoNav : isAM ? amNav : smeNav;
+  const items = isCEO ? ceoNav : isAM ? amNav : smeNav;
+  document.getElementById('sidebar').innerHTML = items.map((item, i) => {
+    if (!item) return '<div style="height:8px;margin:4px 12px;border-top:1px solid var(--border)"></div>';
+    return `<div class="nav-section"><div class="nav-item" id="nav-${item.id}" onclick="nav('${item.id}')">
+      <span class="nav-icon">${item.icon}</span> ${item.label}
+      ${item.badge ? `<span class="nav-badge ${item.badgeClass||''}">${item.badge}</span>` : ''}
+    </div></div>`;
+  }).join('');
 }
 
-function showPage(page) {
-  currentPage = page;
-  // Update nav active state
+function nav(page) {
+  G.page = page;
   document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-  const nav = document.getElementById('nav-' + page);
-  if (nav) nav.classList.add('active');
-  // Render page
-  const main = document.getElementById('main-content');
-  main.innerHTML = PAGES[page] ? PAGES[page]() : `<div class="card"><p style="color:var(--muted)">Page coming soon.</p></div>`;
+  const el = document.getElementById('nav-'+page);
+  if (el) el.classList.add('active');
+  document.getElementById('main').innerHTML = (PAGES[page] || PAGES.pipeline)();
 }
 
 // ─────────────────────────────────────────────────────────────────
-// STAGE CONFIG
+// SCORE RING SVG
 // ─────────────────────────────────────────────────────────────────
-const STAGES = [
-  { id: 0, name: 'AI Discovery', color: '#666', short: 'Discovered' },
-  { id: 1, name: 'AI Analysis', color: '#8e44ad', short: 'Analyzed' },
-  { id: 2, name: 'CEO Review', color: '#C9A84C', short: 'CEO Review' },
-  { id: 3, name: 'Capture', color: '#2980b9', short: 'Capture' },
-  { id: 4, name: 'SME Review', color: '#16a085', short: 'SME Review' },
-  { id: 5, name: 'AM Sign-off', color: '#27ae60', short: 'AM Sign-off' },
-  { id: 6, name: 'Go / No-Go', color: '#C9A84C', short: 'Go/No-Go' },
-  { id: 7, name: 'Pink Team', color: '#e67e22', short: 'Pink Team' },
-  { id: 8, name: 'Red Team', color: '#e74c3c', short: 'Red Team' },
-  { id: 9, name: 'Gold Team', color: '#f39c12', short: 'Gold Team' },
-  { id: 10, name: 'Black Hat', color: '#2c3e50', short: 'Black Hat' },
-  { id: 11, name: 'Final Gate', color: '#27ae60', short: 'Final Gate' },
-];
-
-function stageColor(stageId) { return STAGES[stageId]?.color || '#666'; }
-function stageName(stageId) { return STAGES[stageId]?.short || 'Unknown'; }
+function scoreRing(score, max, color) {
+  const r = 12, cx = 16, cy = 16;
+  const circ = 2 * Math.PI * r;
+  const pct = Math.min(score / max, 1);
+  const offset = circ * (1 - pct);
+  return `<svg class="score-ring" viewBox="0 0 32 32">
+    <circle class="score-ring-bg" cx="${cx}" cy="${cy}" r="${r}" stroke-dasharray="${circ}" />
+    <circle class="score-ring-fill" cx="${cx}" cy="${cy}" r="${r}"
+      stroke="${color || '#C9A84C'}"
+      stroke-dasharray="${circ}"
+      stroke-dashoffset="${offset}"
+      transform="rotate(-90 ${cx} ${cy})" />
+    <text x="${cx}" y="${cy+1}" text-anchor="middle" dominant-baseline="middle" fill="${color||'#C9A84C'}" font-size="7" font-weight="800" font-family="-apple-system,sans-serif">${score}</text>
+  </svg>`;
+}
 
 // ─────────────────────────────────────────────────────────────────
 // PAGES
 // ─────────────────────────────────────────────────────────────────
 const PAGES = {
 
-  pipeline: () => {
-    const isCEO = currentUser.role === 'ceo';
-    // Group opps by stage (show stages 0-6 for capture, 7-11 for proposal)
-    const captureStages = STAGES.slice(0, 7);
-    const proposalStages = STAGES.slice(7);
-
+  pipeline() {
+    const isCEO = G.user.role === 'ceo';
+    const tcv = '$22.5M+';
     let html = `
       <div class="page-hdr">
         <div>
-          <div class="page-title">⚡ Pipeline</div>
-          <div class="page-sub">${OPPS.length} active opportunities across ${STAGES.length} stages</div>
+          <div class="page-title">Pipeline</div>
+          <div class="page-sub">${OPPS.length} active opportunities · ${STAGES.length} stages from discovery to submission</div>
         </div>
-        <button class="btn btn-gold" onclick="showPage('submit')">+ Submit Opp</button>
+        <button class="btn btn-gold" onclick="nav('submit')">+ Submit Opp</button>
       </div>
 
-      <div class="stats-grid">
+      <div class="stat-grid">
         <div class="stat-card">
           <div class="stat-val" style="color:var(--gold)">${OPPS.length}</div>
           <div class="stat-lbl">Active Opportunities</div>
+          <div class="stat-trend" style="color:var(--green)">↑ 2 this week</div>
         </div>
         <div class="stat-card">
-          <div class="stat-val" style="color:var(--blue)">${OPPS.filter(o=>o.stage<=6).length}</div>
+          <div class="stat-val" style="color:var(--blue)">${OPPS.filter(o=>o.stage<=5).length}</div>
           <div class="stat-lbl">In Capture</div>
         </div>
         <div class="stat-card">
-          <div class="stat-val" style="color:var(--orange)">${OPPS.filter(o=>o.stage>=7).length}</div>
+          <div class="stat-val" style="color:var(--orange)">${OPPS.filter(o=>o.stage>=6).length}</div>
           <div class="stat-lbl">In Proposal</div>
         </div>
         <div class="stat-card">
-          <div class="stat-val" style="color:var(--green)">${isCEO ? '2' : '0'}</div>
-          <div class="stat-lbl">Awaiting My Action</div>
-          <div class="stat-sub">↑ Review needed</div>
+          <div class="stat-val" style="color:var(--red)">${isCEO?'2':'0'}</div>
+          <div class="stat-lbl">Awaiting Your Action</div>
+          <div class="stat-trend" style="color:var(--red)">Review needed</div>
         </div>
       </div>
 
-      <div class="card">
-        <div class="card-hdr">
-          <span class="card-title">Capture Stage</span>
-          <span style="font-size:.72rem;color:var(--muted)">Stages 0–6</span>
-        </div>
-        <div class="pipeline-stages">`;
+      <div class="pipeline-header">Capture</div>
+      <div class="pipeline-scroll">`;
 
-    captureStages.forEach(stage => {
-      const stageOpps = OPPS.filter(o => o.stage === stage.id);
-      html += `
-          <div class="stage-col">
-            <div class="stage-hdr">
-              <div class="stage-dot" style="background:${stage.color}"></div>
-              ${stage.short}
-              <span class="stage-count">${stageOpps.length}</span>
-            </div>`;
-      if (stageOpps.length === 0) {
-        html += `<div style="font-size:.7rem;color:var(--muted);padding:8px 0">Empty</div>`;
-      }
-      stageOpps.forEach(opp => {
-        html += `
-            <div class="opp-card" onclick="openOpp(${opp.id})">
-              <div class="opp-agency">${opp.agency}</div>
-              <div class="opp-title">${opp.title}</div>
-              <div class="opp-meta">
-                <span class="badge b-gold">${opp.score}pts</span>
-                <span class="badge b-gray">${opp.set_aside}</span>
-                ${opp.value !== 'TBD' ? `<span class="badge b-green">${opp.value}</span>` : ''}
-                ${opp.assigned_to ? `<span class="badge b-blue">${opp.assigned_to}</span>` : ''}
-              </div>
-            </div>`;
+    STAGES.slice(0,6).forEach(stage => {
+      const stageopps = OPPS.filter(o => o.stage === stage.id);
+      html += `<div class="stage-column">
+        <div class="stage-label">
+          <div class="stage-dot" style="background:${stage.color}"></div>
+          ${stage.short}
+          <span class="stage-count-badge">${stageopps.length}</span>
+        </div>`;
+      if (!stageopps.length) html += `<div style="font-size:.7rem;color:var(--muted);padding:8px 2px">—</div>`;
+      stageopps.forEach(o => {
+        const scoreColor = o.score >= 90 ? 'var(--green)' : o.score >= 70 ? 'var(--gold)' : 'var(--muted)';
+        html += `<div class="opp-card" onclick="openOpp(${o.id})">
+          <div class="opp-agency">${o.agency}</div>
+          <div class="opp-name">${o.title}</div>
+          <div class="score-ring-container">
+            ${scoreRing(o.score, 120, scoreColor.replace('var(',''  ).replace(')',''))}
+            <div>
+              <div style="font-size:.68rem;font-weight:700;color:${scoreColor}">${o.score} pts</div>
+              <div style="font-size:.6rem;color:var(--muted)">${o.set_aside} · ${o.value}</div>
+            </div>
+          </div>
+          <div class="opp-tags" style="margin-top:8px">
+            ${o.assigned_to ? `<span class="tag t-blue">${o.assigned_to}</span>` : ''}
+            ${o.source==='Employee Submission'?'<span class="tag t-purple">Employee</span>':''}
+            ${o.due?`<span class="tag t-dim">${o.due}</span>`:''}
+          </div>
+        </div>`;
       });
       html += `</div>`;
     });
+    html += `</div>`;
 
-    html += `</div></div>`;
-
-    // Proposal stages
-    const proposalOpps = OPPS.filter(o => o.stage >= 7);
-    if (proposalOpps.length > 0) {
-      html += `
-      <div class="card">
-        <div class="card-hdr">
-          <span class="card-title">Proposal Stage</span>
-          <span style="font-size:.72rem;color:var(--muted)">Color Teams</span>
+    html += `<div class="pipeline-header">Proposal / Color Teams</div>
+      <div class="pipeline-scroll">`;
+    STAGES.slice(6).forEach(stage => {
+      const stageopps = OPPS.filter(o => o.stage === stage.id);
+      html += `<div class="stage-column">
+        <div class="stage-label">
+          <div class="stage-dot" style="background:${stage.color}"></div>
+          ${stage.short}
+          <span class="stage-count-badge">${stageopps.length}</span>
         </div>
-        <div style="font-size:.8rem;color:var(--muted);padding:20px;text-align:center">No proposals in color team review yet.</div>
+        <div style="font-size:.68rem;color:var(--muted);padding:10px 2px">Empty</div>
       </div>`;
-    }
-
+    });
+    html += `</div>`;
     return html;
   },
 
-  submit: () => `
-    <div class="page-hdr">
-      <div>
-        <div class="page-title">➕ Submit an Opportunity</div>
-        <div class="page-sub">HigherGov misses things. You don't.</div>
-      </div>
+  review() {
+    const actionOpps = OPPS.filter(o => o.stage <= 1);
+    let html = `<div class="page-hdr">
+      <div><div class="page-title">Review Queue</div>
+      <div class="page-sub">${actionOpps.length} opportunities waiting for your decision</div></div>
+    </div>`;
+    if (!actionOpps.length) {
+      html += `<div class="card"><div class="empty-state">
+        <div class="empty-icon">✅</div>
+        <div class="empty-title">All clear</div>
+        <div class="empty-sub">Nothing waiting for review.</div>
+      </div></div>`;
+    }
+    actionOpps.forEach(o => {
+      const stage = STAGES[o.stage];
+      html += `<div class="card" style="cursor:pointer;border-left:3px solid ${stage.color}" onclick="openOpp(${o.id})">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div style="flex:1;min-width:0">
+            <div style="font-size:.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:.1em">${o.agency} · ${stage.short}</div>
+            <div style="font-weight:700;margin:4px 0;font-size:.9rem">${o.title}</div>
+            <div style="display:flex;gap:6px">
+              <span class="tag t-gold">${o.score}pts</span>
+              <span class="tag t-dim">${o.set_aside}</span>
+              ${o.value!=='TBD'?`<span class="tag t-green">${o.value}`:''}
+            </div>
+          </div>
+          <button class="btn btn-gold btn-sm" onclick="event.stopPropagation();openOpp(${o.id})">Review →</button>
+        </div>
+      </div>`;
+    });
+    return html;
+  },
+
+  myqueue() {
+    const mine = OPPS.filter(o => o.assigned_to === G.user.key);
+    let html = `<div class="page-hdr">
+      <div><div class="page-title">My Queue</div>
+      <div class="page-sub">${mine.length} opportunities assigned to you</div></div>
+    </div>`;
+    if (!mine.length) {
+      html += `<div class="card"><div class="empty-state">
+        <div class="empty-icon">📥</div>
+        <div class="empty-title">Nothing assigned yet</div>
+        <div class="empty-sub">Brian will assign opportunities here.</div>
+      </div></div>`;
+    }
+    mine.forEach(o => {
+      const stage = STAGES[o.stage];
+      html += `<div class="card" style="cursor:pointer;border-left:3px solid ${stage.color}" onclick="openOpp(${o.id})">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-size:.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:.1em">${o.agency}</div>
+            <div style="font-weight:700;margin:4px 0">${o.title}</div>
+            <div style="display:flex;gap:6px"><span class="tag t-gold">${o.score}pts</span><span style="font-size:.65rem;color:var(--muted)">Stage: ${stage.short}</span></div>
+          </div>
+          <button class="btn btn-gold btn-sm">Open →</button>
+        </div>
+      </div>`;
+    });
+    return html;
+  },
+
+  submit() {
+    return `<div class="page-hdr">
+      <div><div class="page-title">Submit an Opportunity</div>
+      <div class="page-sub">Surface something HigherGov missed. Your intel matters.</div></div>
     </div>
-    <div class="card" style="max-width:600px">
-      <div class="card-title" style="margin-bottom:20px">New Opportunity</div>
-      <div class="form-group">
-        <label class="form-label">Agency *</label>
-        <input class="form-input" id="sub-agency" placeholder="e.g. DEA, Census Bureau, HHS/CMS...">
+    <div class="form-card">
+      <div class="form-title">New Opportunity</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Agency *</label>
+          <input class="form-input" id="s-agency" placeholder="e.g. DEA, Census, HHS/CMS">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Set-Aside</label>
+          <select class="form-select" id="s-setaside">
+            <option value="Unknown">Unknown</option>
+            <option value="8(a) Sole Source">8(a) Sole Source</option>
+            <option value="8(a) Competitive">8(a) Competitive</option>
+            <option value="SB">Small Business</option>
+            <option value="Full & Open">Full & Open</option>
+          </select>
+        </div>
       </div>
       <div class="form-group">
         <label class="form-label">Opportunity Title *</label>
-        <input class="form-input" id="sub-title" placeholder="e.g. Web Developer and Content Services">
+        <input class="form-input" id="s-title" placeholder="e.g. Web Developer and Content Services">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Estimated Value</label>
+          <input class="form-input" id="s-value" placeholder="e.g. $5M, Unknown">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Reference / Source</label>
+          <input class="form-input" id="s-ref" placeholder="RFI number, SAM ID, etc.">
+        </div>
       </div>
       <div class="form-group">
-        <label class="form-label">Source / Where you heard about it</label>
-        <input class="form-input" id="sub-source" placeholder="e.g. CO meeting, eBuy, colleague tip, relationship...">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Estimated Value</label>
-        <input class="form-input" id="sub-value" placeholder="e.g. $5M, $500K, Unknown">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Set-Aside</label>
-        <select class="form-select" id="sub-setaside">
-          <option value="">Unknown</option>
-          <option value="8(a) Sole Source">8(a) Sole Source</option>
-          <option value="8(a) Competitive">8(a) Competitive</option>
-          <option value="SB">Small Business</option>
-          <option value="Full & Open">Full & Open</option>
-        </select>
+        <label class="form-label">How you heard about it *</label>
+        <input class="form-input" id="s-source" placeholder="CO meeting, colleague tip, eBuy, relationship...">
       </div>
       <div class="form-group">
         <label class="form-label">Why should BLN24 pursue this? *</label>
-        <textarea class="form-input" id="sub-why" rows="3" placeholder="Your read on why this is a good fit — relationships, PP match, inside track..."></textarea>
+        <textarea class="form-textarea" id="s-why" rows="3" placeholder="Your read on fit — relationships, PP match, incumbent situation, inside track..."></textarea>
       </div>
-      <div class="form-group">
-        <label class="form-label">Solicitation / Reference Number (if known)</label>
-        <input class="form-input" id="sub-ref" placeholder="e.g. RFI1807179, SAM notice ID...">
-      </div>
-      <div class="action-row">
+      <div class="form-actions">
         <button class="btn btn-gold" onclick="submitOpp()">Submit to WIRE</button>
-        <button class="btn btn-outline" onclick="showPage('pipeline')">Cancel</button>
+        <button class="btn btn-outline" onclick="nav('pipeline')">Cancel</button>
       </div>
-      <div id="submit-msg" style="margin-top:10px;font-size:.8rem;color:var(--green)"></div>
-    </div>`,
-
-  myqueue: () => {
-    const myOpps = OPPS.filter(o =>
-      o.assigned_to === currentUser.key ||
-      (currentUser.role === 'ceo' && (o.stage === 0 || o.stage === 2 || o.stage === 6))
-    );
-    let html = `
-      <div class="page-hdr">
-        <div>
-          <div class="page-title">📥 ${currentUser.role === 'ceo' ? 'Review Queue' : 'My Queue'}</div>
-          <div class="page-sub">${myOpps.length} opportunities need your attention</div>
-        </div>
-      </div>`;
-
-    if (myOpps.length === 0) {
-      html += `<div class="card"><div class="empty"><div class="empty-icon">✅</div>All clear — nothing waiting for you.</div></div>`;
-    } else {
-      myOpps.forEach(opp => {
-        const stage = STAGES[opp.stage];
-        html += `
-      <div class="card" style="cursor:pointer;border-left:3px solid ${stage.color}" onclick="openOpp(${opp.id})">
-        <div style="display:flex;justify-content:space-between;align-items:start">
-          <div>
-            <div style="font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em">${opp.agency}</div>
-            <div style="font-weight:700;margin:4px 0">${opp.title}</div>
-            <div class="opp-meta">
-              <span class="badge b-gold">${opp.score}pts</span>
-              <span class="badge" style="background:rgba(${hexToRgb(stage.color)},.15);color:${stage.color}">${stage.short}</span>
-              ${opp.value !== 'TBD' ? `<span class="badge b-green">${opp.value}</span>` : ''}
-            </div>
-          </div>
-          <button class="btn btn-gold btn-sm" onclick="event.stopPropagation();openOpp(${opp.id})">Review →</button>
-        </div>
-      </div>`;
-      });
-    }
-    return html;
+      <div class="form-msg" id="s-msg"></div>
+    </div>`;
   },
 
-  discover: () => `
-    <div class="page-hdr">
-      <div>
-        <div class="page-title">🔍 AI Discovery</div>
-        <div class="page-sub">Live feed from HigherGov + USASpending + SAM.gov</div>
-      </div>
-      <button class="btn btn-outline" onclick="alert('Refreshing from HigherGov API...')">🔄 Refresh</button>
+  winloss() {
+    return `<div class="page-hdr">
+      <div><div class="page-title">Win / Loss Intelligence</div>
+      <div class="page-sub">28 government debrief letters · 2023–2026 · All official sources</div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px">
+      ${[['23','Wins','$144.4M TCV','var(--green)'],['13','Losses','$66.4M missed','var(--red)'],['64%','Win Rate','by total contract value','var(--gold)']].map(([v,l,s,c])=>`
+      <div class="card" style="text-align:center">
+        <div style="font-size:2rem;font-weight:800;color:${c}">${v}</div>
+        <div style="font-size:.78rem;font-weight:700;margin:4px 0">${l}</div>
+        <div style="font-size:.7rem;color:var(--muted)">${s}</div>
+      </div>`).join('')}
     </div>
     <div class="card">
-      <div style="text-align:center;padding:40px;color:var(--muted)">
-        <div style="font-size:2rem;margin-bottom:12px">🤖</div>
-        <div style="font-weight:700;margin-bottom:6px">WIRE is scanning...</div>
-        <div style="font-size:.8rem">Connected to HigherGov, USASpending, and SAM.gov<br>New opportunities will appear here as they're discovered</div>
-        <button class="btn btn-gold" style="margin-top:20px" onclick="showPage('pipeline')">View Pipeline →</button>
-      </div>
-    </div>`,
-
-  winloss: () => `
-    <div class="page-hdr">
-      <div>
-        <div class="page-title">📊 Win / Loss Intelligence</div>
-        <div class="page-sub">28 government debrief letters · 2023–2026</div>
-      </div>
-    </div>
-    <div class="card">
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px">
-        <div style="background:rgba(39,174,96,.08);border:1px solid rgba(39,174,96,.2);border-radius:8px;padding:14px;text-align:center">
-          <div style="font-size:1.8rem;font-weight:800;color:var(--green)">23</div>
-          <div style="font-size:.72rem;color:var(--muted)">Total Wins · $144.4M</div>
-        </div>
-        <div style="background:rgba(231,76,60,.08);border:1px solid rgba(231,76,60,.2);border-radius:8px;padding:14px;text-align:center">
-          <div style="font-size:1.8rem;font-weight:800;color:var(--red)">13</div>
-          <div style="font-size:.72rem;color:var(--muted)">Losses · $66.4M missed</div>
-        </div>
-        <div style="background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.2);border-radius:8px;padding:14px;text-align:center">
-          <div style="font-size:1.8rem;font-weight:800;color:var(--gold)">64%</div>
-          <div style="font-size:.72rem;color:var(--muted)">Win Rate (by TCV)</div>
-        </div>
-      </div>
-      <div style="font-size:.8rem;color:var(--muted);text-align:center;padding:12px">
-        Full win/loss intelligence available in the CEO Dashboard →
-        <a href="https://bln24.github.io/bln24-dashboard/" target="_blank" style="color:var(--gold)">Open Dashboard</a>
-      </div>
-    </div>`,
-
-  team: () => `
-    <div class="page-hdr">
-      <div>
-        <div class="page-title">👥 Team Roster</div>
-        <div class="page-sub">BLN24 capture and proposal team</div>
-      </div>
-    </div>
-    <div class="card">
-      ${['Brian Nguyen — CEO / Final Gate','Hayk — Account Manager','Michael — Account Manager','Gabe — Account Manager','Eric Ma — BD / WIRE Manager','Favi Villa — UX Lead / SME'].map(m => `
-      <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)">
-        <div style="width:36px;height:36px;background:var(--border);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.85rem;font-weight:700">${m[0]}</div>
+      <div class="card-title" style="margin-bottom:12px">Top Loss Patterns (Government Confirmed)</div>
+      ${[['Good vs Outstanding','2 losses — technical rating gap'],['PP Depth Gap','2 losses — no specific PP for that agency type'],['Technically Unacceptable','2 losses — DHA 2025 + 2026 (cold pursuit without CEO relationship)'],['SOW Misalignment','1 loss — IRS: wrote about web, SOW was about notices'],['Non-Compliance','1 loss — DOL: pricing format error, never evaluated']].map(([p,d])=>`
+      <div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--border)">
+        <div style="width:6px;height:6px;border-radius:50%;background:var(--red);flex-shrink:0"></div>
         <div>
-          <div style="font-size:.85rem;font-weight:600">${m.split('—')[0].trim()}</div>
-          <div style="font-size:.72rem;color:var(--muted)">${m.split('—')[1]?.trim() || ''}</div>
+          <div style="font-size:.8rem;font-weight:600">${p}</div>
+          <div style="font-size:.72rem;color:var(--muted)">${d}</div>
         </div>
       </div>`).join('')}
-    </div>`,
+    </div>`;
+  },
 
-  proposals: () => `
-    <div class="page-hdr">
-      <div>
-        <div class="page-title">📄 Proposals</div>
-        <div class="page-sub">Active proposal development</div>
-      </div>
+  proposals() {
+    return `<div class="page-hdr">
+      <div><div class="page-title">Proposals</div>
+      <div class="page-sub">Color team review stages</div></div>
     </div>
     <div class="card">
-      <div class="empty">
+      <div class="empty-state">
         <div class="empty-icon">📝</div>
-        No proposals in color team review yet.<br>
-        <span style="font-size:.75rem">Opportunities advance here after CEO Go/No-Go.</span>
+        <div class="empty-title">No proposals in review</div>
+        <div class="empty-sub">Opportunities advance here after CEO Go/No-Go at Stage 5.<br>Pink Team → Red Team → Gold Team → Black Hat → Submit.</div>
       </div>
-    </div>`,
+    </div>`;
+  },
 
-  review: () => PAGES.myqueue(),
+  team() {
+    const members = [
+      { name:'Brian Nguyen', role:'CEO / Final Gate', note:'All final approvals' },
+      { name:'Hayk', role:'Account Manager', note:'Assigned: QMARS III' },
+      { name:'Michael', role:'Account Manager', note:'Assigned: NTIA Phase 2' },
+      { name:'Gabe', role:'Account Manager', note:'Available' },
+      { name:'Eric Ma', role:'BD / WIRE Manager', note:'Assigned: Census ADRM' },
+      { name:'Favi Villa', role:'UX Lead / SME', note:'Available for HCD reviews' },
+    ];
+    return `<div class="page-hdr">
+      <div><div class="page-title">Team</div>
+      <div class="page-sub">BLN24 capture and proposal team</div></div>
+    </div>
+    <div class="card">
+      ${members.map((m,i) => `
+      <div style="display:flex;align-items:center;gap:14px;padding:12px 0;${i<members.length-1?'border-bottom:1px solid var(--border)':''}">
+        <div style="width:38px;height:38px;background:var(--faint);border:1px solid var(--border);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.85rem;font-weight:700;flex-shrink:0">${m.name[0]}</div>
+        <div style="flex:1">
+          <div style="font-weight:700;font-size:.85rem">${m.name}</div>
+          <div style="font-size:.72rem;color:var(--muted)">${m.role}</div>
+        </div>
+        <div style="font-size:.72rem;color:var(--muted)">${m.note}</div>
+      </div>`).join('')}
+    </div>`;
+  },
 };
 
 // ─────────────────────────────────────────────────────────────────
-// OPP MODAL
+// OPP PANEL
 // ─────────────────────────────────────────────────────────────────
 function openOpp(id) {
-  const opp = OPPS.find(o => o.id === id);
-  if (!opp) return;
-  currentOpp = opp;
-  const stage = STAGES[opp.stage];
-  const isCEO = currentUser.role === 'ceo';
+  const o = OPPS.find(x => x.id === id);
+  if (!o) return;
+  G.opp = o;
+  const stage = STAGES[o.stage];
+  const isCEO = G.user.role === 'ceo';
+  const isOwner = G.user.key === o.assigned_to;
 
-  document.getElementById('modal-agency').textContent = opp.agency;
-  document.getElementById('modal-title').textContent = opp.title;
-  document.getElementById('modal-badges').innerHTML = `
-    <span class="badge b-gold">${opp.score}pts</span>
-    <span class="badge" style="background:rgba(${hexToRgb(stage.color)},.2);color:${stage.color}">${stage.short}</span>
-    <span class="badge b-gray">${opp.set_aside}</span>
-    ${opp.value !== 'TBD' ? `<span class="badge b-green">${opp.value}</span>` : ''}
-    ${opp.source === 'Employee Submission' ? `<span class="badge b-purple">Employee Submission</span>` : ''}
-  `;
+  document.getElementById('panel-agency').textContent = o.agency;
+  document.getElementById('panel-title').textContent = o.title;
+  document.getElementById('panel-tags').innerHTML = [
+    `<span class="tag t-gold">${o.score}pts</span>`,
+    `<span class="tag" style="background:rgba(${hexRgb(stage.color)},.12);color:${stage.color}">${stage.short}</span>`,
+    `<span class="tag t-dim">${o.set_aside}</span>`,
+    o.value !== 'TBD' ? `<span class="tag t-green">${o.value}</span>` : '',
+    o.source === 'Employee Submission' ? `<span class="tag t-purple">Submitted by ${o.submitted_by}</span>` : '',
+  ].join('');
 
   let body = `
-    <div class="modal-section">
-      <div class="modal-section-title">AI Analysis</div>
-      <div class="modal-text">${opp.ai_analysis}</div>
+    <div class="panel-section">
+      <div class="panel-section-title">🤖 AI Analysis</div>
+      <div class="panel-text">${o.ai_analysis}</div>
     </div>
-
-    <div class="modal-section">
-      <div class="modal-section-title">🤖 AI Win Theme</div>
-      <div class="modal-text" style="border-left:3px solid var(--purple);padding-left:12px;font-style:italic">${opp.ai_win_theme}</div>
+    <div class="panel-section">
+      <div class="panel-section-title">🤖 AI Win Theme</div>
+      <div class="win-theme-box" style="border-left-color:var(--purple)">${o.ai_win_theme}</div>
     </div>`;
 
-  if (opp.brian_win_theme) {
-    body += `
-    <div class="modal-section">
-      <div class="modal-section-title">👤 Brian's Win Theme</div>
-      <div class="modal-text" style="border-left:3px solid var(--gold);padding-left:12px;font-style:italic">${opp.brian_win_theme}</div>
+  if (o.brian_win_theme) {
+    body += `<div class="panel-section">
+      <div class="panel-section-title">👤 Brian's Win Theme</div>
+      <div class="win-theme-box" style="border-left-color:var(--gold)">${o.brian_win_theme}</div>
     </div>`;
   }
 
-  if (opp.competitors) {
-    body += `
-    <div class="modal-section">
-      <div class="modal-section-title">⚔️ Expected Competitors</div>
-      <div class="modal-text">${opp.competitors.join(' · ')}</div>
+  if (o.competitors?.length) {
+    body += `<div class="panel-section">
+      <div class="panel-section-title">⚔️ Expected Competitors</div>
+      <div class="panel-text">${o.competitors.map(c=>`• ${c}`).join('<br>')}</div>
     </div>`;
   }
 
-  // CEO actions
+  // CEO controls
+  let footer = '';
   if (isCEO) {
     body += `<hr class="divider">
-    <div class="modal-section">
-      <div class="modal-section-title">Your Win Theme (optional — override or add to AI's)</div>
-      <textarea class="input-field" id="ceo-theme" rows="3" placeholder="Add your strategic framing here...">${opp.brian_win_theme || ''}</textarea>
+    <div class="panel-section">
+      <div class="panel-section-title">Your Win Theme</div>
+      <textarea class="panel-input" id="p-theme" rows="3" placeholder="Override or add to AI's theme...">${o.brian_win_theme || ''}</textarea>
     </div>
-    <div class="modal-section">
-      <div class="modal-section-title">Assign To</div>
-      <select class="input-field" id="assign-to" style="resize:none">
+    <div class="panel-section">
+      <div class="panel-section-title">Assign To</div>
+      <select class="panel-select" id="p-assign">
         <option value="">Select account manager...</option>
-        <option value="hayk" ${opp.assigned_to==='hayk'?'selected':''}>Hayk</option>
-        <option value="michael" ${opp.assigned_to==='michael'?'selected':''}>Michael</option>
-        <option value="gabe" ${opp.assigned_to==='gabe'?'selected':''}>Gabe</option>
-        <option value="eric" ${opp.assigned_to==='eric'?'selected':''}>Eric</option>
+        ${['hayk','michael','gabe','eric'].map(k=>`<option value="${k}" ${o.assigned_to===k?'selected':''}>${USERS[k].name}</option>`).join('')}
       </select>
     </div>
-    <div class="modal-section">
-      <div class="modal-section-title">Challenge AI (optional)</div>
-      <textarea class="input-field" id="ceo-challenge" rows="2" placeholder="What did AI get wrong or miss?"></textarea>
+    <div class="panel-section">
+      <div class="panel-section-title">Challenge AI (optional)</div>
+      <textarea class="panel-input" id="p-challenge" rows="2" placeholder="What did AI get wrong or miss?"></textarea>
     </div>
-    <div class="action-row">
-      <button class="btn btn-gold" onclick="ceoApprove()">✓ Approve & Assign</button>
+    <div class="msg-box" id="p-msg"></div>`;
+    footer = `<button class="btn btn-gold" onclick="ceoApprove()">✓ Approve & Assign</button>
       <button class="btn btn-red" onclick="ceoPass()">✕ Pass</button>
-      <button class="btn btn-outline" onclick="closeModal()">Close</button>
-    </div>
-    <div id="modal-msg" style="margin-top:8px;font-size:.78rem;color:var(--green)"></div>`;
+      <button class="btn btn-ghost" onclick="closePanel()">Close</button>`;
   }
 
-  // AM actions
-  if (currentUser.role === 'am' && opp.assigned_to === currentUser.key) {
+  if (!isCEO && isOwner) {
     body += `<hr class="divider">
-    <div class="modal-section">
-      <div class="modal-section-title">Your Capture Strategy</div>
-      <textarea class="input-field" id="am-strategy" rows="3" placeholder="Agree with AI win theme, or write your own approach..."></textarea>
+    <div class="panel-section">
+      <div class="panel-section-title">Your Capture Strategy</div>
+      <textarea class="panel-input" id="p-strategy" rows="3" placeholder="Agree with win theme above, or write your own approach..."></textarea>
     </div>
-    <div class="modal-section">
-      <div class="modal-section-title">Prompt AI to Improve (optional)</div>
-      <textarea class="input-field" id="am-prompt" rows="2" placeholder="e.g. 'The agency relationship angle is stronger than the tech angle. Reweight the win theme.'"></textarea>
+    <div class="panel-section">
+      <div class="panel-section-title">Prompt AI to Improve</div>
+      <textarea class="panel-input" id="p-prompt" rows="2" placeholder="e.g. 'The sole source angle is stronger. Reweight the win theme around the relationship.'"></textarea>
     </div>
-    <div class="modal-section">
-      <div class="modal-section-title">Tag SME for Technical Review</div>
-      <select class="input-field" id="sme-tag" style="resize:none">
-        <option value="">Select SME...</option>
-        <option value="favi">Favi Villa — UX / HCD</option>
-        <option value="drupal">Drupal Engineer (TBD)</option>
-        <option value="data">Data Engineer (TBD)</option>
-        <option value="comms">Comms Lead (TBD)</option>
+    <div class="panel-section">
+      <div class="panel-section-title">Tag Technical SME</div>
+      <select class="panel-select" id="p-sme">
+        <option value="">Select SME (optional)...</option>
+        ${SMES.map(s=>`<option value="${s}">${s}</option>`).join('')}
       </select>
     </div>
-    <div class="action-row">
-      <button class="btn btn-gold" onclick="amSubmit()">Submit Strategy</button>
-      <button class="btn btn-outline" onclick="closeModal()">Close</button>
-    </div>
-    <div id="modal-msg" style="margin-top:8px;font-size:.78rem;color:var(--green)"></div>`;
+    <div class="msg-box" id="p-msg"></div>`;
+    footer = `<button class="btn btn-gold" onclick="amSubmit()">Submit Strategy</button>
+      <button class="btn btn-ghost" onclick="closePanel()">Close</button>`;
   }
 
-  document.getElementById('modal-body').innerHTML = body;
-  document.getElementById('opp-modal').classList.add('open');
+  if (!footer) footer = `<button class="btn btn-outline" onclick="closePanel()">Close</button>`;
+
+  document.getElementById('panel-body').innerHTML = body;
+  document.getElementById('panel-footer').innerHTML = footer;
+  document.getElementById('panel-overlay').classList.add('open');
+  document.getElementById('slide-panel').classList.add('open');
 }
 
-function closeModal() {
-  document.getElementById('opp-modal').classList.remove('open');
-  currentOpp = null;
+function closePanel() {
+  document.getElementById('panel-overlay').classList.remove('open');
+  document.getElementById('slide-panel').classList.remove('open');
+  G.opp = null;
 }
 
 function ceoApprove() {
-  const theme = document.getElementById('ceo-theme')?.value;
-  const assignTo = document.getElementById('assign-to')?.value;
-  if (!assignTo) { document.getElementById('modal-msg').textContent = 'Please assign to someone first.'; return; }
-  if (currentOpp) {
-    currentOpp.brian_win_theme = theme || currentOpp.brian_win_theme;
-    currentOpp.assigned_to = assignTo;
-    currentOpp.stage = Math.max(currentOpp.stage, 2);
+  const theme = document.getElementById('p-theme')?.value;
+  const assignTo = document.getElementById('p-assign')?.value;
+  const msg = document.getElementById('p-msg');
+  if (!assignTo) { showMsg(msg,'Select someone to assign to.','err'); return; }
+  if (G.opp) {
+    G.opp.brian_win_theme = theme || G.opp.brian_win_theme;
+    G.opp.assigned_to = assignTo;
+    G.opp.stage = Math.max(G.opp.stage, 2);
   }
-  document.getElementById('modal-msg').textContent = `✓ Approved and assigned to ${assignTo}. They'll be notified.`;
+  showMsg(msg, `✓ Approved and assigned to ${USERS[assignTo]?.name || assignTo}. They will be notified.`, 'ok');
 }
 
 function ceoPass() {
-  if (currentOpp) currentOpp.stage = -1;
-  document.getElementById('modal-msg').textContent = '✕ Passed. Removed from pipeline.';
-  setTimeout(closeModal, 1500);
+  if (G.opp) G.opp.stage = -1;
+  showMsg(document.getElementById('p-msg'), '✕ Passed. Removed from active pipeline.', 'ok');
+  setTimeout(closePanel, 1500);
 }
 
 function amSubmit() {
-  const strategy = document.getElementById('am-strategy')?.value;
-  const prompt = document.getElementById('am-prompt')?.value;
-  const sme = document.getElementById('sme-tag')?.value;
-  document.getElementById('modal-msg').textContent = `✓ Strategy submitted. ${sme ? `${sme} tagged for SME review.` : ''} Brian can see your input.`;
+  const sme = document.getElementById('p-sme')?.value;
+  showMsg(document.getElementById('p-msg'),
+    `✓ Strategy submitted. ${sme ? `${sme} has been tagged.` : ''} Brian can see your input now.`, 'ok');
 }
 
 function submitOpp() {
-  const agency = document.getElementById('sub-agency')?.value;
-  const title = document.getElementById('sub-title')?.value;
-  const why = document.getElementById('sub-why')?.value;
-  if (!agency || !title || !why) {
-    document.getElementById('submit-msg').textContent = 'Agency, title, and rationale are required.';
-    document.getElementById('submit-msg').style.color = 'var(--red)';
-    return;
-  }
-  const newOpp = {
-    id: OPPS.length + 1,
-    stage: 0,
-    agency: agency,
-    title: title,
-    value: document.getElementById('sub-value')?.value || 'TBD',
-    set_aside: document.getElementById('sub-setaside')?.value || 'Unknown',
-    score: 0,
-    source: 'Employee Submission',
-    ref: document.getElementById('sub-ref')?.value || '',
-    due: null,
-    ai_analysis: '⏳ AI analysis in progress...',
+  const agency = document.getElementById('s-agency')?.value?.trim();
+  const title = document.getElementById('s-title')?.value?.trim();
+  const why = document.getElementById('s-why')?.value?.trim();
+  const msg = document.getElementById('s-msg');
+  if (!agency || !title || !why) { showMsg(msg,'Agency, title, and rationale are required.','err'); return; }
+  OPPS.push({
+    id: OPPS.length + 1, stage: 0, agency, title,
+    value: document.getElementById('s-value')?.value || 'TBD',
+    set_aside: document.getElementById('s-setaside')?.value || 'Unknown',
+    score: 0, source: 'Employee Submission',
+    ref: document.getElementById('s-ref')?.value || '',
+    ai_analysis: '⏳ AI analysis running...',
     ai_win_theme: '⏳ Generating win theme...',
-    brian_win_theme: null,
-    assigned_to: null,
-    stage_name: 'AI Discovery',
-    submitted_by: currentUser.name,
-    why_pursue: why,
-  };
-  OPPS.push(newOpp);
-  document.getElementById('submit-msg').style.color = 'var(--green)';
-  document.getElementById('submit-msg').textContent = `✓ Submitted. AI is analyzing now. Brian will see it in his review queue.`;
-  setTimeout(() => showPage('pipeline'), 2000);
+    brian_win_theme: null, assigned_to: null,
+    competitors: [], submitted_by: G.user.name,
+  });
+  showMsg(msg, '✓ Submitted. AI is analyzing now. Brian will see it in his review queue.', 'ok');
+  setTimeout(() => nav('pipeline'), 2000);
 }
 
-// ─────────────────────────────────────────────────────────────────
-// UTILITIES
-// ─────────────────────────────────────────────────────────────────
-function hexToRgb(hex) {
-  const r = parseInt(hex.slice(1,3),16);
-  const g = parseInt(hex.slice(3,5),16);
-  const b = parseInt(hex.slice(5,7),16);
+function showMsg(el, text, type) {
+  if (!el) return;
+  el.textContent = text;
+  el.className = 'msg-box ' + type;
+}
+
+function hexRgb(hex) {
+  if (!hex || !hex.startsWith('#')) return '0,0,0';
+  const r = parseInt(hex.slice(1,3),16)||0;
+  const g = parseInt(hex.slice(3,5),16)||0;
+  const b = parseInt(hex.slice(5,7),16)||0;
   return `${r},${g},${b}`;
 }
 </script>
