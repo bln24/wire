@@ -956,7 +956,12 @@ const MSAL_CONFIG = {
   },
   cache: { cacheLocation: "sessionStorage" },
 };
-const msalApp = new msal.PublicClientApplication(MSAL_CONFIG);
+let msalApp = null;
+try {
+  if(typeof msal !== 'undefined') {
+    msalApp = new msal.PublicClientApplication(MSAL_CONFIG);
+  }
+} catch(e) { console.warn('MSAL init failed:', e); }
 const ROLE_MAP = {"brian@bln24.com": "ceo", "brian.nguyen@bln24.com": "ceo", "hayk@bln24.com": "am", "michael@bln24.com": "am", "gabe@bln24.com": "am", "eric.ma@bln24.com": "am", "eric@bln24.com": "am", "favi.villa@bln24.com": "sme", "favi@bln24.com": "sme"};
 
 function getRoleFromEmail(email) {
@@ -991,6 +996,7 @@ function setMSUser(account) {
 function signInWithMS() {
   const ae = $("ae");
   ae.textContent = "";
+  if(!msalApp) { ae.textContent = "Microsoft auth not loaded. Try refreshing."; return; }
   // Use redirect — works on all browsers without popup blockers
   msalApp.loginRedirect({scopes:["User.Read"]}).catch(err => {
     console.error(err);
@@ -999,18 +1005,13 @@ function signInWithMS() {
 }
 
 function login() {
-  // Try MSAL SSO first, fall back to password if MSAL not available
-  if(typeof msal !== "undefined") {
+  if(msalApp) {
     signInWithMS();
   } else {
-    const key = $("au").value;
-    state.user = {key,...(USERS[key]||USERS.hayk)};
-    $("auth").classList.add("hidden");
-    $("app").classList.add("on");
-    $("userName").textContent = state.user.name;
-    $("rolePill").textContent = state.user.label;
-    buildNav();
-    go("pipeline");
+    // MSAL not available — show error
+    const ae = $("ae");
+    if(ae) ae.textContent = "Microsoft authentication unavailable. Please refresh and try again.";
+    console.warn("MSAL not loaded");
   }
 }
 
@@ -1026,7 +1027,7 @@ function logout() {
 
 // Auto sign-in if already have a session
 window.addEventListener("DOMContentLoaded", function() {
-  if(typeof msal === "undefined") return;
+  if(typeof msal === "undefined" || !msalApp) return;
   // Handle redirect response first
   msalApp.handleRedirectPromise().then(result => {
     if(result && result.account) {
