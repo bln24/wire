@@ -1863,7 +1863,7 @@ function wireMain(){
   // delegated on main - see global handler below
   const submit = $("submitOpp");
   if(submit) submit.addEventListener("click",submitOpp);
-  restoreSections();
+  try { restoreSections(); } catch(e) {}
 }
 function renderCommand(){
   if(!state.user || state.user.role !== "ceo"){ $("commandBar").classList.remove("on"); return; }
@@ -2593,7 +2593,8 @@ function requestNotifPermission() {
 
 function toggleSection(id) {
   var el = document.getElementById(id);
-  if(el) el.classList.toggle("collapsed");
+  if(!el) return;
+  el.classList.toggle("collapsed");
   try { localStorage.setItem("wire_sec_" + id, el.classList.contains("collapsed") ? "1" : "0"); } catch(e) {}
 }
 function restoreSections() {
