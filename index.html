@@ -1510,9 +1510,12 @@ function agencyTitle(name){
 
 // ── MSAL CONFIG ──
 // Compute redirect URI — covers bln24.github.io/wire/ and wire.bln24.com/
-var _redirectUri = (window.location.hostname === "wire.bln24.com")
-  ? "https://wire.bln24.com/"
-  : "https://bln24.github.io/wire/";
+var _hostMap = {
+  "wire.bln24.com": "https://wire.bln24.com/",
+  "bln24-wire.netlify.app": "https://bln24-wire.netlify.app/",
+  "bln24.github.io": "https://bln24.github.io/wire/"
+};
+var _redirectUri = _hostMap[window.location.hostname] || (window.location.origin + window.location.pathname.replace(/index\.html$/, "").replace(/\/?$/, "/"));
 const MSAL_CONFIG = {
   auth: {
     clientId: "c1ab9244-fd91-468d-ba13-736c9783809c",
