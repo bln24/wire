@@ -1165,7 +1165,7 @@ function oppCard(o){
       ${o.assigned_to ? `<span class="chip blue">${esc(o.assigned_to)}</span>` : ""}
       ${o.cm_fit ? `<span class="chip ${o.cm_fit === "Strong" ? "green" : o.cm_fit === "Pass" ? "red" : ""}">${esc(o.cm_fit)}</span>` : ""}
     </div>
-    <div class="opp-foot"><span>${esc(o.value || "TBD")}</span><div class="score-ring" style="--score:${Math.min(o.score,100)};--score-color:${sc}"><span>${esc(o.score)}</span></div></div>
+    <div class="opp-foot"><span>${esc(o.value || "TBD")}</span><div style="display:flex;align-items:center;gap:6px">${(o.hg_url || o.source_url) ? `<a href="${esc(o.hg_url || o.source_url)}" target="_blank" rel="noreferrer" onclick="event.stopPropagation()" title="Open source on HigherGov" style="color:var(--amber);font-size:10px;font-weight:900;text-decoration:none;opacity:.7">&#8599;</a>` : ""}<div class="score-ring" style="--score:${Math.min(o.score,100)};--score-color:${sc}"><span>${esc(o.score)}</span></div></div></div>
   </article>`;
 }
 function board(stages){
@@ -1291,7 +1291,8 @@ function openOpp(id){
   if(!o) return;
   state.opp = o;
   const st = stageOf(o);
-  $("drawerAgency").textContent = `${o.agency} - ${st.name}`;
+  var sourceLink = o.hg_url || o.source_url || "";
+  $("drawerAgency").innerHTML = esc(o.agency) + " - " + esc(st.name) + (sourceLink ? " <a href= + esc(sourceLink) +  target='_blank' rel='noreferrer' style='color:var(--amber);font-weight:900;font-size:10px;text-decoration:none;margin-left:6px' title='Source'>Source &#8599;</a>" : "");
   $("drawerTitle").textContent = o.title;
   $("drawerTags").innerHTML = [
     `<span class="chip amber">${esc(o.score)} pts</span>`,
