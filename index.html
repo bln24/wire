@@ -1549,34 +1549,60 @@ function drawerBody(o){
   var risks = da.loss_risks || "";
   var modelBadge = da.model ? " (" + da.model + ")" : "";
 
+  var _bulletIdx = 0;
   function bulletLines(text, color) {
     if(!text) return "";
     var out = "";
     text.split("\n").forEach(function(line) {
       var clean = line.replace(/^[\-\*•#]+\s*/, "").replace(/\*\*/g, "").trim();
       if(!clean) return;
-      out += "<div style=\"border:1px solid rgba(244,241,232,.1);border-left:2px solid " + color + ";border-radius:6px;padding:9px 11px;background:rgba(244,241,232,.03);font-size:12px;line-height:1.5;color:#9a9488;margin-bottom:6px\">" + esc(clean) + "</div>";
+      _bulletIdx++;
+      var bid = "bl-" + o.id + "-" + _bulletIdx;
+      out += "<div style=\"border:1px solid rgba(244,241,232,.1);border-left:2px solid " + color + ";border-radius:6px;padding:9px 11px;background:rgba(244,241,232,.03);font-size:12px;line-height:1.5;color:#9a9488;margin-bottom:6px\">" + truncateText(clean, 200, bid) + "</div>";
     });
     return out;
   }
 
   var b = "";
 
+  // Recommendation + Win Prob
+  if(o.recommendation || o.win_prob) {
+    b += "<section class=\"detail-section\" style=\"padding-bottom:0\">";
+    if(o.recommendation) b += "<span class=\"chip\" style=\"margin-right:6px\">⚡ " + esc(o.recommendation) + "</span>";
+    if(o.win_prob) b += "<span class=\"chip\">" + esc(o.win_prob) + "</span>";
+    b += "</section>";
+  }
+
+  // Description (synopsis)
+  if(o.description && o.description.trim()) {
+    b += "<section class=\"detail-section\"><div class=\"detail-label\">Synopsis</div>";
+    b += "<p class=\"detail-copy\">" + truncateText(o.description.trim(), 200, "desc-" + o.id) + "</p>";
+    b += "</section>";
+  }
+
   // What they actually need
   b += "<section class=\"detail-section\"><div class=\"detail-label\"><span data-icon=\"spark\"></span>What They Actually Need</div>";
-  if(whatNeed) b += "<p class=\"detail-copy\">" + truncateText(whatNeed, 280, "need-" + o.id) + "</p>";
+  if(whatNeed) b += "<p class=\"detail-copy\">" + truncateText(whatNeed, 320, "need-" + o.id) + "</p>";
   b += "</section>";
 
   // Rex's Strategic Take
   b += "<section class=\"detail-section\"><div class=\"detail-label\">Rex\u2019s Strategic Take<span style=\"font-size:9px;opacity:.4;font-weight:400;text-transform:none\">" + modelBadge + "</span></div>";
-  if(strategic) b += "<div class=\"callout\">" + truncateText(strategic, 360, "strat-" + o.id) + "</div>";
+  if(strategic) b += "<div class=\"callout\">" + truncateText(strategic, 400, "strat-" + o.id) + "</div>";
   b += "</section>";
 
   // Win Theme
   b += "<section class=\"detail-section\"><div class=\"detail-label\">Win Theme</div>";
-  if(winDeep) b += "<div class=\"callout\" style=\"border-left-color:var(--amber)\">" + truncateText(winDeep, 280, "win-" + o.id) + "</div>";
-  if(o.brian_win_theme) b += "<div class=\"callout\" style=\"margin-top:8px\">\ud83d\udc64 " + esc(o.brian_win_theme) + "</div>";
+  if(winDeep) b += "<div class=\"callout\" style=\"border-left-color:var(--amber)\">" + truncateText(winDeep, 320, "win-" + o.id) + "</div>";
+  if(o.brian_win_theme) b += "<div class=\"callout\" style=\"margin-top:8px\">\ud83d\udc64 " + truncateText(o.brian_win_theme, 240, "bwt-" + o.id) + "</div>";
   b += "</section>";
+
+  // Watch Notes
+  var watchNotes = da.watch_notes_deep || o.watch_notes || "";
+  if(watchNotes) {
+    b += "<section class=\"detail-section\"><div class=\"detail-label\">Watch Notes</div>";
+    b += "<div class=\"callout\" style=\"border-left-color:var(--blue)\">" + truncateText(watchNotes, 240, "watch-" + o.id) + "</div>";
+    b += "</section>";
+  }
 
   // PP Mapping
   if(ppMap) {
@@ -1739,7 +1765,7 @@ function capabilityMatrix(o){
       const color = t.score >= 4 ? "var(--green)" : t.score >= 3 ? "var(--amber)" : t.score >= 2 ? "#ff9a62" : "var(--red)";
       return `<div class="matrix-row" style="--bar-color:${color};--bar-width:${Math.round((t.score || 0) / 4 * 100)}%">
         <div class="matrix-top"><span class="matrix-name">${esc(t.task)}</span><span class="matrix-score">${esc(t.score)}/4 - ${esc(t.status)}</span></div>
-        <div class="bar"><span></span></div>${t.pp ? `<div class="mini-note">PP: ${esc(t.pp)}</div>` : ""}
+        <div class="bar"><span></span></div>${t.pp ? `<div class="mini-note">PP: ${truncateText(t.pp, 120, "pp-" + o.id + "-" + i)}</div>` : ""}${t.note ? `<div class="mini-note" style="color:var(--quiet)">${truncateText(t.note, 100, "tn-" + o.id + "-" + i)}</div>` : ""}
       </div>`;
     }).join("")}</div></section>`;
 }
@@ -1747,7 +1773,7 @@ function intelList(title,items,tone){
   if(!items || !items.length) return "";
   return `<section class="detail-section"><div class="detail-label">${title}</div>${items.map(item=>`
     <div class="intel-card" style="border-left:2px solid ${tone === "red" ? "var(--red)" : "var(--green)"}">
-      <b>${esc(item.name)}</b>${item.gap ? `<div class="mini-note">Fills gap: ${esc(item.gap)}</div>` : ""}<p>${esc(item.why)}</p>${item.url ? `<a href="${esc(item.url)}" target="_blank" rel="noreferrer">View source</a>` : ""}
+      <b>${esc(item.name)}</b>${item.gap ? `<div class="mini-note">Fills gap: ${esc(item.gap)}</div>` : ""}<p>${truncateText(item.why||"", 160, "intel-" + (item.name||"").replace(/[^a-z0-9]/gi,"-").toLowerCase() + "-" + o.id)}</p>${item.url ? `<a href="${esc(item.url)}" target="_blank" rel="noreferrer">View source</a>` : ""}
     </div>`).join("")}</section>`;
 }
 function ceoControls(o){
