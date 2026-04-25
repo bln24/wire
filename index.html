@@ -1370,6 +1370,15 @@ function drawerBody(o){
   b += intelList("Competitors", o.competitors, "red");
   b += intelList("Teaming partners", o.partners, "green");
 
+  // Document links
+  if(o.source_url || o.hg_url) {
+    b += "<section class='detail-section'><div class='detail-label'>Solicitation Documents</div>";
+    b += "<div style='display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px'>";
+    if(o.source_url) b += "<a href='" + esc(o.source_url) + "' target='_blank' rel='noreferrer' style='display:inline-flex;align-items:center;gap:5px;background:rgba(244,183,63,.1);border:1px solid rgba(244,183,63,.25);border-radius:7px;padding:7px 13px;color:var(--amber);font-size:12px;font-weight:800;text-decoration:none'>&#8659; Solicitation / eBuy</a>";
+    if(o.hg_url) b += "<a href='" + esc(o.hg_url) + "' target='_blank' rel='noreferrer' style='display:inline-flex;align-items:center;gap:5px;background:rgba(114,183,255,.08);border:1px solid rgba(114,183,255,.22);border-radius:7px;padding:7px 13px;color:var(--blue);font-size:12px;font-weight:800;text-decoration:none'>&#8599; HigherGov Profile</a>";
+    b += "</div><div style='font-size:11px;color:var(--quiet)'>Documents available on eBuy or HigherGov &middot; Upload below for AI analysis</div></section>";
+  }
+
   // Controls
   if(state.user.role === "ceo") b += ceoControls(o);
   if(state.user.role !== "ceo" && state.user.key === o.assigned_to) b += amControls();
