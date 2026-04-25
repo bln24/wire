@@ -950,6 +950,28 @@ body.light-mode .chip.blue { color:#1a3f6b !important; }
 .notif-body { color:var(--muted); }
 .notif-time { font-size:10px; color:var(--quiet); }
 .notif-empty { padding:24px; text-align:center; color:var(--quiet); font-size:12px; }
+/* Assign autocomplete */
+.ac-wrap { position:relative; }
+.ac-list {
+  position:absolute; top:calc(100% + 4px); left:0; right:0;
+  background:var(--panel-2); border:1px solid var(--line-strong);
+  border-radius:8px; z-index:60; max-height:200px; overflow-y:auto;
+  box-shadow:var(--shadow); display:none;
+}
+.ac-list.on { display:block; }
+.ac-item {
+  display:flex; align-items:center; gap:10px;
+  padding:9px 12px; cursor:pointer; transition:background .12s;
+}
+.ac-item:hover, .ac-item.sel { background:var(--amber-soft); }
+.ac-avatar {
+  width:28px; height:28px; border-radius:50%; background:var(--amber);
+  color:#11100d; display:grid; place-items:center;
+  font-size:11px; font-weight:900; flex-shrink:0;
+}
+.ac-info b { display:block; font-size:12px; font-weight:700; }
+.ac-info span { font-size:11px; color:var(--quiet); }
+body.light-mode .ac-list { background:var(--panel); border-color:var(--line-strong); }
 </style>
 <script src="msal-browser.min.js"></script>
 </head>
@@ -1094,13 +1116,31 @@ body.light-mode .chip.blue { color:#1a3f6b !important; }
 <script src="opps-data.js"></script>
 <script>
 const USERS = {
-  brian:{name:"Brian Nguyen",role:"ceo",label:"CEO"},
-  hayk:{name:"Hayk",role:"am",label:"Account Manager"},
-  michael:{name:"Michael",role:"am",label:"Account Manager"},
-  gabe:{name:"Gabe",role:"am",label:"Account Manager"},
-  eric:{name:"Eric Ma",role:"am",label:"BD"},
-  favi:{name:"Favi Villa",role:"sme",label:"SME"}
+  brian:{name:"Brian Nguyen",role:"ceo",label:"CEO",email:"brian@bln24.com"},
+  hayk:{name:"Hayk Manukyan",role:"am",label:"Account Manager",email:"hayk@bln24.com"},
+  michael:{name:"Michael Nguyen",role:"am",label:"Account Manager",email:"michael@bln24.com"},
+  gabe:{name:"Gabe Meckler",role:"am",label:"Account Manager",email:"gabe@bln24.com"},
+  eric:{name:"Eric Ma",role:"am",label:"BD Manager",email:"eric.ma@bln24.com"},
+  favi:{name:"Favi Villa",role:"sme",label:"UX Lead / SME",email:"favi.villa@bln24.com"}
 };
+// Full org roster for assignment autocomplete
+const ORG_ROSTER = [
+  {key:"brian",  name:"Brian Nguyen",   title:"CEO",                    email:"brian@bln24.com"},
+  {key:"hayk",   name:"Hayk Manukyan",  title:"Account Manager",        email:"hayk@bln24.com"},
+  {key:"michael",name:"Michael Nguyen", title:"Account Manager",        email:"michael@bln24.com"},
+  {key:"gabe",   name:"Gabe Meckler",   title:"Account Manager",        email:"gabe@bln24.com"},
+  {key:"eric",   name:"Eric Ma",        title:"BD Manager",             email:"eric.ma@bln24.com"},
+  {key:"favi",   name:"Favi Villa",     title:"UX Lead / SME",          email:"favi.villa@bln24.com"},
+  {key:"nikki",  name:"Nikki Lee",      title:"Project Manager",        email:"nikki@bln24.com"},
+  {key:"jose",   name:"Jose Garcia",    title:"Developer",              email:"jose@bln24.com"},
+  {key:"sarah",  name:"Sarah Kim",      title:"UX Designer",            email:"sarah@bln24.com"},
+  {key:"david",  name:"David Pham",     title:"Data Engineer",          email:"david@bln24.com"},
+  {key:"maya",   name:"Maya Johnson",   title:"Communications Lead",    email:"maya@bln24.com"},
+  {key:"carlos", name:"Carlos Rivera",  title:"DevSecOps Engineer",     email:"carlos@bln24.com"},
+  {key:"lisa",   name:"Lisa Chen",      title:"Business Analyst",       email:"lisa@bln24.com"},
+  {key:"james",  name:"James Wilson",   title:"Cloud Architect",        email:"james@bln24.com"},
+  {key:"anna",   name:"Anna Park",      title:"Content Strategist",     email:"anna@bln24.com"}
+];
 const STAGES = [
   {id:0,name:"AI Discovery",short:"Discovery",color:"#8d877b"},
   {id:1,name:"CEO Review",short:"CEO Review",color:"#f4b73f"},
@@ -1807,7 +1847,15 @@ function intelList(title,items,tone,oppId){
 function ceoControls(o){
   return `<section class="detail-section"><div class="detail-label">CEO decision</div>
     <div class="field"><label class="label">Your win theme</label><textarea class="textarea" id="ceoTheme">${esc(o.brian_win_theme || "")}</textarea></div>
-    <div class="field"><label class="label">Assign to</label><select class="select" id="assignTo"><option value="">Select account manager</option>${["hayk","michael","gabe","eric"].map(k=>`<option value="${k}" ${o.assigned_to === k ? "selected" : ""}>${USERS[k].name}</option>`).join("")}</select></div>
+    <div class="field"><label class="label">Assign to</label>
+      <div class="ac-wrap">
+        <input class="input" id="assignTo" placeholder="Search by name or title…" autocomplete="off"
+          value="${o.assigned_to && ORG_ROSTER.find(r=>r.key===o.assigned_to) ? ORG_ROSTER.find(r=>r.key===o.assigned_to).name : o.assigned_to || ""}"
+          oninput="acFilter(this)" onfocus="acFilter(this)" onblur="setTimeout(()=>acClose(),200)">
+        <input type="hidden" id="assignToKey" value="${o.assigned_to || ""}">
+        <div class="ac-list" id="acList"></div>
+      </div>
+    </div>
     <div class="field"><label class="label">Challenge WIRE</label><textarea class="textarea" id="challenge" placeholder="What did the model miss?"></textarea></div>
     <div class="message" id="decisionMsg"></div>
   </section>`;
@@ -1838,7 +1886,7 @@ function closeDrawer(){
   state.opp = null;
 }
 function approveOpp(){
-  const assignee = $("assignTo").value;
+  const assignee = ($("assignToKey") && $("assignToKey").value) || $("assignTo").value;
   if(!assignee){$("decisionMsg").textContent = "Select an account manager before approving."; $("decisionMsg").classList.add("err"); return;}
   state.opp.assigned_to = assignee;
   state.opp.brian_win_theme = $("ceoTheme").value || state.opp.brian_win_theme;
@@ -2067,6 +2115,37 @@ async function fetchMSPhoto(account) {
     // Silent fail - initials are fine fallback
     console.log("WIRE: profile photo fetch skipped:", e.message);
   }
+}
+
+// ── Assign-to autocomplete ────────────────────────────────────────────────
+function acFilter(input) {
+  const q = (input.value || "").toLowerCase().trim();
+  const list = $("acList");
+  if(!list) return;
+  const matches = q
+    ? ORG_ROSTER.filter(r =>
+        r.name.toLowerCase().includes(q) ||
+        r.title.toLowerCase().includes(q) ||
+        r.email.toLowerCase().includes(q))
+    : ORG_ROSTER;
+  if(!matches.length) { list.classList.remove("on"); return; }
+  list.innerHTML = matches.map(r => `
+    <div class="ac-item" onmousedown="acSelect('${r.key}','${r.name}')">
+      <div class="ac-avatar">${r.name.split(" ").map(w=>w[0]).join("").toUpperCase().slice(0,2)}</div>
+      <div class="ac-info"><b>${esc(r.name)}</b><span>${esc(r.title)}</span></div>
+    </div>`).join("");
+  list.classList.add("on");
+}
+function acSelect(key, name) {
+  const input = $("assignTo");
+  const hidden = $("assignToKey");
+  if(input) input.value = name;
+  if(hidden) hidden.value = key;
+  acClose();
+}
+function acClose() {
+  const list = $("acList");
+  if(list) list.classList.remove("on");
 }
 </script>
 </body>
