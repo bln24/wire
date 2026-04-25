@@ -1410,7 +1410,7 @@ function agencyStrip(){
 
 function oppCard(o){
   const sc = scoreColor(o.score);
-  return `<article class="opp" data-open="${o.id}">
+  return `<article class="opp" data-open="${o.id}" onclick="openOpp(${o.id})">
     <div class="opp-agency">${esc(o.agency)}</div>
     <div class="opp-title">${esc(o.title)}</div>
     <div class="opp-meta">
@@ -1433,7 +1433,7 @@ function board(stages){
 }
 function priorities(){
   return filteredOpps().slice().sort((a,b)=>b.score-a.score).slice(0,4).map((o,i)=>`
-    <div class="priority" data-open="${o.id}">
+    <div class="priority" data-open="${o.id}" onclick="openOpp(${o.id})">
       <div class="rank">${i+1}</div>
       <div><b>${esc(o.agency)}</b><span>${esc(o.title)}</span></div>
       <div class="score-pill">${esc(o.score)}</div>
@@ -1514,7 +1514,7 @@ const PAGES = {
 
 function rowCard(o,action){
   const st = stageOf(o);
-  return `<article class="row-card" data-open="${o.id}">
+  return `<article class="row-card" data-open="${o.id}" onclick="openOpp(${o.id})">
     <div>
       <div class="eyebrow" style="margin:0;color:${st.color}">${esc(o.agency)} - ${esc(st.short)}</div>
       <h3>${esc(o.title)}</h3>
@@ -1872,15 +1872,11 @@ $("filterSheetBg").addEventListener("click",e=>{if(e.target===$("filterSheetBg")
 
 // Global delegated handler for [data-open] — opens opp drawer
 document.addEventListener("click", e => {
-  // Don't open if clicking a link or a real action button
-  if(e.target.closest("a")) return;
-  if(e.target.closest("button") && !e.target.closest("[data-open]")) return;
-  // If a button IS inside a [data-open] card but it's the tgl/read-more button, skip
-  if(e.target.tagName === "BUTTON" || (e.target.closest("button") && e.target.closest("button").hasAttribute("onclick"))) return;
+  if(e.target.closest("a")) return;           // ignore link clicks
+  if(e.target.tagName === "BUTTON") return;   // ignore button clicks
   const card = e.target.closest("[data-open]");
   if(!card) return;
-  // Don't open from inside the drawer itself
-  if(card.closest("#drawer") || card.closest("#filterSheetBg")) return;
+  if(card.closest("#drawer")) return;         // ignore clicks inside open drawer
   const id = Number(card.dataset.open);
   if(id) openOpp(id);
 });
