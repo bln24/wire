@@ -615,6 +615,11 @@ button{cursor:pointer}
   text-transform:uppercase;
   letter-spacing:.16em;
 }
+.stage-label{cursor:pointer;user-select:none}
+.stage-label:hover{color:var(--amber)}
+.stage-section.collapsed .board{display:none}
+.stage-label .toggle-icon{margin-left:6px;font-size:11px;opacity:.5;transition:transform .2s}
+.stage-section.collapsed .toggle-icon{transform:rotate(-90deg)}
 .stage-label:after{content:"";height:1px;background:var(--line);flex:1}
 .board{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(240px,280px);gap:10px;overflow-x:auto;padding-bottom:10px}
 .stage{
@@ -1778,8 +1783,14 @@ const PAGES = {
           <div class="callout">WIRE is built to make BLN24 faster than larger competitors: sense earlier, qualify harder, capture with evidence, assemble the right partners, and recycle every debrief into the next pursuit.</div>
         </section>
       </div>
-      <div class="stage-label">Capture pipeline</div>${board(STAGES.slice(0,6))}
-      <div class="stage-label">Proposal and color teams</div>${board(STAGES.slice(6))}`;
+      <div class="stage-section" id="sec-capture">
+        <div class="stage-label" onclick="toggleSection('sec-capture')">Capture pipeline<span class="toggle-icon">▾</span></div>
+        ${board(STAGES.slice(0,6))}
+      </div>
+      <div class="stage-section" id="sec-proposal">
+        <div class="stage-label" onclick="toggleSection('sec-proposal')">Proposal and color teams<span class="toggle-icon">▾</span></div>
+        ${board(STAGES.slice(6))}
+      </div>\`;
   },
   review(){
     const acts = filteredOpps().filter(o=>o.stage <= 1);
@@ -1860,6 +1871,7 @@ function wireMain(){
   // delegated on main - see global handler below
   const submit = $("submitOpp");
   if(submit) submit.addEventListener("click",submitOpp);
+  restoreSections();
 }
 function renderCommand(){
   if(!state.user || state.user.role !== "ceo"){ $("commandBar").classList.remove("on"); return; }
@@ -2752,6 +2764,19 @@ function advanceStage(oppId, newStage) {
   setTimeout(function(){ closeDrawer(); go(state.page); }, 600);
 }
 
+
+function toggleSection(id) {
+  var el = document.getElementById(id);
+  if(el) el.classList.toggle("collapsed");
+  // Save state
+  try { localStorage.setItem("wire_sec_" + id, el.classList.contains("collapsed") ? "1" : "0"); } catch(e) {}
+}
+function restoreSections() {
+  ["sec-capture","sec-proposal"].forEach(function(id) {
+    var saved = localStorage.getItem("wire_sec_" + id);
+    if(saved === "1") { var el = document.getElementById(id); if(el) el.classList.add("collapsed"); }
+  });
+}
 </script>
 </body>
 </html>
