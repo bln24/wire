@@ -1272,6 +1272,8 @@ const USERS = {
   michael:{name:"Michael Nguyen",role:"am",label:"Account Manager",email:"michael@bln24.com"},
   gabe:{name:"Gabe Meckler",role:"am",label:"Account Manager",email:"gabe@bln24.com"},
   eric:{name:"Eric Ma",role:"am",label:"BD Manager",email:"eric.ma@bln24.com"},
+  shawn:{name:"Shawn de Lopez",role:"am",label:"Art Director / AM",email:"shawn@bln24.com"},
+  ted:{name:"Ted Ridley",role:"am",label:"Senior Capture Manager",email:"ted.ridley@bln24.com"},
   favi:{name:"Favi Villa",role:"sme",label:"UX Lead / SME",email:"favi.villa@bln24.com"}
 };
 // Full org roster — pulled from Microsoft Entra ID (135 employees)
@@ -1529,7 +1531,7 @@ async function initMSAL() {
   }
 }
 initMSAL();
-const ROLE_MAP = {"brian@bln24.com": "ceo", "brian.nguyen@bln24.com": "ceo", "hayk@bln24.com": "am", "michael@bln24.com": "am", "gabe@bln24.com": "am", "eric.ma@bln24.com": "am", "eric@bln24.com": "am", "favi.villa@bln24.com": "sme", "favi@bln24.com": "sme"};
+const ROLE_MAP = {"brian@bln24.com": "ceo", "brian.nguyen@bln24.com": "ceo", "jomar@bln24.com": "ceo", "hayk@bln24.com": "am", "hayk.rachidian@bln24.com": "am", "michael@bln24.com": "am", "michael.dumlao@bln24.com": "am", "gabe@bln24.com": "am", "eric.ma@bln24.com": "am", "e.ma@bln24.com": "am", "eric@bln24.com": "am", "shawn@bln24.com": "am", "ted.ridley@bln24.com": "am", "favi.villa@bln24.com": "sme", "favi@bln24.com": "sme", "lily.le@bln24.com": "sme", "vasilisa.barsukova@bln24.com": "sme", "eduardo.abraham@bln24.com": "sme", "faisal.hussein@bln24.com": "sme"};
 
 function getRoleFromEmail(email) {
   const e = (email || "").toLowerCase();
