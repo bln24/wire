@@ -1545,7 +1545,7 @@ function openOpp(id){
   state.opp = o;
   const st = stageOf(o);
   var sourceLink = (o.hg_url && o.hg_url.length > 50) ? o.hg_url : (o.source_url || ("https://www.highergov.com/contract-opportunity/?search=" + encodeURIComponent(o.title)));
-  $("drawerAgency").innerHTML = esc(o.agency) + " - " + esc(st.name) + (sourceLink ? " <a href= + esc(sourceLink) +  target='_blank' rel='noreferrer' style='color:var(--amber);font-weight:900;font-size:10px;text-decoration:none;margin-left:6px' title='Source'>Source &#8599;</a>" : "");
+  $("drawerAgency").innerHTML = esc(o.agency) + " - " + esc(st.name) + (sourceLink ? " <a href='" + esc(sourceLink) + "' target='_blank' rel='noreferrer' style='color:var(--amber);font-weight:900;font-size:10px;text-decoration:none;margin-left:6px' title='Source'>Source &#8599;</a>" : "");
   $("drawerTitle").textContent = o.title;
   $("drawerTags").innerHTML = [
     `<span class="chip amber">${esc(o.score)} pts</span>`,
