@@ -1081,6 +1081,21 @@ body.light-mode .chip.blue { color:#1a3f6b !important; }
 .notif-body { color:var(--muted); }
 .notif-time { font-size:10px; color:var(--quiet); }
 .notif-empty { padding:24px; text-align:center; color:var(--quiet); font-size:12px; }
+/* Toast notification */
+.toast {
+  position:fixed; bottom:80px; left:50%; transform:translateX(-50%) translateY(20px);
+  background:var(--panel-2); border:1px solid var(--line-strong);
+  border-radius:10px; padding:14px 20px; z-index:100;
+  display:flex; align-items:center; gap:12px; min-width:300px; max-width:480px;
+  box-shadow:var(--shadow); opacity:0; transition:all .3s ease; pointer-events:none;
+}
+.toast.on { opacity:1; transform:translateX(-50%) translateY(0); pointer-events:auto; }
+.toast-icon { font-size:20px; flex-shrink:0; }
+.toast-body { flex:1; }
+.toast-title { font-size:13px; font-weight:800; margin-bottom:2px; }
+.toast-msg { font-size:12px; color:var(--muted); }
+.toast-close { background:none; border:none; color:var(--quiet); cursor:pointer; font-size:16px; padding:0 4px; }
+
 /* Assign autocomplete */
 .ac-wrap { position:relative; }
 .ac-list {
@@ -1221,6 +1236,11 @@ body.light-mode .ac-list { background:var(--panel); border-color:var(--line-stro
     <main class="main" id="main"></main>
   </div>
   <div class="command" id="commandBar"></div>
+</div>
+<div class="toast" id="wireToast">
+  <div class="toast-icon" id="toastIcon">✓</div>
+  <div class="toast-body"><div class="toast-title" id="toastTitle"></div><div class="toast-msg" id="toastMsg"></div></div>
+  <button class="toast-close" onclick="hideToast()">×</button>
 </div>
 
 <div class="drawer-bg" id="drawerBg"></div>
@@ -1545,6 +1565,7 @@ function setMSUser(account) {
   setTheme(localStorage.getItem("wire_theme")||"dark");
   // Seed notifications
   seedNotifications(role);
+  requestNotifPermission();
   buildNav();
   go("pipeline");
   // Fetch MS profile photo async (non-blocking)
@@ -2149,15 +2170,42 @@ function closeDrawer(){
 }
 function approveOpp(){
   const assignee = ($("assignToKey") && $("assignToKey").value) || $("assignTo").value;
-  if(!assignee){$("decisionMsg").textContent = "Select an account manager before approving."; $("decisionMsg").classList.add("err"); return;}
+  if(!assignee){
+    $("decisionMsg").textContent = "Select a team member before approving.";
+    $("decisionMsg").classList.add("err"); return;
+  }
+  const assigneeName = ORG_ROSTER.find(r=>r.key===assignee)?.name || USERS[assignee]?.name || assignee;
+  const oppTitle = state.opp.title || "Opportunity";
   state.opp.assigned_to = assignee;
-  state.opp.brian_win_theme = $("ceoTheme").value || state.opp.brian_win_theme;
-  state.opp.stage = Math.max(state.opp.stage,2);
-  $("decisionMsg").classList.remove("err");
-  $("decisionMsg").textContent = `Approved and assigned to ${USERS[assignee].name}.`;
+  state.opp.brian_win_theme = $("ceoTheme")?.value || state.opp.brian_win_theme;
+  state.opp.stage = Math.max(state.opp.stage, 2);
+  $("decisionMsg")?.classList.remove("err");
   buildNav();
   renderCommand();
-  setTimeout(()=>go(state.page),500);
+
+  // Show in-drawer confirmation
+  const msg = $("decisionMsg");
+  if(msg){
+    msg.style.cssText = "color:var(--green);font-weight:700;padding:10px 12px;background:rgba(88,214,141,.08);border:1px solid rgba(88,214,141,.2);border-radius:8px;margin-top:8px";
+    msg.innerHTML = "✓ Approved &amp; assigned to <b>" + esc(assigneeName) + "</b>. Moving to Capture stage.";
+  }
+
+  // Toast notification
+  showToast("✓ Approved", oppTitle + " assigned to " + assigneeName, "var(--green)");
+
+  // Browser notification
+  sendBrowserNotification("WIRE: Opp Approved", oppTitle + " has been assigned to " + assigneeName);
+
+  // Teams webhook notification (via worker)
+  notifyTeams({
+    title: "WIRE: Opp Approved → " + assigneeName,
+    body: oppTitle,
+    assignee: assigneeName,
+    opp_id: state.opp.id,
+    assigned_by: state.user ? state.user.name : "CEO"
+  });
+
+  setTimeout(()=>{ closeDrawer(); go(state.page); }, 1200);
 }
 function passOpp(){
   state.opp.stage = -1;
@@ -2465,6 +2513,54 @@ function acSelect(key, name) {
 function acClose() {
   const list = $("acList");
   if(list) list.classList.remove("on");
+}
+
+// ── Toast ────────────────────────────────────────────────────────────────
+let _toastTimer = null;
+function showToast(title, msg, color) {
+  color = color || "var(--amber)";
+  var t = $("wireToast");
+  if(!t) return;
+  $("toastTitle").textContent = title;
+  $("toastMsg").textContent = msg;
+  $("toastIcon").style.color = color;
+  t.style.borderLeftColor = color;
+  t.style.borderLeft = "3px solid " + color;
+  t.classList.add("on");
+  if(_toastTimer) clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(hideToast, 5000);
+}
+function hideToast() {
+  var t = $("wireToast");
+  if(t) t.classList.remove("on");
+}
+
+// ── Browser notifications ─────────────────────────────────────────────────
+function sendBrowserNotification(title, body) {
+  if(!("Notification" in window)) return;
+  if(Notification.permission === "granted") {
+    new Notification(title, { body: body, icon: "https://bln24.github.io/wire/favicon.ico" });
+  } else if(Notification.permission !== "denied") {
+    Notification.requestPermission().then(p => {
+      if(p === "granted") new Notification(title, { body: body });
+    });
+  }
+}
+
+// ── Teams notification via worker ─────────────────────────────────────────
+function notifyTeams(payload) {
+  fetch("https://bln24-hg-proxy.bln24.workers.dev/notify-teams", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  }).catch(() => {}); // silent fail
+}
+
+// Request browser notification permission on login
+function requestNotifPermission() {
+  if("Notification" in window && Notification.permission === "default") {
+    Notification.requestPermission();
+  }
 }
 </script>
 </body>
