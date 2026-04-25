@@ -1519,7 +1519,7 @@ const MSAL_CONFIG = {
     authority: "https://login.microsoftonline.com/bce59a38-0a4f-42df-8ff2-8d40797d61f1",
     redirectUri: _redirectUri,
   },
-  cache: { cacheLocation: "localStorage", storeAuthStateInCookie: true },
+  cache: { cacheLocation: "localStorage", storeAuthStateInCookie: false },
 };
 let msalApp = null;
 // Initialize MSAL async (required for v2.x)
@@ -1598,10 +1598,9 @@ function signInWithMS() {
     prompt: "select_account"
   }).catch(function(err) {
     console.error("WIRE loginRedirect error:", err);
-    // Fallback: try popup
-    msalApp.loginPopup({scopes:["User.Read"]}).then(function(r){ if(r && r.account) setMSUser(r.account); }).catch(function(){
-      ae.textContent = err.message || "Sign-in failed — please allow popups or try another browser.";
-    });
+    // Fallback: show error
+    if(ae) ae.textContent = err.message || "Sign-in failed. Check your popup blocker or try again.";
+    if(btn) { btn.innerHTML = "Sign in with Microsoft"; btn.disabled = false; }
   });
 }
 
