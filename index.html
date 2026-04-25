@@ -1165,7 +1165,7 @@ function oppCard(o){
       ${o.assigned_to ? `<span class="chip blue">${esc(o.assigned_to)}</span>` : ""}
       ${o.cm_fit ? `<span class="chip ${o.cm_fit === "Strong" ? "green" : o.cm_fit === "Pass" ? "red" : ""}">${esc(o.cm_fit)}</span>` : ""}
     </div>
-    <div class="opp-foot"><span>${esc(o.value || "TBD")}</span><div style="display:flex;align-items:center;gap:6px">${(o.hg_url || o.source_url) ? `<a href="${esc(o.hg_url || o.source_url)}" target="_blank" rel="noreferrer" onclick="event.stopPropagation()" title="Open source on HigherGov" style="color:var(--amber);font-size:10px;font-weight:900;text-decoration:none;opacity:.7">&#8599;</a>` : ""}<div class="score-ring" style="--score:${Math.min(o.score,100)};--score-color:${sc}"><span>${esc(o.score)}</span></div></div></div>
+    <div class="opp-foot"><span>${esc(o.value || "TBD")}</span><div style="display:flex;align-items:center;gap:6px">${(o.hg_url && o.hg_url.length > 50 ? o.hg_url : o.source_url) ? `<a href="${esc(o.hg_url && o.hg_url.length > 50 ? o.hg_url : (o.source_url || 'https://www.highergov.com/contract-opportunity/?search=' + encodeURIComponent(o.title)))}" target="_blank" rel="noreferrer" onclick="event.stopPropagation()" title="View on HigherGov" style="color:var(--amber);font-size:11px;font-weight:900;text-decoration:none;padding:2px 5px;border:1px solid rgba(244,183,63,.3);border-radius:3px">HG&#8599;</a>` : ""}<div class="score-ring" style="--score:${Math.min(o.score,100)};--score-color:${sc}"><span>${esc(o.score)}</span></div></div></div>
   </article>`;
 }
 function board(stages){
@@ -1276,7 +1276,7 @@ function emptyState(title,copy){
 
 function wireMain(){
   $("main").querySelectorAll("[data-page]").forEach(el=>el.addEventListener("click",()=>go(el.dataset.page)));
-  $("main").querySelectorAll("[data-open]").forEach(el=>el.addEventListener("click",e=>{if(e.target.closest("button") && !e.currentTarget.classList.contains("priority")){} openOpp(Number(el.dataset.open));}));
+  $("main").querySelectorAll("[data-open]").forEach(el=>el.addEventListener("click",e=>{if(e.target.closest("a")||e.target.closest("button") && !e.currentTarget.classList.contains("priority")) return; openOpp(Number(el.dataset.open));}));
   const submit = $("submitOpp");
   if(submit) submit.addEventListener("click",submitOpp);
 }
@@ -1291,7 +1291,7 @@ function openOpp(id){
   if(!o) return;
   state.opp = o;
   const st = stageOf(o);
-  var sourceLink = o.hg_url || o.source_url || "";
+  var sourceLink = (o.hg_url && o.hg_url.length > 50) ? o.hg_url : (o.source_url || ("https://www.highergov.com/contract-opportunity/?search=" + encodeURIComponent(o.title)));
   $("drawerAgency").innerHTML = esc(o.agency) + " - " + esc(st.name) + (sourceLink ? " <a href= + esc(sourceLink) +  target='_blank' rel='noreferrer' style='color:var(--amber);font-weight:900;font-size:10px;text-decoration:none;margin-left:6px' title='Source'>Source &#8599;</a>" : "");
   $("drawerTitle").textContent = o.title;
   $("drawerTags").innerHTML = [
