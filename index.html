@@ -1593,14 +1593,15 @@ function signInWithMS() {
     return;
   }
   ae.textContent = "Redirecting to Microsoft...";
-  msalApp.loginPopup({
+  msalApp.loginRedirect({
     scopes:["User.Read","User.ReadBasic.All"],
     prompt: "select_account"
-  }).then(function(result) {
-    if(result && result.account) { setMSUser(result.account); }
   }).catch(function(err) {
-    console.error("WIRE loginPopup error:", err);
-    ae.textContent = err.message || "Sign-in failed. Try allowing popups for this site.";
+    console.error("WIRE loginRedirect error:", err);
+    // Fallback: try popup
+    msalApp.loginPopup({scopes:["User.Read"]}).then(function(r){ if(r && r.account) setMSUser(r.account); }).catch(function(){
+      ae.textContent = err.message || "Sign-in failed — please allow popups or try another browser.";
+    });
   });
 }
 
