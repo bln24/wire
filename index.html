@@ -11,8 +11,14 @@ function wireLogin() {
   var ae = document.getElementById("ae");
   if(btn) btn.textContent = "Connecting...";
   
-  // Clear any stale MSAL state
-  try { Object.keys(localStorage).filter(function(k){return k.indexOf("msal.")===0;}).forEach(function(k){localStorage.removeItem(k);}); } catch(e){}
+  // Wipe ALL MSAL state — tokens, sessions, interaction flags
+  try {
+    var msalKeys = Object.keys(localStorage).filter(function(k){
+      return k.indexOf("msal.")===0 || k.indexOf("msal-")===0 || k.indexOf("ms-")===0;
+    });
+    msalKeys.forEach(function(k){ localStorage.removeItem(k); });
+    sessionStorage.clear();
+  } catch(e){}
   
   if(typeof msal === "undefined") {
     if(ae) ae.textContent = "Auth library not loaded. Hard-refresh (Cmd+Shift+R).";
