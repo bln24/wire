@@ -1862,18 +1862,10 @@ hydrateIcons();
 
 
 function truncateText(text, maxLen, id) {
-  if(!text || text.length <= maxLen) return "<span>" + esc(text||'') + "</span>";
-  return "<span>" +
-    "<span id='ts-" + id + "'>" + esc(text.substring(0,maxLen)) + "... " +
-    "<button onclick=\"tgl('" + id + "')\" style='background:none;border:none;color:var(--amber);font-size:11px;font-weight:900;cursor:pointer;font-family:inherit'>Read more</button></span>" +
-    "<span id='tf-" + id + "' style='display:none'>" + esc(text) + " " +
-    "<button onclick=\"tgl('" + id + "')\" style='background:none;border:none;color:var(--amber);font-size:11px;font-weight:900;cursor:pointer;font-family:inherit'>Read less</button></span>" +
-    "</span>";
+  // Always show full text — no truncation
+  return "<span>" + esc(text||'') + "</span>";
 }
-function tgl(id) {
-  var s=document.getElementById('ts-'+id), f=document.getElementById('tf-'+id);
-  if(s&&f){var h=f.style.display==='none';s.style.display=h?'none':'';f.style.display=h?'':'none';}
-}
+function tgl(id) {}
 
 
 function showFilteredOpps(title, opps) {
