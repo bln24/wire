@@ -1154,8 +1154,8 @@ body.light-mode .ac-list { background:var(--panel); border-color:var(--line-stro
           <div class="kicker">BLN24 — Full-lifecycle BD engine</div>
         </div>
         <div class="auth-copy">
-          <h1>Full-lifecycle BD. Faster wins. Better proposals.</h1>
-          <p>WIRE compresses the entire business development cycle — from market signal to submitted proposal — into one AI-powered workspace. Capture intelligence, team coordination, AI-drafted proposals, and color team review all in one loop. Less production time. Higher quality. Easier cross-team communication.</p>
+          <h1>Win more. Work smarter. Leave competitors guessing.</h1>
+          <p>WIRE is BLN24’s unfair advantage. AI scouts every opportunity, scores the fit, assigns your team, drafts the proposal, runs the red team, and tracks every stage — automatically. What used to take weeks now takes days. What took days now takes hours. Your competitors are still doing it manually.</p>
           <div class="signal-row">
             <div class="signal"><b>Sense</b><span>AI finds the signal</span></div>
             <div class="signal"><b>Capture</b><span>Team builds the case</span></div>
@@ -1509,13 +1509,17 @@ function agencyTitle(name){
 }
 
 // ── MSAL CONFIG ──
+// Compute redirect URI — covers bln24.github.io/wire/ and wire.bln24.com/
+var _redirectUri = (window.location.hostname === "wire.bln24.com")
+  ? "https://wire.bln24.com/"
+  : "https://bln24.github.io/wire/";
 const MSAL_CONFIG = {
   auth: {
     clientId: "c1ab9244-fd91-468d-ba13-736c9783809c",
     authority: "https://login.microsoftonline.com/bce59a38-0a4f-42df-8ff2-8d40797d61f1",
-    redirectUri: window.location.origin + window.location.pathname.replace(/index\.html$/, "").replace(/\/?$/, "/"),
+    redirectUri: _redirectUri,
   },
-  cache: { cacheLocation: "sessionStorage", storeAuthStateInCookie: true },
+  cache: { cacheLocation: "localStorage", storeAuthStateInCookie: true },
 };
 let msalApp = null;
 // Initialize MSAL async (required for v2.x)
