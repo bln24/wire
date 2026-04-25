@@ -40,18 +40,23 @@ function wireLogin() {
     cache: { cacheLocation: "localStorage", storeAuthStateInCookie: false }
   };
   
-  var app = new msal.PublicClientApplication(config);
-  app.initialize().then(function() {
-    return app.handleRedirectPromise();
-  }).then(function(result) {
-    if(result && result.account) {
-      if(typeof setMSUser === "function") { setMSUser(result.account); return; }
-    }
-    return app.loginRedirect({ scopes: ["User.Read"], prompt: "select_account" });
-  }).catch(function(e) {
-    if(ae) ae.textContent = e.message || "Login failed — try again.";
-    if(btn) { btn.textContent = "Sign in with Microsoft"; btn.disabled = false; }
-  });
+  // If main app already initialized, reuse it. Otherwise bootstrap a minimal one.
+  function doRedirect(msalInstance) {
+    msalInstance.loginRedirect({ scopes: ["User.Read"], prompt: "select_account" }).catch(function(e) {
+      if(ae) ae.textContent = e.message || "Login failed — try again.";
+      if(btn) { btn.textContent = "Sign in with Microsoft"; btn.disabled = false; }
+    });
+  }
+  
+  if(typeof msalApp !== "undefined" && msalApp) {
+    doRedirect(msalApp);
+  } else {
+    var app = new msal.PublicClientApplication(config);
+    app.initialize().then(function() { doRedirect(app); }).catch(function(e) {
+      if(ae) ae.textContent = e.message || "Login failed.";
+      if(btn) { btn.textContent = "Sign in with Microsoft"; btn.disabled = false; }
+    });
+  }
 }
 </script>
 <!-- build: v8.5 -->
