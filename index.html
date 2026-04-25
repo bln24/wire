@@ -36,10 +36,15 @@ function wireLogin() {
   
   var app = new msal.PublicClientApplication(config);
   app.initialize().then(function() {
-    app.loginRedirect({ scopes: ["User.Read"], prompt: "select_account" });
+    return app.handleRedirectPromise();
+  }).then(function(result) {
+    if(result && result.account) {
+      if(typeof setMSUser === "function") { setMSUser(result.account); return; }
+    }
+    return app.loginRedirect({ scopes: ["User.Read"], prompt: "select_account" });
   }).catch(function(e) {
-    if(ae) ae.textContent = e.message || "Login failed.";
-    if(btn) btn.textContent = "Sign in with Microsoft";
+    if(ae) ae.textContent = e.message || "Login failed — try again.";
+    if(btn) { btn.textContent = "Sign in with Microsoft"; btn.disabled = false; }
   });
 }
 </script>
