@@ -1304,21 +1304,80 @@ function openOpp(id){
   wireDrawer();
 }
 function drawerBody(o){
-  return `
-    <section class="detail-section"><div class="detail-label"><span data-icon="spark"></span>WIRE analysis</div>
-      ${o.what_they_need ? `<p class="detail-copy"><b style="color:var(--ink)">What they need:</b><br>${esc(o.what_they_need)}</p>` : ""}
-      ${o.rex_take ? `<div class="callout">${esc(o.rex_take)}</div>` : ""}
-    </section>
-    <section class="detail-section"><div class="detail-label">Win theme</div>
-      ${o.ai_win_theme ? `<div class="callout" style="border-left-color:var(--violet)">${esc(o.ai_win_theme)}</div>` : ""}
-      ${o.brian_win_theme ? `<div class="callout" style="margin-top:8px">${esc(o.brian_win_theme)}</div>` : ""}
-    </section>
-    ${capabilityMatrix(o)}
-    ${intelList("Competitors", o.competitors, "red")}
-    ${intelList("Teaming partners", o.partners, "green")}
-    ${state.user.role === "ceo" ? ceoControls(o) : ""}
-    ${state.user.role !== "ceo" && state.user.key === o.assigned_to ? amControls() : ""}`;
+  var da = o.deep_analysis || {};
+  var whatNeed = da.what_they_need_deep || o.what_they_need || "";
+  var strategic = da.strategic_take || o.rex_take || "";
+  var winDeep = da.win_theme_deep || o.ai_win_theme || "";
+  var ppMap = da.pp_mapping || "";
+  var gaps = da.honest_gaps || "";
+  var risks = da.loss_risks || "";
+  var modelBadge = da.model ? " (" + da.model + ")" : "";
+
+  function bulletLines(text, color) {
+    if(!text) return "";
+    var out = "";
+    text.split("\n").forEach(function(line) {
+      var clean = line.replace(/^[\-\*•#]+\s*/, "").replace(/\*\*/g, "").trim();
+      if(!clean) return;
+      out += "<div style=\"border:1px solid rgba(244,241,232,.1);border-left:2px solid " + color + ";border-radius:6px;padding:9px 11px;background:rgba(244,241,232,.03);font-size:12px;line-height:1.5;color:#9a9488;margin-bottom:6px\">" + esc(clean) + "</div>";
+    });
+    return out;
+  }
+
+  var b = "";
+
+  // What they actually need
+  b += "<section class=\"detail-section\"><div class=\"detail-label\"><span data-icon=\"spark\"></span>What They Actually Need</div>";
+  if(whatNeed) b += "<p class=\"detail-copy\">" + esc(whatNeed) + "</p>";
+  b += "</section>";
+
+  // Rex's Strategic Take
+  b += "<section class=\"detail-section\"><div class=\"detail-label\">Rex\u2019s Strategic Take<span style=\"font-size:9px;opacity:.4;font-weight:400;text-transform:none\">" + modelBadge + "</span></div>";
+  if(strategic) b += "<div class=\"callout\">" + esc(strategic) + "</div>";
+  b += "</section>";
+
+  // Win Theme
+  b += "<section class=\"detail-section\"><div class=\"detail-label\">Win Theme</div>";
+  if(winDeep) b += "<div class=\"callout\" style=\"border-left-color:var(--amber)\">" + esc(winDeep) + "</div>";
+  if(o.brian_win_theme) b += "<div class=\"callout\" style=\"margin-top:8px\">\ud83d\udc64 " + esc(o.brian_win_theme) + "</div>";
+  b += "</section>";
+
+  // PP Mapping
+  if(ppMap) {
+    b += "<section class=\"detail-section\"><div class=\"detail-label\">PP \u2192 SOW Mapping</div>";
+    b += bulletLines(ppMap, "var(--amber)");
+    b += "</section>";
+  }
+
+  // Capability matrix
+  b += capabilityMatrix(o);
+
+  // Honest Gaps
+  if(gaps) {
+    b += "<section class=\"detail-section\"><div class=\"detail-label\">Honest Gaps</div>";
+    b += bulletLines(gaps, "var(--amber)");
+    b += "</section>";
+  }
+
+  // Loss Risks
+  if(risks) {
+    b += "<section class=\"detail-section\"><div class=\"detail-label\">What Would Make Us Lose</div>";
+    b += bulletLines(risks, "var(--red)");
+    b += "</section>";
+  }
+
+  // Competitors + Partners
+  b += intelList("Competitors", o.competitors, "red");
+  b += intelList("Teaming partners", o.partners, "green");
+
+  // Controls
+  if(state.user.role === "ceo") b += ceoControls(o);
+  if(state.user.role !== "ceo" && state.user.key === o.assigned_to) b += amControls();
+
+  return b;
 }
+
+
 function capabilityMatrix(o){
   if(!o.cm_tasks || !o.cm_tasks.length) return "";
   return `<section class="detail-section"><div class="detail-label">Capability matrix</div><div class="matrix">
