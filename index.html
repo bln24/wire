@@ -807,7 +807,7 @@ button{cursor:pointer}
     <section class="auth-panel">
       <div class="auth-status">Encrypted workspace</div>
       <h2>Enter WIRE</h2>
-      <p>Choose your profile and unlock the capture intelligence workspace.</p>
+      <p>Sign in with your BLN24 Microsoft account to unlock the BD workspace.</p>
       <!-- Profile auto-detected from Microsoft account -->
       <select id="au" style="display:none">
         <option value="brian">Brian Nguyen - CEO</option>
@@ -973,24 +973,26 @@ function getUserKeyFromEmail(email) {
   return "hayk"; // fallback
 }
 
+function setMSUser(account) {
+  const email = account.username || "";
+  const name = account.name || email;
+  const role = getRoleFromEmail(email);
+  const key = getUserKeyFromEmail(email);
+  const label = USERS[key] ? USERS[key].label : (role === "ceo" ? "CEO" : "Account Manager");
+  state.user = {key, name, role, label, email, msalAccount: account};
+  $("auth").classList.add("hidden");
+  $("app").classList.add("on");
+  $("userName").textContent = name;
+  $("rolePill").textContent = label;
+  buildNav();
+  go("pipeline");
+}
+
 function signInWithMS() {
   const ae = $("ae");
   ae.textContent = "";
-  msalApp.loginPopup({scopes:["User.Read"]}).then(result => {
-    const account = result.account;
-    const email = account.username || "";
-    const name = account.name || email;
-    const role = getRoleFromEmail(email);
-    const key = getUserKeyFromEmail(email);
-    const label = USERS[key] ? USERS[key].label : (role === "ceo" ? "CEO" : "Account Manager");
-    state.user = {key, name, role, label, email, msalAccount: account};
-    $("auth").classList.add("hidden");
-    $("app").classList.add("on");
-    $("userName").textContent = name;
-    $("rolePill").textContent = label;
-    buildNav();
-    go("pipeline");
-  }).catch(err => {
+  // Use redirect — works on all browsers without popup blockers
+  msalApp.loginRedirect({scopes:["User.Read"]}).catch(err => {
     console.error(err);
     ae.textContent = err.message || "Sign-in failed. Try again.";
   });
@@ -1024,24 +1026,21 @@ function logout() {
 
 // Auto sign-in if already have a session
 window.addEventListener("DOMContentLoaded", function() {
-  if(typeof msal !== "undefined") {
+  if(typeof msal === "undefined") return;
+  // Handle redirect response first
+  msalApp.handleRedirectPromise().then(result => {
+    if(result && result.account) {
+      setMSUser(result.account);
+      return;
+    }
+    // Check for existing session
     const accounts = msalApp.getAllAccounts();
     if(accounts.length > 0) {
-      const account = accounts[0];
-      const email = account.username || "";
-      const name = account.name || email;
-      const role = getRoleFromEmail(email);
-      const key = getUserKeyFromEmail(email);
-      const label = USERS[key] ? USERS[key].label : (role === "ceo" ? "CEO" : "Account Manager");
-      state.user = {key, name, role, label, email, msalAccount: account};
-      $("auth").classList.add("hidden");
-      $("app").classList.add("on");
-      $("userName").textContent = name;
-      $("rolePill").textContent = label;
-      buildNav();
-      go("pipeline");
+      setMSUser(accounts[0]);
     }
-  }
+  }).catch(err => {
+    console.error("MSAL redirect error:", err);
+  });
 });
 
 function buildNav(){
