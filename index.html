@@ -723,10 +723,16 @@ const PG={
           <div class="oc-agency">${o.agency}</div>
           <div class="oc-name">${o.title}</div>
           <div class="oc-bottom">
-            <div class="arc-wrap">${arc(o.score,120,sc.replace('var(',''  ).replace(')',''))}<div style="font-size:.65rem;color:${sc};font-weight:700">${o.value}</div></div>
+            <div class="arc-wrap">${arc(o.score,120,sc.replace('var(',''  ).replace(')',''))}<div>
+              <div style="font-size:.68rem;color:${sc};font-weight:700">${o.score}pts${o.score_delta?` <span style="font-size:.58rem;color:var(--green)">+${o.score_delta}</span>`:''}</div>
+              <div style="font-size:.6rem;color:var(--muted)">${o.value}</div>
+            </div></div>
           </div>
-          <div class="oc-tags">
-            <span class="chip ch-gold">${o.set_aside}</span>
+          <div class="oc-tags" style="margin-top:8px">
+            <span class="chip ${o.notice==='RFP'?'ch-b':o.notice==='RFI'?'ch-p':'ch-dim'}">${o.notice||'OPP'}</span>
+            ${o.is8a?'<span class="chip ch-gold">8(a)</span>':''}
+            ${o.is_full_open?'<span class="chip ch-r">Full&amp;Open</span>':''}
+            ${o.set_aside&&!o.is8a?'<span class="chip ch-dim">'+o.set_aside+'</span>':''}
             ${o.assigned_to?`<span class="chip ch-b">${o.assigned_to}</span>`:''}
             ${o.source==='Employee Submission'?'<span class="chip ch-p">Employee</span>':''}
           </div>
