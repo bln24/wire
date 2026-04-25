@@ -1507,7 +1507,7 @@ function emptyState(title,copy){
 
 function wireMain(){
   $("main").querySelectorAll("[data-page]").forEach(el=>el.addEventListener("click",()=>go(el.dataset.page)));
-  $("main").querySelectorAll("[data-open]").forEach(el=>el.addEventListener("click",e=>{if(e.target.closest("a")||e.target.closest("button") && !e.currentTarget.classList.contains("priority")) return; openOpp(Number(el.dataset.open));}));
+  $("main").querySelectorAll("[data-open]").forEach(el=>el.addEventListener("click",e=>{if(e.target.closest("a")) return; if(e.target.tagName==="BUTTON" || e.target.closest("button")) return; openOpp(Number(el.dataset.open));}));
   const submit = $("submitOpp");
   if(submit) submit.addEventListener("click",submitOpp);
 }
@@ -1889,7 +1889,7 @@ function showFilteredOpps(title, opps) {
     ? opps.map(o => rowCard(o, "View")).join("")
     : "<div style='color:var(--quiet);padding:32px 0;text-align:center'>No matches found.</div>";
   body.querySelectorAll("[data-open]").forEach(el => el.addEventListener("click", e => {
-    if(e.target.closest("a")) return;
+    if(e.target.closest("a") || e.target.tagName==="BUTTON" || e.target.closest("button")) return;
     closeFilterSheet();
     $("globalSearch").value = ""; state.query = "";
     openOpp(Number(el.dataset.open));
