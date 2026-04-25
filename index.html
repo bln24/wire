@@ -1045,7 +1045,7 @@ body.light-mode .chip.blue { color:#1a3f6b !important; }
         <div class="profile-menu" id="profileMenu">
           <div class="profile-menu-head">
             <div class="profile-avatar" id="profileAvatarLarge"><span id="profileInitialLarge">?</span></div>
-            <div><div class="profile-name" id="profileName">—</div><div class="profile-role" id="profileRoleLabel">—</div></div>
+            <div><div class="profile-name" id="profileName">-</div><div class="profile-role" id="profileRoleLabel">-</div></div>
           </div>
           <div class="theme-row">
             <span class="theme-label">Theme</span>
@@ -1283,7 +1283,7 @@ function login() {
   if(msalApp) {
     signInWithMS();
   } else {
-    // MSAL not available — show error
+    // MSAL not available - show error
     const ae = $("ae");
     if(ae) ae.textContent = "Microsoft authentication unavailable. Please refresh and try again.";
     console.warn("MSAL not loaded");
@@ -1453,7 +1453,7 @@ const PAGES = {
       ${agencyStrip()}
       <div class="insight-grid">
         ${metric(OPPS.length,"Active opps","All tracked opportunities","var(--amber)",[18,28,12,34,22],"showFiltered('all','All Active Opportunities')")}
-        ${metric(high,"Priority fits","Score 70+ — high-confidence pursuits","var(--green)",[10,22,32,28,38],"showFiltered('priority','Priority Fits — Score 70+')")}
+        ${metric(high,"Priority fits","Score 70+ - high-confidence pursuits","var(--green)",[10,22,32,28,38],"showFiltered('priority','Priority Fits - Score 70+')")}
         ${metric(`$${Math.round(total)}M+`,"Visible TCV","Known values only; TBD excluded","var(--blue)",[30,14,26,40,18],"showFiltered('tcv','Known TCV Opportunities')")}
         ${metric(needs,"Need decision","Waiting for CEO go/no-go","var(--red)",[20,34,16,28,42],"go('review')")}
       </div>
@@ -1530,7 +1530,7 @@ function emptyState(title,copy){
 
 function wireMain(){
   $("main").querySelectorAll("[data-page]").forEach(el=>el.addEventListener("click",()=>go(el.dataset.page)));
-  // delegated on main — see global handler below
+  // delegated on main - see global handler below
   const submit = $("submitOpp");
   if(submit) submit.addEventListener("click",submitOpp);
 }
@@ -1613,7 +1613,7 @@ function drawerBody(o){
   if(whatNeed) b += "<p class=\"detail-copy\">" + truncateText(whatNeed, 320, "need-" + o.id) + "</p>";
   b += "</section>";
 
-  // Rex's Strategic Take
+  // WIRE’s Strategic Take
   b += "<section class=\"detail-section\"><div class=\"detail-label\">Rex\u2019s Strategic Take<span style=\"font-size:9px;opacity:.4;font-weight:400;text-transform:none\">" + modelBadge + "</span></div>";
   if(strategic) b += "<div class=\"callout\">" + truncateText(strategic, 400, "strat-" + o.id) + "</div>";
   b += "</section>";
@@ -1700,7 +1700,7 @@ function proposalStagePanel(o){
   const stageGuide = {
     7: { who: 'Account Manager', action: 'Review AI first draft. Flag any errors. Use the AI prompt box below to request rewrites.', color: '#ff9a62' },
     8: { who: 'All + AI Evaluators', action: 'AI plays CO, COR, PM, Tech, and Director personas. Each scores the draft. Respond to critiques before advancing.', color: 'var(--red)' },
-    9: { who: 'Account Manager + Brian', action: 'Compliance check — every SOW requirement must be addressed. AI polishes tone and evidence. Brian does final read.', color: '#ffd166' },
+    9: { who: 'Account Manager + Brian', action: 'Compliance check - every SOW requirement must be addressed. AI polishes tone and evidence. Brian does final read.', color: '#ffd166' },
     10: { who: 'Brian', action: 'AI plays the top competitor. Read their attack on your proposal. Harden the vulnerable sections.', color: '#8d877b' },
     11: { who: 'Brian only', action: 'Final gate. Approve to generate submission checklist and drop files to SharePoint.', color: 'var(--green)' }
   }[o.stage] || { who: '', action: '', color: 'var(--amber)' };
@@ -1719,7 +1719,7 @@ function proposalStagePanel(o){
 
 function aiPromptBox(o){
   return `<section class='detail-section'>
-    <div class='detail-label'><span data-icon='spark'></span>AI Prompt — Rewrite a Section</div>
+    <div class='detail-label'><span data-icon='spark'></span>AI Prompt - Rewrite a Section</div>
     <div style='font-size:11px;color:var(--quiet);margin-bottom:10px'>Tell the AI what to fix. Be specific: "Strengthen the past performance section to address DEA\'s Drupal requirement" or "Rewrite the executive summary to lead with mission alignment."</div>
     <div class='field'><input class='input' id='aiSection_${o.id}' placeholder='Section to rewrite (e.g. Executive Summary, Technical Approach)'></div>
     <div class='field'><textarea class='textarea' id='aiInstruction_${o.id}' placeholder='What should change and why? The more specific, the better.' style='min-height:72px'></textarea></div>
@@ -1732,11 +1732,11 @@ function runRedTeam(oppId){
   const o = OPPS.find(x=>x.id===oppId);
   if(!o) return;
   const msg = $('aiRewriteMsg_'+oppId);
-  if(msg) msg.textContent = 'Red Team analysis running… check back in ~30 seconds.';
+  if(msg) msg.textContent = 'Red Team analysis running... check back in ~30 seconds.';
   fetch('https://bln24-hg-proxy.t24worker.workers.dev/ai-rewrite',{
     method:'POST', headers:{'Content-Type':'application/json'},
     body:JSON.stringify({
-      opp_id:oppId, section_title:'Full Proposal — Red Team Review',
+      opp_id:oppId, section_title:'Full Proposal - Red Team Review',
       current_text:'Red Team review of the full proposal',
       instruction:'Play 5 federal evaluator personas (CO, COR, PM, Technical Reviewer, Program Director). For each, score the proposal Technical/Past Performance/Price and give 2 specific criticisms and 1 specific strength. Format as a structured review.',
       context:'Opp: '+o.title+' | Agency: '+o.agency+' | Win theme: '+(o.ai_win_theme||'')
@@ -1765,7 +1765,7 @@ function submitAIRewrite(oppId){
   const instruction = $('aiInstruction_'+oppId)?.value?.trim();
   const msg = $('aiRewriteMsg_'+oppId);
   if(!instruction){ if(msg) msg.textContent = 'Please enter an instruction.'; return; }
-  if(msg){ msg.textContent = 'Sending to AI…'; msg.style.color='var(--amber)'; }
+  if(msg){ msg.textContent = 'Sending to AI...'; msg.style.color='var(--amber)'; }
   fetch('https://bln24-hg-proxy.t24worker.workers.dev/ai-rewrite',{
     method:'POST', headers:{'Content-Type':'application/json'},
     body:JSON.stringify({
@@ -1876,7 +1876,7 @@ document.addEventListener("click", e=>{
 $("drawerBg").addEventListener("click",closeDrawer);
 $("filterSheetBg").addEventListener("click",e=>{if(e.target===$("filterSheetBg"))closeFilterSheet();});
 
-// Global delegated handler for [data-open] — opens opp drawer
+// Global delegated handler for [data-open] - opens opp drawer
 document.addEventListener("click", e => {
   if(e.target.closest("a")) return;           // ignore link clicks
   if(e.target.tagName === "BUTTON") return;   // ignore button clicks
@@ -1903,7 +1903,7 @@ hydrateIcons();
 function truncateText(text, maxLen, id) {
   if(!text || text.length <= maxLen) return "<span>" + esc(text||'') + "</span>";
   return "<span id='tw-" + id + "'>" +
-    "<span id='ts-" + id + "'>" + esc(text.substring(0, maxLen)) + "… " +
+    "<span id='ts-" + id + "'>" + esc(text.substring(0, maxLen)) + "... " +
     "<button onclick=\"tgl('" + id + "')\" style='background:none;border:none;color:var(--amber);font-size:11px;font-weight:800;cursor:pointer;font-family:inherit;padding:0'>Read more ▾</button></span>" +
     "<span id='tf-" + id + "' style='display:none'>" + esc(text) + " " +
     "<button onclick=\"tgl('" + id + "')\" style='background:none;border:none;color:var(--amber);font-size:11px;font-weight:800;cursor:pointer;font-family:inherit;padding:0'>Read less ▴</button></span>" +
@@ -1955,7 +1955,7 @@ function showFiltered(type, title, filterFn) {
 function closeFilterSheet() {
   $("filterSheetBg").classList.remove("on");
   document.body.style.overflow = "";
-  // Don't clear search query here — user may want to refine
+  // Don't clear search query here - user may want to refine
 }
 
 
@@ -2000,8 +2000,8 @@ function seedNotifications(role){
   if(role==="ceo"){
     NOTIFS.push(
       {title:"DEA RFI due soon", body:"DOJ DEA Web Developer RFI closes May 9. Qualtrics form not submitted.", time: now - 3600000, unread:true},
-      {title:"NTIA Phase 2 — Michael's strategy pending", body:"Michael hasn't submitted capture strategy yet. Nudge him.", time: now - 7200000, unread:true},
-      {title:"Census ADRM — CEO review needed", body:"New opp scored 89pts. Assigned to Eric. Awaiting your go/no-go.", time: now - 86400000, unread:false}
+      {title:"NTIA Phase 2 - Michael's strategy pending", body:"Michael hasn't submitted capture strategy yet. Nudge him.", time: now - 7200000, unread:true},
+      {title:"Census ADRM - CEO review needed", body:"New opp scored 89pts. Assigned to Eric. Awaiting your go/no-go.", time: now - 86400000, unread:false}
     );
   } else {
     NOTIFS.push(
@@ -2048,7 +2048,7 @@ async function fetchMSPhoto(account) {
     const photoResp = await fetch("https://graph.microsoft.com/v1.0/me/photo/$value", {
       headers: { "Authorization": "Bearer " + token }
     });
-    if(!photoResp.ok) return; // No photo set — keep initials
+    if(!photoResp.ok) return; // No photo set - keep initials
     const blob = await photoResp.blob();
     const url = URL.createObjectURL(blob);
     // Apply to both avatar buttons
@@ -2064,7 +2064,7 @@ async function fetchMSPhoto(account) {
     applyPhoto($("profileBtn"));
     applyPhoto($("profileAvatarLarge"));
   } catch(e) {
-    // Silent fail — initials are fine fallback
+    // Silent fail - initials are fine fallback
     console.log("WIRE: profile photo fetch skipped:", e.message);
   }
 }
