@@ -691,6 +691,14 @@ button{cursor:pointer}
 
 .drawer-bg{position:fixed;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(6px);z-index:30;display:none}
 .drawer-bg.on{display:block}
+.filter-sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);z-index:40;display:none;align-items:flex-end;justify-content:center}
+.filter-sheet-bg.on{display:flex}
+.filter-sheet{background:var(--panel);border-radius:16px 16px 0 0;border-top:1px solid var(--line-strong);width:100%;max-width:900px;max-height:82vh;display:flex;flex-direction:column;transform:translateY(100%);transition:transform .28s ease}
+.filter-sheet-bg.on .filter-sheet{transform:translateY(0)}
+.filter-sheet-head{display:flex;align-items:center;justify-content:space-between;padding:20px 24px 16px;border-bottom:1px solid var(--line);flex-shrink:0}
+.filter-sheet-title{font-size:18px;font-weight:800;letter-spacing:-.5px}
+.filter-sheet-count{font-size:12px;color:var(--quiet);font-weight:600;margin-top:2px}
+.filter-sheet-body{overflow-y:auto;padding:16px 24px 32px;display:flex;flex-direction:column;gap:8px}
 .drawer{
   position:fixed;
   top:0;
@@ -848,6 +856,15 @@ button{cursor:pointer}
 </div>
 
 <div class="drawer-bg" id="drawerBg"></div>
+<div class="filter-sheet-bg" id="filterSheetBg">
+  <div class="filter-sheet" id="filterSheet">
+    <div class="filter-sheet-head">
+      <div><div class="filter-sheet-title" id="filterSheetTitle"></div><div class="filter-sheet-count" id="filterSheetCount"></div></div>
+      <button class="btn btn-icon" onclick="closeFilterSheet()" title="Close"><span data-icon="x"></span></button>
+    </div>
+    <div class="filter-sheet-body" id="filterSheetBody"></div>
+  </div>
+</div>
 <aside class="drawer" id="drawer">
   <div class="drawer-top">
     <button class="btn btn-icon drawer-close" id="drawerClose" title="Close"><span data-icon="x"></span></button>
@@ -1479,6 +1496,7 @@ function submitOpp(){
 $("loginBtn").addEventListener("click",login);
 $("logoutBtn").addEventListener("click",logout);
 $("drawerBg").addEventListener("click",closeDrawer);
+$("filterSheetBg").addEventListener("click",e=>{if(e.target===$("filterSheetBg"))closeFilterSheet();});
 $("drawerClose").addEventListener("click",closeDrawer);
 $("globalSearch").addEventListener("input",e=>{state.query = e.target.value; go(state.page);});
 hydrateIcons();
@@ -1500,7 +1518,6 @@ function tgl(id) {
 
 
 function showFiltered(type, title, filterFn) {
-  // Build a filtered list view and render it as a modal-like overlay
   var opps;
   if(typeof filterFn === 'function') {
     opps = OPPS.filter(filterFn);
@@ -1513,14 +1530,24 @@ function showFiltered(type, title, filterFn) {
   } else {
     opps = OPPS.slice().sort((a,b) => b.score - a.score);
   }
-
-  // Render as a full page
-  var html = pageHead("Filtered view", title, opps.length + " opportunities",
-    "<button class='btn' onclick='go(state.page)'>← Back to Pipeline</button>");
-  html += "<div class='list-view'>" + opps.map(o => rowCard(o, "View")).join("") + "</div>";
-  $("main").innerHTML = html;
-  wireMain();
-  hydrateIcons($("main"));
+  $("filterSheetTitle").textContent = title;
+  $("filterSheetCount").textContent = opps.length + " opportunit" + (opps.length === 1 ? "y" : "ies");
+  var body = $("filterSheetBody");
+  body.innerHTML = opps.length
+    ? opps.map(o => rowCard(o, "View")).join("")
+    : "<div style='color:var(--quiet);padding:32px 0;text-align:center'>No opportunities found.</div>";
+  body.querySelectorAll("[data-open]").forEach(el => el.addEventListener("click", e => {
+    if(e.target.closest("a")) return;
+    closeFilterSheet();
+    openOpp(Number(el.dataset.open));
+  }));
+  hydrateIcons(body);
+  $("filterSheetBg").classList.add("on");
+  document.body.style.overflow = "hidden";
+}
+function closeFilterSheet() {
+  $("filterSheetBg").classList.remove("on");
+  document.body.style.overflow = "";
 }
 
 </script>
