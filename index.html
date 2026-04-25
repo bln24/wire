@@ -9,31 +9,38 @@ function wireLogin() {
   var btn = document.getElementById("loginBtn");
   var ae = document.getElementById("ae");
   if(btn) { btn.textContent = "Connecting..."; btn.disabled = true; }
-  // Clear MSAL interaction lock (prevents interaction_in_progress error)
-  try {
-    // Remove the interaction status key that blocks concurrent calls
-    Object.keys(sessionStorage).filter(function(k){return k.indexOf("msal.")===0 && k.indexOf("interaction.status")>=0;}).forEach(function(k){sessionStorage.removeItem(k);});
-    Object.keys(localStorage).filter(function(k){return k.indexOf("msal.")===0;}).forEach(function(k){localStorage.removeItem(k);});
-  } catch(e){}
-  if(typeof msal === "undefined") {
-    if(ae) ae.textContent = "Auth library not loaded. Hard-refresh (Cmd+Shift+R).";
-    if(btn) { btn.textContent = "Sign in with Microsoft"; btn.disabled = false; }
-    return;
+  
+  function doLogin() {
+    var app = (typeof msalApp !== "undefined" && msalApp) ? msalApp : null;
+    if(!app) {
+      if(ae) ae.textContent = "Auth not ready. Please wait a moment and try again.";
+      if(btn) { btn.textContent = "Sign in with Microsoft"; btn.disabled = false; }
+      return;
+    }
+    app.loginRedirect({ scopes: ["User.Read"], prompt: "select_account" }).catch(function(e) {
+      if(ae) ae.textContent = e.message || "Login failed. Try again.";
+      if(btn) { btn.textContent = "Sign in with Microsoft"; btn.disabled = false; }
+    });
   }
-  var h = window.location.hostname;
-  var uri = h === "wire.bln24.com" ? "https://wire.bln24.com/" :
-            h === "bln24-wire.netlify.app" ? "https://bln24-wire.netlify.app/" :
-            "https://bln24.github.io/wire/";
-  var app = new msal.PublicClientApplication({
-    auth: { clientId: "c1ab9244-fd91-468d-ba13-736c9783809c", authority: "https://login.microsoftonline.com/bce59a38-0a4f-42df-8ff2-8d40797d61f1", redirectUri: uri },
-    cache: { cacheLocation: "sessionStorage", storeAuthStateInCookie: true }
-  });
-  app.initialize().then(function() {
-    return app.loginRedirect({ scopes: ["User.Read"], prompt: "select_account" });
-  }).catch(function(e) {
-    if(ae) ae.textContent = e.message || "Login failed.";
-    if(btn) { btn.textContent = "Sign in with Microsoft"; btn.disabled = false; }
-  });
+  
+  // If msalApp already initialized by initMSAL, use it directly
+  if(typeof msalApp !== "undefined" && msalApp) {
+    doLogin();
+  } else {
+    // Wait up to 3 seconds for initMSAL to complete
+    var waited = 0;
+    var interval = setInterval(function() {
+      waited += 200;
+      if(typeof msalApp !== "undefined" && msalApp) {
+        clearInterval(interval);
+        doLogin();
+      } else if(waited >= 3000) {
+        clearInterval(interval);
+        if(ae) ae.textContent = "Auth library not ready. Hard-refresh (Cmd+Shift+R).";
+        if(btn) { btn.textContent = "Sign in with Microsoft"; btn.disabled = false; }
+      }
+    }, 200);
+  }
 }
 </script>
 <!-- build: v4.5.1 -->
