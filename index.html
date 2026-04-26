@@ -2212,7 +2212,9 @@ function approveOpp(){
   sendBrowserNotification("WIRE: Opp Approved", oppTitle + " has been assigned to " + assigneeName);
 
   // Full notification suite (email + Teams)
-  var assigneeEmail = (ORG_ROSTER.find(r=>r.key===assignee)||{}).email || "";
+  var assigneeEmail = (ORG_ROSTER.find(function(r){return r.key===assignee;})||{}).email || "";
+  console.log("WIRE notifyAll: assignee="+assignee+" email="+assigneeEmail);
+  if(!assigneeEmail) { console.warn("WIRE: no email found for key="+assignee); }
   notifyAll({
     title: "WIRE: Opp Approved → " + assigneeName,
     body: oppTitle,
