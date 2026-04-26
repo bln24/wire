@@ -2596,6 +2596,7 @@ function stageAdvanceButtons(o) {
   var d = '<div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--line)"><div class="detail-label" style="margin-bottom:10px">Advance Stage</div><div style="display:flex;gap:8px;flex-wrap:wrap">';
   if(o.stage >= 0 && o.stage < 5) {
     d += '<button class="btn btn-primary" style="font-size:12px" onclick="advanceStage(' + o.id + ',5)">▶ Go/No-Go</button>';
+    d += '<button class="btn btn-primary" style="font-size:12px;background:#ff9a62;border-color:#ff9a62" onclick="advanceStage(' + o.id + ',7)">⚡ Jump to Proposal</button>';
     d += '<button class="btn" style="font-size:12px;color:var(--quiet)" onclick="advanceStage(' + o.id + ',-1)">✕ Pass</button>';
   } else if(o.stage === 5) {
     d += '<button class="btn btn-primary" style="font-size:13px;padding:10px 20px;background:var(--green);border-color:var(--green)" onclick="advanceStage(' + o.id + ',7)">✔ GO — Start Proposal</button>';
