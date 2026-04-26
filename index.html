@@ -2011,9 +2011,10 @@ function proposalStagePanel(o){
   const st = stageOf(o);
   const WORKER = 'https://bln24-hg-proxy.t24worker.workers.dev';
   const safe = encodeURIComponent(o.title || '');
-  const teamsBase = 'https://thebln24.sharepoint.com/sites/BLN24-BDAI/Shared%20Documents/General/00%20Proposals';
-  const folderName = (o.title || '').substring(0,40).replace(/[^a-zA-Z0-9 ]/g,'').trim().replace(/\s+/g,'-');
-  const docUrl = teamsBase + '/' + folderName;
+  // Use sp_url (direct SharePoint link) if stored on opp, else build folder path
+  const teamsBase = 'https://thebln24.sharepoint.com/sites/BLN24-BDAI/Shared%20Documents/00%20Proposals';
+  const folderName = o.sp_folder || (o.title || '').substring(0,40).replace(/[^a-zA-Z0-9 ]/g,'').trim().replace(/\s+/g,'-');
+  const docUrl = o.sp_url || (teamsBase + '/' + encodeURIComponent(folderName));
 
   const stageGuide = {
     7: { who: 'Account Manager', action: 'Review AI first draft. Flag any errors. Use the AI prompt box below to request rewrites.', color: '#ff9a62' },
