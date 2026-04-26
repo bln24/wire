@@ -1732,7 +1732,7 @@ function oppCard(o){
     <div class="opp-agency">${esc(o.agency)}</div>
     <div class="opp-title">${esc(o.title)}</div>
     <div class="opp-meta">
-      ${noticeChip(o)}${vehicleChip(o)}<span class="chip amber">${esc(o.set_aside || "TBD")}</span>
+      ${proposalChip(o)}${noticeChip(o)}${vehicleChip(o)}<span class="chip amber">${esc(o.set_aside || "TBD")}</span>
       ${o.assigned_to ? `<span class="chip blue">${esc(o.assigned_to)}</span>` : ""}
       ${o.cm_fit ? `<span class="chip ${o.cm_fit === "Strong" ? "green" : o.cm_fit === "Pass" ? "red" : ""}">${esc(o.cm_fit)}</span>` : ""}
     </div>
@@ -1831,6 +1831,15 @@ const PAGES = {
   }
 };
 
+function proposalChip(o){
+  if(o.stage < 7) return '';
+  var stageNames={7:'Pink Team',8:'Red Team',9:'Gold Team',10:'Black Hat',11:'Final Gate'};
+  var sName = stageNames[o.stage] || 'Proposal';
+  var stageColors={7:'#ff9a62',8:'#ff6b6b',9:'#ffd166',10:'#8d877b',11:'#58d68d'};
+  var col = stageColors[o.stage] || '#ff9a62';
+  var docIcon = o.sp_url ? ' 📄' : '';
+  return `<span class="chip" style="color:${col};background:${col}18;border-color:${col}44;font-weight:900">✏️ ${sName}${docIcon}</span>`;
+}
 function vehicleChip(o){
   var sp=(o.source_url||o.source_path||'').toLowerCase();
   var v=o.vehicle||'';
@@ -1861,7 +1870,7 @@ function rowCard(o,action){
     <div>
       <div class="eyebrow" style="margin:0;color:${st.color}">${esc(o.agency)} - ${esc(st.short)}</div>
       <h3>${esc(o.title)}</h3>
-      <div class="row-meta">${noticeChip(o)}${vehicleChip(o)}<span class="chip amber">${esc(o.score)} pts</span><span class="chip">${esc(o.set_aside || "TBD")}</span><span class="chip ${o.cm_fit === "Strong" ? "green" : ""}">${esc(o.cm_fit || "Unscored")}</span></div>
+      <div class="row-meta">${proposalChip(o)}${noticeChip(o)}${vehicleChip(o)}<span class="chip amber">${esc(o.score)} pts</span><span class="chip">${esc(o.set_aside || "TBD")}</span><span class="chip ${o.cm_fit === "Strong" ? "green" : ""}">${esc(o.cm_fit || "Unscored")}</span></div>
     </div>
     <button class="btn btn-primary">${action}</button>
   </article>`;
