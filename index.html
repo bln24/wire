@@ -1732,7 +1732,7 @@ function oppCard(o){
     <div class="opp-agency">${esc(o.agency)}</div>
     <div class="opp-title">${esc(o.title)}</div>
     <div class="opp-meta">
-      ${noticeChip(o)}<span class="chip amber">${esc(o.set_aside || "TBD")}</span>
+      ${noticeChip(o)}${vehicleChip(o)}<span class="chip amber">${esc(o.set_aside || "TBD")}</span>
       ${o.assigned_to ? `<span class="chip blue">${esc(o.assigned_to)}</span>` : ""}
       ${o.cm_fit ? `<span class="chip ${o.cm_fit === "Strong" ? "green" : o.cm_fit === "Pass" ? "red" : ""}">${esc(o.cm_fit)}</span>` : ""}
     </div>
@@ -1831,6 +1831,19 @@ const PAGES = {
   }
 };
 
+function vehicleChip(o){
+  var sp=(o.source_path||'').toLowerCase();
+  var v=o.vehicle||'';
+  if(!v){
+    if(sp.includes('ebuy')&&(o.set_aside==='8A'||o.is8a)){v='OASIS+ 8(a)';}
+    else if(sp.includes('ebuy')&&o.set_aside==='SBA'){v='OASIS+ SB';}
+    else if(sp.includes('ebuy')){v='GSA eBuy';}
+    else if(sp.includes('sam.gov')){v='SAM.gov';}
+    else if(v==='')return '';
+  }
+  if(!v)return '';
+  return `<span class="chip" style="color:var(--violet);background:rgba(183,156,255,.1);border-color:rgba(183,156,255,.22)">${v}</span>`;
+}
 function noticeChip(o){
   var raw=(o.noticeCategory||o.notice||'').toLowerCase();
   var label,cls;
@@ -1848,7 +1861,7 @@ function rowCard(o,action){
     <div>
       <div class="eyebrow" style="margin:0;color:${st.color}">${esc(o.agency)} - ${esc(st.short)}</div>
       <h3>${esc(o.title)}</h3>
-      <div class="row-meta">${noticeChip(o)}<span class="chip amber">${esc(o.score)} pts</span><span class="chip">${esc(o.set_aside || "TBD")}</span><span class="chip ${o.cm_fit === "Strong" ? "green" : ""}">${esc(o.cm_fit || "Unscored")}</span></div>
+      <div class="row-meta">${noticeChip(o)}${vehicleChip(o)}<span class="chip amber">${esc(o.score)} pts</span><span class="chip">${esc(o.set_aside || "TBD")}</span><span class="chip ${o.cm_fit === "Strong" ? "green" : ""}">${esc(o.cm_fit || "Unscored")}</span></div>
     </div>
     <button class="btn btn-primary">${action}</button>
   </article>`;
