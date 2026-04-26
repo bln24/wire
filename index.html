@@ -1732,7 +1732,7 @@ function oppCard(o){
     <div class="opp-agency">${esc(o.agency)}</div>
     <div class="opp-title">${esc(o.title)}</div>
     <div class="opp-meta">
-      <span class="chip amber">${esc(o.set_aside || "TBD")}</span>
+      ${noticeChip(o)}<span class="chip amber">${esc(o.set_aside || "TBD")}</span>
       ${o.assigned_to ? `<span class="chip blue">${esc(o.assigned_to)}</span>` : ""}
       ${o.cm_fit ? `<span class="chip ${o.cm_fit === "Strong" ? "green" : o.cm_fit === "Pass" ? "red" : ""}">${esc(o.cm_fit)}</span>` : ""}
     </div>
@@ -1831,13 +1831,24 @@ const PAGES = {
   }
 };
 
+function noticeChip(o){
+  var raw=(o.noticeCategory||o.notice||'').toLowerCase();
+  var label,cls;
+  if(raw.includes('rfp')||raw.includes('rfq')){label='RFP';cls='red';}
+  else if(raw.includes('sources')||raw.includes('ss')){label='SS';cls='amber';}
+  else if(raw.includes('forecast')){label='Forecast';cls='blue';}
+  else if(raw.includes('rfi')){label='RFI';cls='blue';}
+  else{label=(o.noticeCategory||'').toUpperCase()||'';cls='';}
+  if(!label)return '';
+  return `<span class="chip ${cls}">${label}</span>`;
+}
 function rowCard(o,action){
   const st = stageOf(o);
   return `<article class="row-card" data-open="${o.id}" onclick="openOpp(${o.id})">
     <div>
       <div class="eyebrow" style="margin:0;color:${st.color}">${esc(o.agency)} - ${esc(st.short)}</div>
       <h3>${esc(o.title)}</h3>
-      <div class="row-meta"><span class="chip amber">${esc(o.score)} pts</span><span class="chip">${esc(o.set_aside || "TBD")}</span><span class="chip ${o.cm_fit === "Strong" ? "green" : ""}">${esc(o.cm_fit || "Unscored")}</span></div>
+      <div class="row-meta">${noticeChip(o)}<span class="chip amber">${esc(o.score)} pts</span><span class="chip">${esc(o.set_aside || "TBD")}</span><span class="chip ${o.cm_fit === "Strong" ? "green" : ""}">${esc(o.cm_fit || "Unscored")}</span></div>
     </div>
     <button class="btn btn-primary">${action}</button>
   </article>`;
