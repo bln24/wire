@@ -2583,6 +2583,49 @@ function requestNotifPermission() {
     Notification.requestPermission();
   }
 }
+
+// ── Stage advance buttons ─────────────────────────────────────────────────
+function stageAdvanceButtons(o) {
+  if(!o) return "";
+  var SNAMES = ["","","Capture","Capture","Sign-off","Go/No-Go","Team Assembly","Pink Team","Red Team","Gold Team","Black Hat","Final Gate"];
+  var d = '<div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--line)"><div class="detail-label" style="margin-bottom:10px">Advance Stage</div><div style="display:flex;gap:8px;flex-wrap:wrap">';
+  if(o.stage >= 0 && o.stage < 5) {
+    d += '<button class="btn btn-primary" style="font-size:12px" onclick="advanceStage(' + o.id + ',5)">▶ Go/No-Go</button>';
+    d += '<button class="btn" style="font-size:12px;color:var(--quiet)" onclick="advanceStage(' + o.id + ',-1)">✕ Pass</button>';
+  } else if(o.stage === 5) {
+    d += '<button class="btn btn-primary" style="font-size:13px;padding:10px 20px;background:var(--green);border-color:var(--green)" onclick="advanceStage(' + o.id + ',7)">✔ GO — Start Proposal</button>';
+    d += '<button class="btn btn-danger" style="font-size:13px;padding:10px 20px" onclick="advanceStage(' + o.id + ',-1)">✖ NO-GO</button>';
+  } else if(o.stage >= 6 && o.stage < 11) {
+    d += '<button class="btn btn-primary" style="font-size:12px" onclick="advanceStage(' + o.id + ',' + (o.stage+1) + ')">▶ ' + (SNAMES[o.stage+1]||"Next Stage") + '</button>';
+  }
+  d += '</div></div>';
+  return d;
+}
+
+function advanceStage(oppId, newStage) {
+  var SNAMES = ["","","Capture","Capture","Sign-off","Go/No-Go","Team Assembly","Pink Team","Red Team","Gold Team","Black Hat","Final Gate"];
+  var o = OPPS.find(function(x){return x.id===oppId;});
+  if(!o) return;
+  o.stage = newStage;
+  var stageName = newStage < 0 ? "Passed" : (SNAMES[newStage] || ("Stage "+newStage));
+  showToast(newStage < 0 ? "✕ No-Go" : "▶ " + stageName, o.title, newStage < 0 ? "var(--red)" : "var(--amber)");
+  if(newStage > 0 && o.assigned_to) {
+    var r = ORG_ROSTER.find(function(x){return x.key===o.assigned_to;});
+    if(r && r.email) {
+      notifyAll({
+        title: "WIRE: " + o.title + " advanced to " + stageName,
+        body: o.title + " has moved to " + stageName,
+        assignee: r.name, assignee_email: r.email,
+        assigned_by: state.user ? state.user.name : "Brian",
+        assigned_by_email: state.user ? state.user.email : "brian@bln24.com",
+        opp_id: oppId, opp_hg_url: o.hg_url || "", delegated_token: ""
+      });
+    }
+  }
+  buildNav(); renderCommand();
+  setTimeout(function(){ closeDrawer(); go(state.page); }, 600);
+}
+
 </script>
 </body>
 </html>
