@@ -1832,7 +1832,7 @@ const PAGES = {
 };
 
 function vehicleChip(o){
-  var sp=(o.source_path||'').toLowerCase();
+  var sp=(o.source_url||o.source_path||'').toLowerCase();
   var v=o.vehicle||'';
   if(!v){
     if(sp.includes('ebuy')&&(o.set_aside==='8A'||o.is8a)){v='OASIS+ 8(a)';}
@@ -1845,7 +1845,7 @@ function vehicleChip(o){
   return `<span class="chip" style="color:var(--violet);background:rgba(183,156,255,.1);border-color:rgba(183,156,255,.22)">${v}</span>`;
 }
 function noticeChip(o){
-  var raw=(o.noticeCategory||o.notice||'').toLowerCase();
+  var raw=(o.notice||o.noticeCategory||o.notice_type||'').toLowerCase();
   var label,cls;
   if(raw.includes('rfp')||raw.includes('rfq')){label='RFP';cls='red';}
   else if(raw.includes('sources')||raw.includes('ss')){label='SS';cls='amber';}
