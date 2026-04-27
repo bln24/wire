@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WIRE - BLN24 Capture Intelligence</title>
-<!-- build: v11.33 — shared Notes section — persistent, editable, visible to all team members -->
+<!-- build: v11.34 — agency intel now instant via Cloudflare Worker — no more next cycle wait -->
 <style>
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap");
 
@@ -3923,54 +3923,22 @@ function agencyIntelSection(o) {
     h += '</div>';
   }
 
-  // Try to parse AgencyIntel from SP data (loaded into o.agency_intel or o.sp_agency_intel)
+  // Try to parse AgencyIntel from: opp object > localStorage cache > SP data
   var intel = null;
   try {
     var raw = o.agency_intel || '';
+    if(!raw) {
+      var cached = localStorage.getItem('wire_agency_intel_' + o.id);
+      if(cached) raw = cached;
+    }
     if(raw && typeof raw === 'string') intel = JSON.parse(raw);
     else if(raw && typeof raw === 'object') intel = raw;
   } catch(e) { intel = null; }
 
   if(intel) {
-    // Render the intel brief
-    if(intel.fy2026_priorities) {
-      h += '<div style="margin-bottom:6px;font-size:12px;line-height:1.5">';
-      h += '<span style="color:var(--amber);font-weight:800">\uD83C\uDFAF FY2026 Priorities:</span> ';
-      var pText = Array.isArray(intel.fy2026_priorities) ? intel.fy2026_priorities.join('; ') : String(intel.fy2026_priorities);
-      h += '<span style="color:var(--muted)">' + esc(pText).substring(0, 400) + '</span></div>';
-    }
-    if(intel.budget_trend) {
-      h += '<div style="margin-bottom:6px;font-size:12px;line-height:1.5">';
-      h += '<span style="color:var(--green);font-weight:800">\uD83D\uDCB0 Budget trend:</span> ';
-      h += '<span style="color:var(--muted)">' + esc(String(intel.budget_trend)) + '</span></div>';
-    }
-    if(intel.bln24_relationship) {
-      h += '<div style="margin-bottom:6px;font-size:12px;line-height:1.5">';
-      h += '<span style="color:var(--blue);font-weight:800">\uD83E\uDD1D BLN24 relationship:</span> ';
-      h += '<span style="color:var(--muted)">' + esc(String(intel.bln24_relationship)) + '</span></div>';
-    }
-    if(intel.proposal_hot_buttons) {
-      h += '<div style="margin-bottom:6px;font-size:12px;line-height:1.5">';
-      h += '<span style="color:var(--violet);font-weight:800">\uD83D\uDCCB Proposal hot buttons:</span> ';
-      var hbText = Array.isArray(intel.proposal_hot_buttons) ? intel.proposal_hot_buttons.join('; ') : String(intel.proposal_hot_buttons);
-      h += '<span style="color:var(--muted)">' + esc(hbText).substring(0, 400) + '</span></div>';
-    }
-    if(intel.naics_spending) {
-      h += '<div style="margin-bottom:6px;font-size:12px;line-height:1.5">';
-      h += '<span style="color:var(--amber);font-weight:800">\uD83D\uDCC8 NAICS spending:</span> ';
-      h += '<span style="color:var(--muted)">' + esc(String(intel.naics_spending)).substring(0, 300) + '</span></div>';
-    }
-    if(intel.watch_notes) {
-      h += '<div style="margin-bottom:6px;font-size:12px;line-height:1.5">';
-      h += '<span style="color:var(--red);font-weight:800">\uD83D\uDC41\uFE0F Watch:</span> ';
-      var wnText = Array.isArray(intel.watch_notes) ? intel.watch_notes.join('; ') : String(intel.watch_notes);
-      h += '<span style="color:var(--muted)">' + esc(wnText).substring(0, 300) + '</span></div>';
-    }
-    if(intel.researched_at) {
-      h += '<div style="font-size:10px;color:var(--quiet);margin-top:4px;margin-bottom:8px">Last researched: ' + esc(String(intel.researched_at).substring(0, 10)) + '</div>';
-    }
-    h += '<button class="btn btn-ghost" style="font-size:11px;min-height:30px;padding:0 10px" onclick="requestAgencyIntel(' + o.id + ')">';
-    h += '\uD83D\uDD04 Refresh Intel</button>';
+    h += renderAgencyIntelContent(intel);
+    h += '<div style="margin-top:8px"><button class="btn btn-ghost" style="font-size:11px;min-height:30px;padding:0 10px" onclick="requestAgencyIntel(' + o.id + ')">';
+    h += '\uD83D\uDD04 Refresh Intel</button></div>';
   } else {
     h += '<div style="color:var(--quiet);font-size:12px;margin-bottom:8px">No agency intel available.</div>';
     h += '<button class="btn" style="font-size:11px;min-height:30px;padding:0 12px;background:var(--amber-soft);border-color:rgba(244,183,63,.3);color:var(--amber);font-weight:800" onclick="requestAgencyIntel(' + o.id + ')">';
@@ -3978,6 +3946,52 @@ function agencyIntelSection(o) {
   }
 
   h += '</section>';
+  return h;
+}
+
+function renderAgencyIntelContent(intel) {
+  var h = '';
+  if(intel.mission) {
+    h += '<div style="margin-bottom:6px;font-size:12px;line-height:1.5">';
+    h += '<span style="color:var(--ink);font-weight:800">Mission:</span> ';
+    h += '<span style="color:var(--muted)">' + esc(String(intel.mission)).substring(0, 400) + '</span></div>';
+  }
+  if(intel.fy2026_priorities) {
+    h += '<div style="margin-bottom:6px;font-size:12px;line-height:1.5">';
+    h += '<span style="color:var(--amber);font-weight:800">\uD83C\uDFAF FY2026 Priorities:</span> ';
+    var pText = Array.isArray(intel.fy2026_priorities) ? intel.fy2026_priorities.join('; ') : String(intel.fy2026_priorities);
+    h += '<span style="color:var(--muted)">' + esc(pText).substring(0, 400) + '</span></div>';
+  }
+  if(intel.budget_trend) {
+    h += '<div style="margin-bottom:6px;font-size:12px;line-height:1.5">';
+    h += '<span style="color:var(--green);font-weight:800">\uD83D\uDCB0 Budget trend:</span> ';
+    h += '<span style="color:var(--muted)">' + esc(String(intel.budget_trend)) + '</span></div>';
+  }
+  if(intel.bln24_relationship) {
+    h += '<div style="margin-bottom:6px;font-size:12px;line-height:1.5">';
+    h += '<span style="color:var(--blue);font-weight:800">\uD83E\uDD1D BLN24 relationship:</span> ';
+    h += '<span style="color:var(--muted)">' + esc(String(intel.bln24_relationship)) + '</span></div>';
+  }
+  if(intel.proposal_hot_buttons) {
+    h += '<div style="margin-bottom:6px;font-size:12px;line-height:1.5">';
+    h += '<span style="color:var(--violet);font-weight:800">\uD83D\uDCCB Proposal hot buttons:</span> ';
+    var hbText = Array.isArray(intel.proposal_hot_buttons) ? intel.proposal_hot_buttons.join('; ') : String(intel.proposal_hot_buttons);
+    h += '<span style="color:var(--muted)">' + esc(hbText).substring(0, 400) + '</span></div>';
+  }
+  if(intel.naics_spending) {
+    h += '<div style="margin-bottom:6px;font-size:12px;line-height:1.5">';
+    h += '<span style="color:var(--amber);font-weight:800">\uD83D\uDCC8 NAICS spending:</span> ';
+    h += '<span style="color:var(--muted)">' + esc(String(intel.naics_spending)).substring(0, 300) + '</span></div>';
+  }
+  if(intel.watch_notes) {
+    h += '<div style="margin-bottom:6px;font-size:12px;line-height:1.5">';
+    h += '<span style="color:var(--red);font-weight:800">\uD83D\uDC41\uFE0F Watch:</span> ';
+    var wnText = Array.isArray(intel.watch_notes) ? intel.watch_notes.join('; ') : String(intel.watch_notes);
+    h += '<span style="color:var(--muted)">' + esc(wnText).substring(0, 300) + '</span></div>';
+  }
+  if(intel.researched_at) {
+    h += '<div style="font-size:10px;color:var(--quiet);margin-top:4px">Researched: ' + esc(String(intel.researched_at).substring(0, 10)) + '</div>';
+  }
   return h;
 }
 
@@ -3990,67 +4004,121 @@ async function requestAgencyIntel(oppId) {
   if(btnIcon) btnIcon.textContent = '\u23F3';
 
   var userName = state.user ? state.user.name : 'Unknown';
+  var userEmail = state.user ? state.user.email : 'brian@bln24.com';
+  var agency = o.agency || '';
+  var subage = o.subage || o.sub_agency || '';
+
+  // Show pulsing loading state in the intel body area
+  var intelSection = document.querySelector('#drawerBody .detail-section:last-of-type');
+  if(intelSection) {
+    var loadingDiv = document.createElement('div');
+    loadingDiv.id = 'agencyIntelLoading_' + oppId;
+    loadingDiv.style.cssText = 'padding:12px 0;font-size:13px;color:var(--amber);font-weight:600';
+    loadingDiv.innerHTML = '<span style="display:inline-block;animation:pulse 1.5s ease-in-out infinite">\uD83D\uDD04 Researching ' + esc(agency) + '...</span>'
+      + '<div style="color:var(--quiet);font-size:11px;margin-top:4px">Rex is generating an intel brief via GPT-4.1. Usually 5\u201315 seconds.</div>';
+    intelSection.appendChild(loadingDiv);
+  }
+
   try {
-    var item = await spFindItem(String(oppId));
+    var resp = await fetch('https://bln24-hg-proxy.bln24.workers.dev/agency-intel', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        opp_id: String(oppId),
+        opp_title: o.title || '',
+        agency: agency,
+        subage: subage,
+        requester_email: userEmail,
+        requester_name: userName
+      })
+    });
+    var data = await resp.json();
 
-    // If item not found, create it on the fly
-    if(!item) {
-      try {
-        await spCreateItem({
-          Title: String(oppId),
-          OppId: String(oppId),
-          Agency: o.agency || '',
-          Stage: o.stage || 0,
-          ActivityFeed: '[]',
-          StageData: '{}'
-        });
-        item = await spFindItem(String(oppId));
-      } catch(ce) {
-        console.warn('Could not create SP item:', ce);
-      }
-    }
+    if(data.ok && data.intel) {
+      // Cache in localStorage for instant load on refresh
+      localStorage.setItem('wire_agency_intel_' + oppId, JSON.stringify(data.intel));
 
-    if(item) {
-      await spUpdateItem(item.id, {
-        AgencyIntelRequested: true,
-        Agency: o.agency || '',
-        SubAgency: o.subage || o.sub_agency || ''
-      });
-      showToast('Agency intel requested', 'Rex will research ' + (o.agency || 'this agency') + ' on the next cycle', 'var(--amber)');
+      // Update the opp object so drawer re-renders correctly
+      o.agency_intel = data.intel;
 
-      // Post activity feed entry
-      var afEntry = {type: 'agency_intel', msg: 'Agency intel research requested for ' + (o.agency || 'unknown'), by: userName, at: new Date().toISOString()};
+      // Remove loading indicator
+      var loader = $('agencyIntelLoading_' + oppId);
+      if(loader) loader.remove();
+
+      // Re-render the full drawer to show intel
+      $('drawerBody').innerHTML = drawerBody(o);
+
+      // Update local activity feed
+      var afEntry = {type: 'agency_intel_ready', msg: 'Rex completed agency intel research for ' + agency + '. FY2026 priorities and proposal hot buttons now available.', by: 'Rex', at: new Date().toISOString()};
       var localFeed = [];
       try { localFeed = JSON.parse(localStorage.getItem('wire_af_' + oppId) || '[]'); } catch(e) { localFeed = []; }
       localFeed.unshift(afEntry);
       localStorage.setItem('wire_af_' + oppId, JSON.stringify(localFeed));
-      try {
-        var spFeed = [];
-        try { spFeed = JSON.parse(item.fields.ActivityFeed || '[]'); } catch(e) { spFeed = []; }
-        spFeed.unshift(afEntry);
-        await spUpdateItem(item.id, {ActivityFeed: JSON.stringify(spFeed)});
-      } catch(e) { console.warn('agency intel activity error:', e); }
+
+      showToast('Agency intel ready', 'Research complete for ' + agency, 'var(--green)');
     } else {
-      // Even without SP, queue locally and show success
-      localStorage.setItem('wire_intel_req_' + oppId, JSON.stringify({
-        oppId: oppId,
-        agency: o.agency,
-        subage: o.agency_full || '',
-        requested: true,
-        requestedAt: new Date().toISOString(),
-        requestedBy: userName
-      }));
-      showToast('Agency intel queued', 'Rex will research ' + (o.agency || 'this agency') + ' \u2014 saved locally', 'var(--amber)');
+      throw new Error(data.error || 'Worker returned no intel');
     }
   } catch(e) {
     console.warn('requestAgencyIntel error:', e);
-    // Fallback: save to localStorage so cron can pick it up
-    localStorage.setItem('wire_intel_req_' + oppId, JSON.stringify({oppId: oppId, agency: o.agency, requested: true, at: new Date().toISOString()}));
-    showToast('Agency intel queued', 'Research request saved \u2014 will process on next cycle', 'var(--amber)');
-  }
 
-  if(btnText) btnText.textContent = 'Requested \u2713';
-  if(btnIcon) btnIcon.textContent = '\u2705';
+    // Remove loading indicator
+    var loader2 = $('agencyIntelLoading_' + oppId);
+    if(loader2) loader2.remove();
+
+    // Fallback: flag in SP for background processing and poll
+    try {
+      var item = await spFindItem(String(oppId));
+      if(!item) {
+        await spCreateItem({
+          Title: String(oppId), OppId: String(oppId),
+          Agency: agency, Stage: o.stage || 0,
+          ActivityFeed: '[]', StageData: '{}'
+        });
+        item = await spFindItem(String(oppId));
+      }
+      if(item) {
+        await spUpdateItem(item.id, { AgencyIntelRequested: true, Agency: agency, SubAgency: subage });
+      }
+    } catch(spErr) { console.warn('SP fallback error:', spErr); }
+
+    // Poll SP as backup
+    pollForAgencyIntel(oppId, 22);
+    showToast('Researching ' + agency, 'Generating intel brief... results will appear here shortly.', 'var(--amber)');
+
+    if(btnText) btnText.textContent = 'Researching...';
+    if(btnIcon) btnIcon.textContent = '\u23F3';
+    return;
+  }
+}
+
+function pollForAgencyIntel(oppId, maxAttempts) {
+  var attempts = 0;
+  var poll = setInterval(async function() {
+    attempts++;
+    if(attempts > maxAttempts) {
+      clearInterval(poll);
+      var btn = $('intelBtnText_' + oppId);
+      if(btn) btn.textContent = 'Check back soon';
+      var icon = $('intelBtnIcon_' + oppId);
+      if(icon) icon.textContent = '\u23F0';
+      return;
+    }
+    try {
+      var item = await spFindItem(String(oppId));
+      if(item && item.fields && item.fields.AgencyIntel) {
+        clearInterval(poll);
+        var intel = JSON.parse(item.fields.AgencyIntel);
+        var o = OPPS.find(function(x) { return x.id === oppId; });
+        if(o) {
+          o.agency_intel = intel;
+          localStorage.setItem('wire_agency_intel_' + oppId, JSON.stringify(intel));
+          $('drawerBody').innerHTML = drawerBody(o);
+          showToast('Agency intel ready', 'Research complete for ' + (o.agency || 'agency'), 'var(--green)');
+        }
+      }
+    } catch(e) { /* poll error, keep trying */ }
+  }, 8000);
 }
 
 // Load agency intel from SharePoint when opening drawer
