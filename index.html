@@ -1118,6 +1118,28 @@ body.light-mode .chip.blue { color:#1a3f6b !important; }
 .ac-info b { display:block; font-size:12px; font-weight:700; }
 .ac-info span { font-size:11px; color:var(--quiet); }
 body.light-mode .ac-list { background:var(--panel); border-color:var(--line-strong); }
+/* Drag & drop */
+.opp.dragging{opacity:.5;transform:scale(.97)}
+.stage.drag-over{border:2px dashed var(--amber)!important;background:rgba(244,183,63,.06)!important}
+/* Stage input panels */
+.stage-panel{border:1px solid var(--line-strong);border-radius:10px;padding:16px;margin-bottom:18px;background:rgba(244,241,232,.04)}
+.stage-panel h3{margin:0 0 12px;font-size:15px;font-weight:800;letter-spacing:-.3px}
+.stage-panel .sp-row{display:flex;gap:8px;margin-bottom:8px;align-items:center}
+.stage-panel .sp-textarea{width:100%;min-height:72px;resize:vertical}
+.stage-panel .sp-input{flex:1}
+.stage-panel .sp-entries{margin-top:8px;max-height:200px;overflow-y:auto}
+.stage-panel .sp-entry{padding:8px 10px;border:1px solid var(--line);border-radius:6px;margin-bottom:6px;font-size:12px;background:rgba(244,241,232,.03);position:relative}
+.stage-panel .sp-entry-time{color:var(--quiet);font-size:10px;margin-top:2px}
+.stage-panel .sp-score-row{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:8px}
+.stage-panel .sp-score-item{display:flex;flex-direction:column;gap:4px;min-width:120px}
+.stage-panel .sp-score-item label{font-size:11px;font-weight:700;color:var(--muted)}
+.stage-panel .sp-score-item select{width:100%}
+.stage-panel .sp-toggle{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+.stage-panel .sp-toggle label{font-size:12px;font-weight:700;color:var(--muted);min-width:140px}
+.stage-panel .sp-check{display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:12px;cursor:pointer}
+.stage-panel .sp-check input[type=checkbox]{width:16px;height:16px;accent-color:var(--amber)}
+.sp-comp-list{margin-top:8px}
+.sp-remove{float:right;background:none;border:none;color:var(--red);cursor:pointer;font-size:14px;padding:0 4px}
 </style>
 <script src="msal-browser.min.js"></script>
 </head>
@@ -1432,6 +1454,8 @@ const OPPS = LIVE.map((o,i)=>({...o,id:i+1,stage:o.stage || 0,submitted_by:o.sub
   {id:900,stage:1,agency:"Census Bureau",title:"CES ADRM Phase 2 Analytics",value:"~$7M",set_aside:"SB",score:89,due:"2026-06-15",source:"AI",what_they_need:"Analytics support for Census Center for Economic Studies ADRM program. Phase 2 follow-on.",rex_take:"Repeat client. BLN24 won Phase 1. Census relationship spans five prior contracts. Incumbency advantage is decisive.",recommendation:"Pursue",cm_fit:"Strong",cm_avg:3.8,cm_tasks:[{task:"Data Analytics",score:4,status:"prime",pp:"Census SRQA $4.1M"},{task:"Agile Delivery",score:4,status:"prime",pp:"Census DWS III $8.3M"}],competitors:[{name:"AFS",why:"Active sub on Phase 1",url:""},{name:"Guidehouse",why:"Large Census incumbent",url:""}],partners:[],ai_win_theme:"We built it. We own it. No competitor can claim four years of Census ADRM institutional knowledge.",brian_win_theme:"This is ours. Eric needs to call Jason Winings before solicitation drops.",assigned_to:"eric",submitted_by:"AI"},
   {id:901,stage:5,agency:"NTIA",title:"Digital Outreach Phase 2",value:"~$3.5M",set_aside:"8(a)",score:95,due:"2026-08-01",source:"AI",what_they_need:"Follow-on outreach and engagement services for NTIA digital programs.",rex_take:"Repeat client. Exceptional CPARS on NTIA Outreach. Classic sole-source setup.",recommendation:"Pursue - Sole Source",cm_fit:"Strong",cm_avg:4,cm_tasks:[{task:"Strategic Communications",score:4,status:"prime",pp:"NTIA Outreach $2.7M"},{task:"Content Development",score:4,status:"prime",pp:"CMS MNPS $16M"}],competitors:[{name:"None if sole source",why:"Push CO before posting",url:""}],partners:[],ai_win_theme:"Exceptional CPARS is a direct invitation. The relationship is warm. Push for sole source before it posts.",brian_win_theme:"My relationship. Reaching out to CO this week.",assigned_to:"michael",submitted_by:"AI"}
 ]);
+// Load stage overrides from localStorage
+(function(){try{var ov=JSON.parse(localStorage.getItem("wire_stage_overrides")||"{}");Object.keys(ov).forEach(function(k){var o=OPPS.find(function(x){return x.id===Number(k);});if(o) o.stage=ov[k];});}catch(e){}})();
 
 const state = {user:null,page:"pipeline",opp:null,query:""};
 const $ = id => document.getElementById(id);
@@ -1748,7 +1772,8 @@ function dueDateColor(d){
 }
 function oppCard(o){
   const sc = scoreColor(o.score);
-  return `<article class="opp" data-open="${o.id}" onclick="openOpp(${o.id})">
+  const canDrag = state.user && state.user.role === 'ceo';
+  return `<article class="opp" data-open="${o.id}" data-opp-id="${o.id}" onclick="openOpp(${o.id})"${canDrag ? ' draggable="true" ondragstart="dragOpp(event,'+o.id+')" ondragend="dragEnd(event)"' : ''}>
     <div class="opp-agency">${esc(o.agency)}</div>
     <div class="opp-title">${esc(o.title)}</div>
     <div class="opp-meta">
@@ -1763,7 +1788,7 @@ function board(stages){
   const ops = filteredOpps();
   return `<div class="board">${stages.map(st=>{
     const col = ops.filter(o=>o.stage === st.id);
-    return `<section class="stage" style="--stage-color:${st.color}">
+    return `<section class="stage" style="--stage-color:${st.color}" data-stage-id="${st.id}" ondragover="dragOver(event)" ondrop="dropOpp(event,${st.id})" ondragleave="dragLeave(event)">
       <div class="stage-head"><span class="dot"></span>${st.short}<span class="stage-count">${col.length}</span></div>
       <div class="opp-list">${col.length ? col.map(oppCard).join("") : `<div class="empty">No active opportunities</div>`}</div>
     </section>`;
@@ -2005,6 +2030,7 @@ function drawerBody(o){
   }
 
   var b = "";
+  b += stageInputPanel(o);
 
   // Recommendation + Win Prob
   if(o.recommendation || o.win_prob) {
@@ -2744,6 +2770,192 @@ function advanceStage(oppId, newStage) {
   }
   buildNav(); renderCommand();
   setTimeout(function(){ closeDrawer(); go(state.page); }, 600);
+}
+
+// ── Drag & Drop ──────────────────────────────────────────────────────────
+function dragOpp(e, oppId){
+  e.dataTransfer.setData('text/plain', String(oppId));
+  e.dataTransfer.effectAllowed = 'move';
+  setTimeout(function(){ e.target.classList.add('dragging'); }, 0);
+}
+function dragEnd(e){
+  e.target.classList.remove('dragging');
+  document.querySelectorAll('.stage.drag-over').forEach(function(el){ el.classList.remove('drag-over'); });
+}
+function dragOver(e){
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  var col = e.target.closest('.stage');
+  if(col) col.classList.add('drag-over');
+}
+function dragLeave(e){
+  var col = e.target.closest('.stage');
+  if(col && !col.contains(e.relatedTarget)) col.classList.remove('drag-over');
+}
+function dropOpp(e, newStage){
+  e.preventDefault();
+  var col = e.target.closest('.stage');
+  if(col) col.classList.remove('drag-over');
+  if(!state.user || state.user.role !== 'ceo') return;
+  var oppId = Number(e.dataTransfer.getData('text/plain'));
+  if(!oppId) return;
+  var o = OPPS.find(function(x){return x.id === oppId;});
+  if(!o || o.stage === newStage) return;
+  o.stage = newStage;
+  var ov = {};
+  try{ ov = JSON.parse(localStorage.getItem('wire_stage_overrides') || '{}'); }catch(ex){}
+  ov[oppId] = newStage;
+  localStorage.setItem('wire_stage_overrides', JSON.stringify(ov));
+  var st = STAGES.find(function(s){return s.id === newStage;}) || STAGES[0];
+  showToast('Stage Updated', o.title + ' moved to ' + st.name, st.color);
+  buildNav();
+  renderCommand();
+  go(state.page);
+}
+
+// ── Stage-specific drawer panels ─────────────────────────────────────────
+function loadStageData(oppId){
+  try{ return JSON.parse(localStorage.getItem('wire_stage_'+oppId) || '{}'); }catch(e){ return {}; }
+}
+function saveStageData(oppId, data){
+  localStorage.setItem('wire_stage_'+oppId, JSON.stringify(data));
+}
+function stageInputPanel(o){
+  if(o.stage < 7) return '';
+  var d = loadStageData(o.id);
+  var h = '';
+  if(o.stage === 7){
+    var comps = d.competitors || [];
+    var entries = d.team_inputs || [];
+    h = '<div class="stage-panel" style="border-left:3px solid #8d877b">' +
+      '<h3 style="color:#8d877b">&#9823; Black Hat Intelligence</h3>' +
+      '<div class="sp-row"><input class="input sp-input" id="spCompName" placeholder="Competitor name"><input class="input sp-input" id="spCompStrategy" placeholder="Their likely strategy / win theme"><button class="btn" onclick="addBlackHatComp('+o.id+')" style="font-size:12px">+ Add</button></div>' +
+      '<div class="sp-comp-list" id="spCompList">' + comps.map(function(c,i){ return '<div class="sp-entry"><b>'+esc(c.name)+'</b> &mdash; '+esc(c.strategy)+'<button class="sp-remove" onclick="removeBlackHatComp('+o.id+','+i+')">&times;</button></div>'; }).join('') + '</div>' +
+      '<div class="field" style="margin-top:12px"><label class="label">Our vulnerabilities</label><textarea class="textarea sp-textarea" id="spVulnerabilities" onchange="saveBlackHat('+o.id+')">'+esc(d.vulnerabilities||'')+'</textarea></div>' +
+      '<div class="field"><label class="label">Counter-moves</label><textarea class="textarea sp-textarea" id="spCounterMoves" onchange="saveBlackHat('+o.id+')">'+esc(d.counter_moves||'')+'</textarea></div>' +
+      '<div class="field"><label class="label">Team inputs</label><div class="sp-row"><input class="input sp-input" id="spTeamInput" placeholder="Add intel..."><button class="btn" onclick="addBlackHatIntel('+o.id+')" style="font-size:12px">Add Intel</button></div></div>' +
+      '<div class="sp-entries" id="spIntelList">' + entries.map(function(en){ return '<div class="sp-entry"><div>'+esc(en.text)+'</div><div class="sp-entry-time">'+esc(en.time)+'</div></div>'; }).join('') + '</div>' +
+      '</div>';
+  } else if(o.stage === 8){
+    h = '<div class="stage-panel" style="border-left:3px solid #ff9a62">' +
+      '<h3 style="color:#ff9a62">&#128221; Pink Team Review</h3>' +
+      '<div class="field"><label class="label">Draft document</label><input class="input" id="spDraftLink" value="'+esc(d.draft_link||'')+'" placeholder="Paste link to draft document" onchange="savePinkTeam('+o.id+')"></div>' +
+      (d.draft_link ? '<div style="margin-bottom:12px"><a href="'+esc(d.draft_link)+'" target="_blank" rel="noreferrer" style="color:var(--amber);font-size:12px;font-weight:800">Open draft &#8599;</a></div>' : '<div style="margin-bottom:12px;color:var(--quiet);font-size:12px">No doc attached</div>') +
+      '<div class="field"><label class="label">Open issues</label><textarea class="textarea sp-textarea" id="spOpenIssues" placeholder="List open issues..." onchange="savePinkTeam('+o.id+')">'+esc(d.open_issues||'')+'</textarea></div>' +
+      '<div class="field"><label class="label">Reviewer notes</label><textarea class="textarea sp-textarea" id="spReviewerNotes" placeholder="Reviewer notes..." onchange="savePinkTeam('+o.id+')">'+esc(d.reviewer_notes||'')+'</textarea></div>' +
+      '</div>';
+  } else if(o.stage === 9){
+    var scores = d.scores || {};
+    var sections = ['Executive Summary','Technical','Past Performance','Price'];
+    h = '<div class="stage-panel" style="border-left:3px solid #ff6b6b">' +
+      '<h3 style="color:#ff6b6b">&#127919; Red Team Scorecard</h3>' +
+      '<div class="sp-score-row">' + sections.map(function(s){
+        var key = s.toLowerCase().replace(/\s+/g,'_');
+        var val = scores[key] || 0;
+        return '<div class="sp-score-item"><label>'+esc(s)+'</label><select class="select" id="spScore_'+key+'" onchange="saveRedTeam('+o.id+')"><option value="0"'+(val===0?' selected':'')+'>-</option><option value="1"'+(val===1?' selected':'')+'>1</option><option value="2"'+(val===2?' selected':'')+'>2</option><option value="3"'+(val===3?' selected':'')+'>3</option><option value="4"'+(val===4?' selected':'')+'>4</option><option value="5"'+(val===5?' selected':'')+'>5</option></select></div>';
+      }).join('') + '</div>' +
+      '<div class="field"><label class="label">Key weaknesses</label><textarea class="textarea sp-textarea" id="spWeaknesses" placeholder="Key weaknesses found..." onchange="saveRedTeam('+o.id+')">'+esc(d.weaknesses||'')+'</textarea></div>' +
+      '<div class="field"><label class="label">Action items</label><textarea class="textarea sp-textarea" id="spActionItems" placeholder="Action items to address..." onchange="saveRedTeam('+o.id+')">'+esc(d.action_items||'')+'</textarea></div>' +
+      '</div>';
+  } else if(o.stage === 10){
+    var wta = d.win_theme_approved || 'pending';
+    var pr = d.pricing_reviewed || 'no';
+    h = '<div class="stage-panel" style="border-left:3px solid #ffd166">' +
+      '<h3 style="color:#ffd166">&#127942; Gold Team Sign-off</h3>' +
+      '<div class="sp-toggle"><label>Win theme approved</label><select class="select" id="spWinTheme" onchange="saveGoldTeam('+o.id+')" style="max-width:160px"><option value="pending"'+(wta==='pending'?' selected':'')+'>Pending</option><option value="yes"'+(wta==='yes'?' selected':'')+'>Yes</option><option value="no"'+(wta==='no'?' selected':'')+'>No</option></select></div>' +
+      '<div class="sp-toggle"><label>Pricing reviewed</label><select class="select" id="spPricingReviewed" onchange="saveGoldTeam('+o.id+')" style="max-width:160px"><option value="no"'+(pr==='no'?' selected':'')+'>No</option><option value="yes"'+(pr==='yes'?' selected':'')+'>Yes</option></select></div>' +
+      '<div class="field"><label class="label">Compliance flagged</label><textarea class="textarea sp-textarea" id="spCompFlagged" placeholder="Compliance issues..." onchange="saveGoldTeam('+o.id+')">'+esc(d.compliance_flagged||'')+'</textarea></div>' +
+      '<div class="field"><label class="label">Final notes</label><textarea class="textarea sp-textarea" id="spFinalNotes" placeholder="Final notes..." onchange="saveGoldTeam('+o.id+')">'+esc(d.final_notes||'')+'</textarea></div>' +
+      '</div>';
+  } else if(o.stage === 11){
+    var checks = d.checks || {};
+    var checkItems = [
+      ['tech_volume','Technical volume complete'],
+      ['pp_volume','Past performance complete'],
+      ['price_volume','Price volume complete'],
+      ['compliance_matrix','Compliance matrix reviewed'],
+      ['brian_approved','Brian approved']
+    ];
+    h = '<div class="stage-panel" style="border-left:3px solid #58d68d">' +
+      '<h3 style="color:#58d68d">&#9989; Final Gate Checklist</h3>' +
+      checkItems.map(function(ci){
+        return '<div class="sp-check"><input type="checkbox" id="spCheck_'+ci[0]+'" '+(checks[ci[0]]?'checked':'')+' onchange="saveFinalGate('+o.id+')"><label for="spCheck_'+ci[0]+'">'+ci[1]+'</label></div>';
+      }).join('') +
+      '<div class="field" style="margin-top:12px"><label class="label">Submission date</label><input type="date" class="input" id="spSubDate" value="'+esc(d.submission_date||'')+'" onchange="saveFinalGate('+o.id+')"></div>' +
+      '<div class="field"><label class="label">SharePoint submission folder</label><input class="input" id="spSubFolder" value="'+esc(d.submission_folder||'')+'" placeholder="Link to SharePoint folder" onchange="saveFinalGate('+o.id+')"></div>' +
+      '</div>';
+  }
+  return h;
+}
+
+// Save functions for each stage panel
+function addBlackHatComp(oppId){
+  var name = ($('spCompName')||{}).value||'';
+  var strat = ($('spCompStrategy')||{}).value||'';
+  if(!name.trim()) return;
+  var d = loadStageData(oppId);
+  d.competitors = d.competitors || [];
+  d.competitors.push({name:name.trim(), strategy:strat.trim()});
+  saveStageData(oppId, d);
+  openOpp(oppId);
+}
+function removeBlackHatComp(oppId, idx){
+  var d = loadStageData(oppId);
+  if(d.competitors) d.competitors.splice(idx, 1);
+  saveStageData(oppId, d);
+  openOpp(oppId);
+}
+function addBlackHatIntel(oppId){
+  var text = ($('spTeamInput')||{}).value||'';
+  if(!text.trim()) return;
+  var d = loadStageData(oppId);
+  d.team_inputs = d.team_inputs || [];
+  d.team_inputs.unshift({text:text.trim(), time:new Date().toLocaleString()});
+  saveStageData(oppId, d);
+  openOpp(oppId);
+}
+function saveBlackHat(oppId){
+  var d = loadStageData(oppId);
+  d.vulnerabilities = ($('spVulnerabilities')||{}).value||'';
+  d.counter_moves = ($('spCounterMoves')||{}).value||'';
+  saveStageData(oppId, d);
+}
+function savePinkTeam(oppId){
+  var d = loadStageData(oppId);
+  d.draft_link = ($('spDraftLink')||{}).value||'';
+  d.open_issues = ($('spOpenIssues')||{}).value||'';
+  d.reviewer_notes = ($('spReviewerNotes')||{}).value||'';
+  saveStageData(oppId, d);
+}
+function saveRedTeam(oppId){
+  var d = loadStageData(oppId);
+  d.scores = d.scores || {};
+  ['executive_summary','technical','past_performance','price'].forEach(function(k){
+    var el = $('spScore_'+k);
+    if(el) d.scores[k] = Number(el.value);
+  });
+  d.weaknesses = ($('spWeaknesses')||{}).value||'';
+  d.action_items = ($('spActionItems')||{}).value||'';
+  saveStageData(oppId, d);
+}
+function saveGoldTeam(oppId){
+  var d = loadStageData(oppId);
+  d.win_theme_approved = ($('spWinTheme')||{}).value||'pending';
+  d.pricing_reviewed = ($('spPricingReviewed')||{}).value||'no';
+  d.compliance_flagged = ($('spCompFlagged')||{}).value||'';
+  d.final_notes = ($('spFinalNotes')||{}).value||'';
+  saveStageData(oppId, d);
+}
+function saveFinalGate(oppId){
+  var d = loadStageData(oppId);
+  d.checks = {};
+  ['tech_volume','pp_volume','price_volume','compliance_matrix','brian_approved'].forEach(function(k){
+    var el = $('spCheck_'+k);
+    if(el) d.checks[k] = el.checked;
+  });
+  d.submission_date = ($('spSubDate')||{}).value||'';
+  d.submission_folder = ($('spSubFolder')||{}).value||'';
+  saveStageData(oppId, d);
 }
 
 </script>
