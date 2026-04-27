@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WIRE - BLN24 Capture Intelligence</title>
-<!-- build: v11.31 — Agency Intel panel; research on demand via SharePoint trigger -->
+<!-- build: v11.32 — @mention only name in gold; email + WIRE notifications on tag -->
 <style>
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap");
 
@@ -1153,6 +1153,10 @@ body.light-mode .ac-list { background:var(--panel); border-color:var(--line-stro
 .af-who{font-size:12px;font-weight:700}
 .af-time{font-size:10px;color:var(--quiet);margin-left:8px}
 .af-text{font-size:12px;color:var(--muted);margin-top:2px;line-height:1.5}
+.af-item{position:relative}
+.af-delete{position:absolute;right:0;top:10px;width:20px;height:20px;border:none;background:none;color:var(--quiet);font-size:13px;cursor:pointer;opacity:0;transition:opacity .15s,color .15s;display:grid;place-items:center;border-radius:4px}
+.af-item:hover .af-delete{opacity:1}
+.af-delete:hover{color:var(--red);background:var(--red-soft)}
 .af-compose{display:flex;gap:8px;margin-top:10px;position:relative}
 .af-compose input{flex:1}
 .af-compose button{flex-shrink:0}
@@ -3354,7 +3358,7 @@ function renderActivityFeed(oppId, feed) {
     container.innerHTML = '<div style="color:var(--quiet);font-size:12px;padding:8px 0">No activity yet. Be the first to add a note.</div>';
     return;
   }
-  container.innerHTML = feed.slice(0, 50).map(function(entry) {
+  container.innerHTML = feed.slice(0, 50).map(function(entry, idx) {
     var initials = (entry.by || '?').split(' ').map(function(w){return w[0];}).join('').toUpperCase().slice(0,2);
     var isSystem = entry.type === 'stage_change' || entry.type === 'team_change';
     var dt = entry.at ? new Date(entry.at) : null;
@@ -3367,12 +3371,14 @@ function renderActivityFeed(oppId, feed) {
     } else {
       text = highlightMentions(esc(entry.text || ''));
     }
+    var canDelete = state.user && ((state.user.role === 'ceo') || (entry.by === state.user.name));
+    var deleteBtn = (canDelete && entry.type === 'comment') ? '<button class="af-delete" onclick="deleteActivityEntry(' + oppId + ',' + idx + ')" title="Delete message">\u2715</button>' : '';
     return '<div class="af-item">' +
       '<div class="af-avatar' + (isSystem ? ' system' : '') + '">' + (isSystem ? '\u21C5' : esc(initials)) + '</div>' +
       '<div class="af-body">' +
       '<span class="af-who">' + esc(entry.by || 'Unknown') + '</span><span class="af-time">' + esc(timeStr) + '</span>' +
       '<div class="af-text">' + text + '</div>' +
-      '</div></div>';
+      '</div>' + deleteBtn + '</div>';
   }).join('');
 }
 
@@ -3388,6 +3394,31 @@ function postComment(oppId) {
   spPostCommentWithMentions(oppId, userName, text, mentions).then(function(feed) {
     renderActivityFeed(oppId, feed);
   });
+}
+
+function deleteActivityEntry(oppId, entryIndex) {
+  if (!confirm('Delete this message?')) return;
+  // Remove from localStorage
+  var lsKey = 'wire_af_' + oppId;
+  var local = [];
+  try { local = JSON.parse(localStorage.getItem(lsKey) || '[]'); } catch(e) { local = []; }
+  if (entryIndex >= 0 && entryIndex < local.length) {
+    local.splice(entryIndex, 1);
+    localStorage.setItem(lsKey, JSON.stringify(local));
+  }
+  renderActivityFeed(oppId, local);
+  // Remove from SP async
+  if (window._spCache && window._spCache[oppId]) {
+    var spItemId = window._spCache[oppId].spItemId;
+    if (spItemId) {
+      spLoadActivityFeed(oppId).then(function(spFeed) {
+        if (entryIndex >= 0 && entryIndex < spFeed.length) {
+          spFeed.splice(entryIndex, 1);
+        }
+        spPatchItem(spItemId, {ActivityFeed: JSON.stringify(spFeed)});
+      }).catch(function() {});
+    }
+  }
 }
 
 // Load activity feed when drawer opens (called after drawer renders)
@@ -3406,8 +3437,15 @@ function loadActivityForOpp(oppId) {
 var _mentionState = { active: false, oppId: null, query: '', startPos: 0, selectedIdx: 0, matches: [] };
 
 function highlightMentions(escapedText) {
-  return escapedText.replace(/@([A-Za-z][A-Za-z .\-]+)/g, function(match) {
-    return '<span class="af-mention">' + match + '</span>';
+  return escapedText.replace(/@([A-Za-z][A-Za-z .\-]+)/g, function(match, name) {
+    var trimmed = name.trim();
+    var found = ORG_ROSTER.find(function(r) {
+      return r.name.toLowerCase() === trimmed.toLowerCase();
+    });
+    if (found) {
+      return '<span class="af-mention">@' + trimmed + '</span>';
+    }
+    return match;
   });
 }
 
@@ -3539,14 +3577,40 @@ async function spPostCommentWithMentions(oppId, userName, text, mentions) {
       await spUpdateItem(item.id, {ActivityFeed: JSON.stringify(feed)});
       // Write notifications for mentioned users
       if(mentions && mentions.length > 0) {
-        var opp = OPPS.find(function(x){return x.id===oppId;});
-        var oppTitle = opp ? opp.title : 'Unknown Opp';
-        var notifs = [];
-        try { notifs = JSON.parse(item.fields.Notifications || "[]"); } catch(e) { notifs = []; }
+        var o = OPPS.find(function(x){return x.id===oppId;}) || {};
+        var existingNotifs = [];
+        try { existingNotifs = JSON.parse(item.fields.Notifications || "[]"); } catch(e) {}
         mentions.forEach(function(mentionKey) {
-          notifs.unshift({to:mentionKey, from:userName, msg:userName + ' mentioned you: ' + text.substring(0,100), oppId:oppId, oppTitle:oppTitle, at:new Date().toISOString(), read:false});
+          var mentionUser = ORG_ROSTER.find(function(r){ return r.key === mentionKey; });
+          var mentionEmail = mentionUser ? (mentionUser.email || mentionKey + "@bln24.com") : "";
+          existingNotifs.push({
+            to: mentionKey,
+            toEmail: mentionEmail,
+            from: userName,
+            msg: userName + " mentioned you in " + (o.agency || "an opp") + ": \"" + text.substring(0,80) + (text.length>80?"...":"") + "\"",
+            oppId: oppId,
+            oppTitle: o.title || "Unknown Opp",
+            at: new Date().toISOString(),
+            read: false
+          });
         });
-        await spUpdateItem(item.id, {Notifications: JSON.stringify(notifs)});
+        await spUpdateItem(item.id, {Notifications: JSON.stringify(existingNotifs)});
+
+        // Also queue emails
+        var pendingEmails = [];
+        try { pendingEmails = JSON.parse(item.fields.PendingEmails || "[]"); } catch(e) {}
+        mentions.forEach(function(mentionKey) {
+          var mentionUser = ORG_ROSTER.find(function(r){ return r.key === mentionKey; });
+          var toEmail = mentionUser ? (mentionUser.email || mentionKey + "@bln24.com") : (mentionKey + "@bln24.com");
+          pendingEmails.push({
+            to: toEmail,
+            subject: userName + " mentioned you in WIRE \u2014 " + (o.agency || o.title || "Opp"),
+            body: userName + " tagged you in a note on " + (o.title || "an opportunity") + ":\n\n\"" + text + "\"\n\nOpen in WIRE: https://wire.bln24.com\n\n\u2014 WIRE, BLN24 BD Intelligence",
+            sent: false,
+            queuedAt: new Date().toISOString()
+          });
+        });
+        await spUpdateItem(item.id, {PendingEmails: JSON.stringify(pendingEmails)});
       }
     }
   } catch(e) { console.warn("spPostCommentWithMentions error:", e); }
