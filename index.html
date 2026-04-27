@@ -2413,7 +2413,9 @@ function ceoControls(o){
         <div class="ac-list" id="acList"></div>
       </div>
     </div>
-    <div class="field"><label class="label">Challenge WIRE</label><textarea class="textarea" id="challenge" placeholder="What did the model miss?"></textarea></div>
+    <div class="field"><label class="label">Challenge WIRE</label><textarea class="textarea" id="challenge" placeholder="What did the model miss? Be specific: wrong capability score, missing competitor, wrong scope interpretation."></textarea>
+      <button class="btn" style="margin-top:8px;font-size:12px" onclick="submitChallenge(${o.id})"><span data-icon="send"></span>Submit Feedback to Rex</button>
+    </div>
     <div class="message" id="decisionMsg"></div>
     ${stageAdvanceButtons(o)}
   </section>`;
@@ -2437,6 +2439,31 @@ function wireDrawer(){
   $("approveBtn")?.addEventListener("click",approveOpp);
   $("passBtn")?.addEventListener("click",passOpp);
   $("strategyBtn")?.addEventListener("click",()=>{$("decisionMsg").textContent = "Strategy submitted. Brian can see your input.";});
+}
+function submitChallenge(oppId){
+  var txt = ($('challenge') && $('challenge').value || '').trim();
+  if(!txt){ showToast('Empty','Please enter feedback before submitting','var(--muted)'); return; }
+  var o = OPPS.find(function(x){return x.id===oppId;});
+  if(!o) return;
+  var userName = (state.user && state.user.name) || 'CEO';
+  var entry = {type:'challenge',msg:txt,by:userName,at:new Date().toISOString()};
+  // Save to localStorage activity feed
+  var lsKey = 'wire_activity_' + oppId;
+  var feed = [];
+  try{ feed = JSON.parse(localStorage.getItem(lsKey)||'[]'); }catch(ex){}
+  feed.push(entry);
+  localStorage.setItem(lsKey, JSON.stringify(feed));
+  // Save to SP async
+  if(window._spCache && window._spCache[oppId]){
+    var spItemId = window._spCache[oppId].spItemId;
+    if(spItemId){ spPatchItem(spItemId,{ActivityFeed:JSON.stringify(feed)}); }
+  }
+  // Save to opp brian_win_theme as challenge note
+  o.brian_challenge = (o.brian_challenge ? o.brian_challenge + ' | ' : '') + txt;
+  // Save to SP WIREPipeline Notes
+  showToast('Feedback sent','Rex will review and update the analysis','var(--green)');
+  if($('challenge')) $('challenge').value = '';
+  if($('decisionMsg')) $('decisionMsg').textContent = 'Feedback logged. Rex will re-analyze this opp.';
 }
 function closeDrawer(){
   $("drawerBg").classList.remove("on");
