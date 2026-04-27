@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WIRE - BLN24 Capture Intelligence</title>
-<!-- build: v11.29 — separate Rex pass recommendation from Brian explicit pass action -->
+<!-- build: v11.30 — save button for stage notes; activity feed always visible; @mention support -->
 <style>
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap");
 
@@ -1153,9 +1153,18 @@ body.light-mode .ac-list { background:var(--panel); border-color:var(--line-stro
 .af-who{font-size:12px;font-weight:700}
 .af-time{font-size:10px;color:var(--quiet);margin-left:8px}
 .af-text{font-size:12px;color:var(--muted);margin-top:2px;line-height:1.5}
-.af-compose{display:flex;gap:8px;margin-top:10px}
+.af-compose{display:flex;gap:8px;margin-top:10px;position:relative}
 .af-compose input{flex:1}
 .af-compose button{flex-shrink:0}
+.mention-dropdown{position:absolute;bottom:100%;left:0;right:60px;max-height:180px;overflow-y:auto;background:var(--panel-2);border:1px solid var(--line-strong);border-radius:8px;box-shadow:var(--shadow);z-index:60;display:none}
+.mention-dropdown.on{display:block}
+.mention-opt{padding:8px 12px;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:8px;transition:background .12s}
+.mention-opt:hover,.mention-opt.active{background:var(--amber-soft);color:var(--ink)}
+.mention-opt .mo-name{font-weight:700}
+.mention-opt .mo-title{color:var(--quiet);font-size:10px}
+.af-mention{color:var(--amber);font-weight:700}
+.btn-save-notes{display:inline-flex;align-items:center;gap:5px;margin-top:10px;padding:6px 14px;border:1px solid rgba(244,183,63,.3);border-radius:7px;background:rgba(244,183,63,.12);color:var(--amber);font-size:12px;font-weight:800;cursor:pointer;transition:background .15s,box-shadow .15s}
+.btn-save-notes:hover{background:rgba(244,183,63,.22);box-shadow:0 4px 12px rgba(244,183,63,.15)}
 /* ── Pursuit Team ──────────────────────────────────────────── */
 .pt-section{margin-bottom:18px}
 .pt-member{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}
@@ -1654,6 +1663,7 @@ function setMSUser(account) {
   setTheme(localStorage.getItem("wire_theme")||"dark");
   // Seed notifications
   seedNotifications(role);
+  loadMentionNotifications();
   requestNotifPermission();
   buildNav();
   go("pipeline");
@@ -3158,6 +3168,7 @@ function stageInputPanel(o){
       '<div class="field"><label class="label">Counter-moves</label><textarea class="textarea sp-textarea" id="spCounterMoves" onchange="saveBlackHat('+o.id+')">'+esc(d.counter_moves||'')+'</textarea></div>' +
       '<div class="field"><label class="label">Team inputs</label><div class="sp-row"><input class="input sp-input" id="spTeamInput" placeholder="Add intel..."><button class="btn" onclick="addBlackHatIntel('+o.id+')" style="font-size:12px">Add Intel</button></div></div>' +
       '<div class="sp-entries" id="spIntelList">' + entries.map(function(en){ return '<div class="sp-entry"><div>'+esc(en.text)+'</div><div class="sp-entry-time">'+esc(en.time)+'</div></div>'; }).join('') + '</div>' +
+      '<button class="btn-save-notes" onclick="saveStageNotesBtn('+o.id+',7)">&#128190; Save Notes</button>' +
       '</div>';
   } else if(o.stage === 8){
     h = '<div class="stage-panel" style="border-left:3px solid #ff9a62">' +
@@ -3166,6 +3177,7 @@ function stageInputPanel(o){
       (d.draft_link ? '<div style="margin-bottom:12px"><a href="'+esc(d.draft_link)+'" target="_blank" rel="noreferrer" style="color:var(--amber);font-size:12px;font-weight:800">Open draft &#8599;</a></div>' : '<div style="margin-bottom:12px;color:var(--quiet);font-size:12px">No doc attached</div>') +
       '<div class="field"><label class="label">Open issues</label><textarea class="textarea sp-textarea" id="spOpenIssues" placeholder="List open issues..." onchange="savePinkTeam('+o.id+')">'+esc(d.open_issues||'')+'</textarea></div>' +
       '<div class="field"><label class="label">Reviewer notes</label><textarea class="textarea sp-textarea" id="spReviewerNotes" placeholder="Reviewer notes..." onchange="savePinkTeam('+o.id+')">'+esc(d.reviewer_notes||'')+'</textarea></div>' +
+      '<button class="btn-save-notes" onclick="saveStageNotesBtn('+o.id+',8)">&#128190; Save Notes</button>' +
       '</div>';
   } else if(o.stage === 9){
     var scores = d.scores || {};
@@ -3179,6 +3191,7 @@ function stageInputPanel(o){
       }).join('') + '</div>' +
       '<div class="field"><label class="label">Key weaknesses</label><textarea class="textarea sp-textarea" id="spWeaknesses" placeholder="Key weaknesses found..." onchange="saveRedTeam('+o.id+')">'+esc(d.weaknesses||'')+'</textarea></div>' +
       '<div class="field"><label class="label">Action items</label><textarea class="textarea sp-textarea" id="spActionItems" placeholder="Action items to address..." onchange="saveRedTeam('+o.id+')">'+esc(d.action_items||'')+'</textarea></div>' +
+      '<button class="btn-save-notes" onclick="saveStageNotesBtn('+o.id+',9)">&#128190; Save Notes</button>' +
       '</div>';
   } else if(o.stage === 10){
     var wta = d.win_theme_approved || 'pending';
@@ -3189,6 +3202,7 @@ function stageInputPanel(o){
       '<div class="sp-toggle"><label>Pricing reviewed</label><select class="select" id="spPricingReviewed" onchange="saveGoldTeam('+o.id+')" style="max-width:160px"><option value="no"'+(pr==='no'?' selected':'')+'>No</option><option value="yes"'+(pr==='yes'?' selected':'')+'>Yes</option></select></div>' +
       '<div class="field"><label class="label">Compliance flagged</label><textarea class="textarea sp-textarea" id="spCompFlagged" placeholder="Compliance issues..." onchange="saveGoldTeam('+o.id+')">'+esc(d.compliance_flagged||'')+'</textarea></div>' +
       '<div class="field"><label class="label">Final notes</label><textarea class="textarea sp-textarea" id="spFinalNotes" placeholder="Final notes..." onchange="saveGoldTeam('+o.id+')">'+esc(d.final_notes||'')+'</textarea></div>' +
+      '<button class="btn-save-notes" onclick="saveStageNotesBtn('+o.id+',10)">&#128190; Save Notes</button>' +
       '</div>';
   } else if(o.stage === 11){
     var checks = d.checks || {};
@@ -3206,6 +3220,7 @@ function stageInputPanel(o){
       }).join('') +
       '<div class="field" style="margin-top:12px"><label class="label">Submission date</label><input type="date" class="input" id="spSubDate" value="'+esc(d.submission_date||'')+'" onchange="saveFinalGate('+o.id+')"></div>' +
       '<div class="field"><label class="label">SharePoint submission folder</label><input class="input" id="spSubFolder" value="'+esc(d.submission_folder||'')+'" placeholder="Link to SharePoint folder" onchange="saveFinalGate('+o.id+')"></div>' +
+      '<button class="btn-save-notes" onclick="saveStageNotesBtn('+o.id+',11)">&#128190; Save Notes</button>' +
       '</div>';
   }
   return h;
@@ -3281,13 +3296,44 @@ function saveFinalGate(oppId){
   saveStageData(oppId, d);
 }
 
+// ── Save Stage Notes Button (all stage panels) ──────────────────────────
+function saveStageNotesBtn(oppId, stageNum){
+  var stageNames = {7:'Black Hat',8:'Pink Team',9:'Red Team',10:'Gold Team',11:'Final Gate'};
+  var stageName = stageNames[stageNum] || 'Stage ' + stageNum;
+  // Call the appropriate save function to ensure localStorage is current
+  if(stageNum === 7) saveBlackHat(oppId);
+  else if(stageNum === 8) savePinkTeam(oppId);
+  else if(stageNum === 9) saveRedTeam(oppId);
+  else if(stageNum === 10) saveGoldTeam(oppId);
+  else if(stageNum === 11) saveFinalGate(oppId);
+  var d = loadStageData(oppId);
+  var userName = state.user ? state.user.name : 'Unknown';
+  // Post to activity feed
+  var feedText = userName + ' updated ' + stageName + ' review notes';
+  spPostComment(oppId, userName, feedText).then(function(feed){
+    renderActivityFeed(oppId, feed);
+  });
+  // Save StageData to SharePoint
+  spSaveStageData(oppId, d);
+  showToast('Notes saved', stageName + ' notes saved for this opportunity.', stageNames[stageNum] === 'Pink Team' ? '#ff9a62' : 'var(--amber)');
+}
+async function spSaveStageData(oppId, data){
+  try{
+    var item = await spFindItem(String(oppId));
+    if(item){
+      await spUpdateItem(item.id, {StageData: JSON.stringify(data)});
+    }
+  }catch(e){ console.warn('spSaveStageData error:', e); }
+}
+
 // ── Activity Feed Section (in drawer) ──────────────────────────────────
 function activityFeedSection(o) {
   return '<section class="activity-feed detail-section">' +
     '<div class="activity-feed-title">Activity</div>' +
-    '<div id="afItems_' + o.id + '"><div style="color:var(--quiet);font-size:12px;padding:8px 0">Loading activity...</div></div>' +
+    '<div id="afItems_' + o.id + '"><div style="color:var(--quiet);font-size:12px;padding:8px 0">No activity yet. Be the first to add a note.</div></div>' +
     '<div class="af-compose">' +
-    '<input class="input" id="afInput_' + o.id + '" placeholder="Add a note..." style="font-size:12px;padding:8px 10px">' +
+    '<div class="mention-dropdown" id="mentionDrop_' + o.id + '"></div>' +
+    '<input class="input" id="afInput_' + o.id + '" placeholder="Add a note... (@ to mention)" style="font-size:12px;padding:8px 10px" oninput="onMentionInput(event,' + o.id + ')" onkeydown="onMentionKey(event,' + o.id + ')">' +
     '<button class="btn btn-primary" style="font-size:12px" onclick="postComment(' + o.id + ')">Post</button>' +
     '</div></section>';
 }
@@ -3310,7 +3356,7 @@ function renderActivityFeed(oppId, feed) {
     } else if(entry.type === 'team_change') {
       text = esc(entry.text || '');
     } else {
-      text = esc(entry.text || '');
+      text = highlightMentions(esc(entry.text || ''));
     }
     return '<div class="af-item">' +
       '<div class="af-avatar' + (isSystem ? ' system' : '') + '">' + (isSystem ? '\u21C5' : esc(initials)) + '</div>' +
@@ -3326,9 +3372,11 @@ function postComment(oppId) {
   if(!input) return;
   var text = input.value.trim();
   if(!text) return;
+  closeMentionDropdown(oppId);
   var userName = state.user ? state.user.name : 'Unknown';
+  var mentions = extractMentions(text);
   input.value = '';
-  spPostComment(oppId, userName, text).then(function(feed) {
+  spPostCommentWithMentions(oppId, userName, text, mentions).then(function(feed) {
     renderActivityFeed(oppId, feed);
   });
 }
@@ -3337,7 +3385,200 @@ function postComment(oppId) {
 function loadActivityForOpp(oppId) {
   spLoadActivityFeed(oppId).then(function(feed) {
     renderActivityFeed(oppId, feed);
+  }).catch(function() {
+    // Fallback: try localStorage, always render something
+    var local = [];
+    try { local = JSON.parse(localStorage.getItem('wire_af_' + oppId) || '[]'); } catch(e) {}
+    renderActivityFeed(oppId, local);
   });
+}
+
+// ── @Mention System ──────────────────────────────────────────────────────
+var _mentionState = { active: false, oppId: null, query: '', startPos: 0, selectedIdx: 0, matches: [] };
+
+function highlightMentions(escapedText) {
+  return escapedText.replace(/@([A-Za-z][A-Za-z .\-]+)/g, function(match) {
+    return '<span class="af-mention">' + match + '</span>';
+  });
+}
+
+function extractMentions(text) {
+  var found = [];
+  var re = /@([A-Za-z][A-Za-z .\-]+)/g;
+  var m;
+  while ((m = re.exec(text)) !== null) {
+    var name = m[1].trim();
+    var roster = ORG_ROSTER.find(function(r) {
+      return r.name.toLowerCase() === name.toLowerCase() ||
+        r.key === name.toLowerCase().replace(/[^a-z0-9]/g, '_');
+    });
+    if (roster) found.push(roster.key);
+  }
+  return found;
+}
+
+function onMentionInput(e, oppId) {
+  var input = $('afInput_' + oppId);
+  if (!input) return;
+  var val = input.value;
+  var pos = input.selectionStart || val.length;
+  // Find the last @ before cursor
+  var before = val.substring(0, pos);
+  var atIdx = before.lastIndexOf('@');
+  if (atIdx >= 0 && (atIdx === 0 || before[atIdx - 1] === ' ')) {
+    var query = before.substring(atIdx + 1).toLowerCase();
+    if (query.length >= 0 && !/\s/.test(query.charAt(query.length - 1))) {
+      _mentionState.active = true;
+      _mentionState.oppId = oppId;
+      _mentionState.query = query;
+      _mentionState.startPos = atIdx;
+      _mentionState.selectedIdx = 0;
+      var matches = ORG_ROSTER.filter(function(r) {
+        return r.name.toLowerCase().indexOf(query) >= 0 ||
+          r.key.toLowerCase().indexOf(query) >= 0;
+      }).slice(0, 8);
+      _mentionState.matches = matches;
+      renderMentionDropdown(oppId, matches);
+      return;
+    }
+  }
+  closeMentionDropdown(oppId);
+}
+
+function onMentionKey(e, oppId) {
+  if (!_mentionState.active || _mentionState.oppId !== oppId) {
+    if (e.key === 'Enter') { e.preventDefault(); postComment(oppId); }
+    return;
+  }
+  var matches = _mentionState.matches;
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    _mentionState.selectedIdx = Math.min(_mentionState.selectedIdx + 1, matches.length - 1);
+    updateMentionSelection(oppId);
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    _mentionState.selectedIdx = Math.max(_mentionState.selectedIdx - 1, 0);
+    updateMentionSelection(oppId);
+  } else if (e.key === 'Enter' || e.key === 'Tab') {
+    e.preventDefault();
+    if (matches[_mentionState.selectedIdx]) {
+      insertMention(oppId, matches[_mentionState.selectedIdx]);
+    }
+  } else if (e.key === 'Escape') {
+    closeMentionDropdown(oppId);
+  }
+}
+
+function renderMentionDropdown(oppId, matches) {
+  var drop = $('mentionDrop_' + oppId);
+  if (!drop) return;
+  if (!matches.length) { drop.classList.remove('on'); return; }
+  drop.innerHTML = matches.map(function(r, i) {
+    var initials = r.name.split(' ').map(function(w){return w[0];}).join('').toUpperCase().slice(0,2);
+    return '<div class="mention-opt' + (i === _mentionState.selectedIdx ? ' active' : '') + '" data-idx="' + i + '" onmousedown="insertMention(' + oppId + ',ORG_ROSTER.find(function(x){return x.key===\'' + r.key + '\';}))">' +
+      '<div style="width:22px;height:22px;border-radius:50%;background:var(--amber-soft);color:var(--amber);display:grid;place-items:center;font-size:9px;font-weight:900;flex-shrink:0">' + esc(initials) + '</div>' +
+      '<div><div class="mo-name">' + esc(r.name) + '</div>' + (r.title ? '<div class="mo-title">' + esc(r.title) + '</div>' : '') + '</div></div>';
+  }).join('');
+  drop.classList.add('on');
+}
+
+function updateMentionSelection(oppId) {
+  var drop = $('mentionDrop_' + oppId);
+  if (!drop) return;
+  var opts = drop.querySelectorAll('.mention-opt');
+  opts.forEach(function(el, i) {
+    el.classList.toggle('active', i === _mentionState.selectedIdx);
+  });
+}
+
+function insertMention(oppId, person) {
+  if (!person) return;
+  var input = $('afInput_' + oppId);
+  if (!input) return;
+  var val = input.value;
+  var before = val.substring(0, _mentionState.startPos);
+  var after = val.substring(input.selectionStart || val.length);
+  input.value = before + '@' + person.name + ' ' + after;
+  input.focus();
+  var newPos = before.length + person.name.length + 2;
+  input.setSelectionRange(newPos, newPos);
+  closeMentionDropdown(oppId);
+}
+
+function closeMentionDropdown(oppId) {
+  _mentionState.active = false;
+  _mentionState.matches = [];
+  var drop = $('mentionDrop_' + oppId);
+  if (drop) drop.classList.remove('on');
+}
+
+// ── Post comment with mentions + notifications ────────────────────────
+async function spPostCommentWithMentions(oppId, userName, text, mentions) {
+  var entry = {type:"comment",by:userName||"Unknown",text:text,mentions:mentions||[],at:new Date().toISOString()};
+  // Save to localStorage immediately
+  var local = [];
+  try { local = JSON.parse(localStorage.getItem("wire_af_" + oppId) || "[]"); } catch(e) { local = []; }
+  local.unshift(entry);
+  localStorage.setItem("wire_af_" + oppId, JSON.stringify(local));
+  // Save to SharePoint async
+  try {
+    var item = await spFindItem(String(oppId));
+    if(item) {
+      var feed = [];
+      try { feed = JSON.parse(item.fields.ActivityFeed || "[]"); } catch(e) { feed = []; }
+      feed.unshift(entry);
+      await spUpdateItem(item.id, {ActivityFeed: JSON.stringify(feed)});
+      // Write notifications for mentioned users
+      if(mentions && mentions.length > 0) {
+        var opp = OPPS.find(function(x){return x.id===oppId;});
+        var oppTitle = opp ? opp.title : 'Unknown Opp';
+        var notifs = [];
+        try { notifs = JSON.parse(item.fields.Notifications || "[]"); } catch(e) { notifs = []; }
+        mentions.forEach(function(mentionKey) {
+          notifs.unshift({to:mentionKey, from:userName, msg:userName + ' mentioned you: ' + text.substring(0,100), oppId:oppId, oppTitle:oppTitle, at:new Date().toISOString(), read:false});
+        });
+        await spUpdateItem(item.id, {Notifications: JSON.stringify(notifs)});
+      }
+    }
+  } catch(e) { console.warn("spPostCommentWithMentions error:", e); }
+  return local;
+}
+
+// ── Load SP notifications on app start ───────────────────────────────
+async function loadMentionNotifications() {
+  if (!state.user) return;
+  var myKey = state.user.key;
+  try {
+    var token = await getGraphToken();
+    if (!token) return;
+    var url = GRAPH + "/sites/" + SP_SITE + "/lists/" + SP_LIST + "/items?$expand=fields&$top=100";
+    var r = await fetch(url, {headers: {Authorization: "Bearer " + token}});
+    if (!r.ok) return;
+    var d = await r.json();
+    var myNotifs = [];
+    if (d.value) {
+      d.value.forEach(function(item) {
+        if (!item.fields || !item.fields.Notifications) return;
+        try {
+          var notifs = JSON.parse(item.fields.Notifications);
+          notifs.forEach(function(n) {
+            if (n.to === myKey && !n.read) myNotifs.push(n);
+          });
+        } catch(e) {}
+      });
+    }
+    // Merge into NOTIFS and re-render
+    myNotifs.forEach(function(n) {
+      NOTIFS.unshift({
+        title: n.from + ' mentioned you',
+        body: n.msg || '',
+        time: n.at ? new Date(n.at).getTime() : Date.now(),
+        unread: true,
+        opp_id: n.oppId || null
+      });
+    });
+    renderNotifications();
+  } catch(e) { console.warn('loadMentionNotifications error:', e); }
 }
 
 // ── Pursuit Team Section (in drawer) ──────────────────────────────────
