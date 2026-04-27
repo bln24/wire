@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WIRE - BLN24 Capture Intelligence</title>
-<!-- build: v11.34 — agency intel now instant via Cloudflare Worker — no more next cycle wait -->
+<!-- build: v11.35 — multi-file upload on Submit Opp page — solicitation docs attach to new opp -->
 <style>
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap");
 
@@ -1970,6 +1970,13 @@ const PAGES = {
         </div>
         <div class="field"><label class="label">How you heard about it *</label><input class="input" id="sh" placeholder="CO meeting, colleague, relationship"></div>
         <div class="field"><label class="label">Why BLN24 should pursue this *</label><textarea class="textarea" id="sw" placeholder="Fit, relationship, PP match, timing, inside track"></textarea></div>
+        <div style="border:1px solid var(--line);border-radius:10px;padding:18px 20px;margin:8px 0 4px">
+          <div style="font-weight:800;font-size:13px;margin-bottom:2px">Solicitation Documents</div>
+          <div style="color:var(--quiet);font-size:11px;margin-bottom:14px">Upload PWS, RFP, SOW, or any solicitation attachments. These will be attached to the opp when submitted.</div>
+          <input type="file" id="submitFileInput" multiple accept=".docx,.pdf,.xlsx,.zip,.pptx,.txt" style="display:none">
+          <button class="btn" type="button" id="submitFileBtn" style="margin-bottom:10px"><span data-icon="plus"></span> Choose Files</button>
+          <div id="submitFileList"></div>
+        </div>
         <div class="head-actions" style="justify-content:flex-start"><button class="btn btn-primary" id="submitOpp"><span data-icon="send"></span>Submit to WIRE</button><button class="btn" data-page="pipeline">Cancel</button></div>
         <div class="message" id="submitMsg"></div>
       </section>`;
@@ -2140,8 +2147,14 @@ function emptyState(title,copy){
 function wireMain(){
   $("main").querySelectorAll("[data-page]").forEach(el=>el.addEventListener("click",()=>go(el.dataset.page)));
   // delegated on main - see global handler below
-  const submit = $("submitOpp");
+  var submit = $("submitOpp");
   if(submit) submit.addEventListener("click",submitOpp);
+  var sfBtn = $("submitFileBtn");
+  var sfInput = $("submitFileInput");
+  if(sfBtn && sfInput) {
+    sfBtn.addEventListener("click", function(){ sfInput.click(); });
+    sfInput.addEventListener("change", function(){ if(sfInput.files && sfInput.files.length){ submitPendingFiles.push.apply(submitPendingFiles, Array.from(sfInput.files)); renderSubmitFileList(); sfInput.value = ""; } });
+  }
   // Updates page: load activity async
   if(state.page === "updates") loadUpdatesPage("week");
 }
@@ -2607,17 +2620,64 @@ function passOpp(){
   renderCommand();
   setTimeout(function(){closeDrawer(); go(state.page);},650);
 }
-function submitOpp(){
-  const agency = $("sa").value.trim();
-  const title = $("st").value.trim();
-  const why = $("sw").value.trim();
-  const msg = $("submitMsg");
+var submitPendingFiles = [];
+
+function renderSubmitFileList() {
+  var container = $("submitFileList");
+  if(!container) return;
+  if(!submitPendingFiles.length) { container.innerHTML = ""; return; }
+  container.innerHTML = submitPendingFiles.map(function(f, i) {
+    var size = f.size < 1024 ? f.size + " B" : f.size < 1048576 ? Math.round(f.size / 1024) + " KB" : (f.size / 1048576).toFixed(1) + " MB";
+    return "<div style='display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--line)'>"
+      + "<span style='font-size:13px'>\uD83D\uDCC4 " + esc(f.name) + " <span style='color:var(--quiet);font-size:11px'>(" + size + ")</span></span>"
+      + "<button onclick='removeSubmitFile(" + i + ")' style='background:none;border:none;color:var(--red);font-size:14px;cursor:pointer;padding:0 4px' title='Remove'>\u2715</button>"
+      + "</div>";
+  }).join("");
+}
+
+function removeSubmitFile(idx) {
+  submitPendingFiles.splice(idx, 1);
+  renderSubmitFileList();
+}
+
+async function submitOpp(){
+  var agency = $("sa").value.trim();
+  var title = $("st").value.trim();
+  var why = $("sw").value.trim();
+  var msg = $("submitMsg");
   if(!agency || !title || !why){msg.textContent = "Agency, title, and rationale are required."; msg.classList.add("err"); return;}
-  var hgLink = ($("shg") && $("shg").value.trim()) || ""; OPPS.push({id:Date.now(),stage:0,agency,title,value:$("sv").value || "TBD",set_aside:$("ss").value,score:0,source:"Employee Submission",ref:$("sr").value,hg_url:hgLink,source_url:hgLink,what_they_need:why,rex_take:"WIRE analysis queued.",recommendation:"Pending",cm_fit:"Pending",cm_avg:0,cm_tasks:[],competitors:[],partners:[],ai_win_theme:"Generating win theme.",brian_win_theme:null,assigned_to:null,submitted_by:state.user.name});
+  var hgLink = ($("shg") && $("shg").value.trim()) || "";
+  var newId = Date.now();
+  var opp = {id:newId,stage:0,agency:agency,title:title,value:$("sv").value || "TBD",set_aside:$("ss").value,score:0,source:"Employee Submission",ref:$("sr").value,hg_url:hgLink,source_url:hgLink,what_they_need:why,rex_take:"WIRE analysis queued.",recommendation:"Pending",cm_fit:"Pending",cm_avg:0,cm_tasks:[],competitors:[],partners:[],ai_win_theme:"Generating win theme.",brian_win_theme:null,assigned_to:null,submitted_by:state.user.name};
+  OPPS.push(opp);
   msg.classList.remove("err");
-  msg.textContent = "Submitted. WIRE analysis is queued for Brian's review.";
+
+  // Upload pending solicitation files
+  if(submitPendingFiles.length) {
+    msg.textContent = "Uploading solicitation documents...";
+    var solDocs = [];
+    var userName = state.user ? state.user.name : "Unknown";
+    for(var i = 0; i < submitPendingFiles.length; i++) {
+      msg.textContent = "Uploading " + (i + 1) + "/" + submitPendingFiles.length + ": " + submitPendingFiles[i].name + "...";
+      var webUrl = await spUploadFile(newId, submitPendingFiles[i]);
+      solDocs.push({name: submitPendingFiles[i].name, url: webUrl || "", uploadedBy: userName, uploadedAt: new Date().toISOString()});
+    }
+    opp.sol_docs = solDocs;
+    opp.sol_status = "pending_analysis";
+    saveSolOverrides(newId, opp);
+    // Save sol docs + reanalysis flag to SP
+    try {
+      var spItem = await spFindItem(String(newId));
+      if(spItem) {
+        await spUpdateItem(spItem.id, {SolicitationDocs: JSON.stringify(solDocs), SolStatus: "pending_analysis", ReanalysisRequested: "true"});
+      }
+    } catch(e) { console.warn("submitOpp: SP sol save error", e); }
+    submitPendingFiles = [];
+  }
+
+  msg.textContent = "Submitted. WIRE analysis is queued for Brian" + String.fromCharCode(8217) + "s review.";
   buildNav();
-  setTimeout(()=>go("pipeline"),800);
+  setTimeout(function(){go("pipeline");},800);
 }
 
 $("loginBtn").addEventListener("click",login);
