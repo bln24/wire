@@ -1843,7 +1843,48 @@ const PAGES = {
       <section class="section-panel">${patterns.map(([p,d])=>`<div class="priority" style="cursor:default"><div class="rank" style="background:var(--red-soft);color:#ff9a9a"></div><div><b>${p}</b><span>${d}</span></div></div>`).join("")}</section>`;
   },
   proposals(){
-    return pageHead("Proposal control","Proposals","Color-team review stages after go/no-go") + emptyState("No proposals in review","Opportunities appear here after CEO approval and capture sign-off.");
+    const props = OPPS.filter(o => o.stage >= 7).sort((a,b) => b.stage - a.stage || b.score - a.score);
+    const stageNames = {7:'Pink Team',8:'Red Team',9:'Gold Team',10:'Black Hat',11:'Final Gate'};
+    const stageColors = {7:'#ff9a62',8:'#ff6b6b',9:'#ffd166',10:'#8d877b',11:'#58d68d'};
+    const stageDesc = {7:'First full draft — test structure and themes',8:'Critical technical review — identify weaknesses',9:'Executive review — sharpen win themes',10:'Competitive intelligence — anticipate competitor approach',11:'Final compliance and quality check before submit'};
+    const colorLegend = [7,8,9,10,11].map(s => `
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)">
+        <span style="width:12px;height:12px;border-radius:50%;background:${stageColors[s]};flex-shrink:0"></span>
+        <div><b style="color:${stageColors[s]}">${stageNames[s]}</b> <span style="color:var(--quiet);font-size:11px">Stage ${s}</span><div style="color:var(--quiet);font-size:11px">${stageDesc[s]}</div></div>
+      </div>`).join('');
+    const byStage = [11,10,9,8,7].map(s => {
+      const col = props.filter(o => o.stage === s);
+      if(!col.length) return '';
+      return `<div style="margin-bottom:28px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+          <span style="width:10px;height:10px;border-radius:50%;background:${stageColors[s]}"></span>
+          <span style="font-weight:800;font-size:15px;color:${stageColors[s]}">${stageNames[s]}</span>
+          <span style="font-size:11px;color:var(--quiet);margin-left:4px">${col.length} proposal${col.length>1?'s':''}</span>
+        </div>
+        <div class="list-view">${col.map(o => {
+          const docChip = o.sp_url ? `<a href="${esc(o.sp_url)}" target="_blank" rel="noreferrer" class="chip" style="color:#58d68d;border-color:#58d68d44;background:#58d68d18;text-decoration:none;font-weight:800">📄 Open Doc</a>` : `<span class="chip" style="color:var(--quiet)">No doc yet</span>`;
+          const assigned = o.assigned_to ? `<span class="chip blue">${esc(o.assigned_to)}</span>` : '';
+          const dueChip = o.due ? `<span class="chip" style="color:${dueDateColor(o.due)};border-color:${dueDateColor(o.due)}55;background:${dueDateColor(o.due)}1f">📅 ${fmtDue(o.due)}</span>` : '';
+          return `<div class="row-card" data-open="${o.id}" onclick="openOpp(${o.id})" style="cursor:pointer">
+            <div style="flex:1;min-width:0">
+              <div class="eyebrow" style="margin:0;color:var(--quiet)">${esc(o.agency)}</div>
+              <h3 style="margin:2px 0 6px;font-size:14px">${esc(o.title)}</h3>
+              <div style="display:flex;flex-wrap:wrap;gap:4px">${docChip}${assigned}${dueChip}<span class="chip amber">${esc(o.score)} pts</span>${noticeChip(o)}${vehicleChip(o)}</div>
+            </div>
+          </div>`;
+        }).join('')}</div>
+      </div>`;
+    }).join('');
+    return pageHead("Proposal control","Proposals",`${props.length} active proposal${props.length!==1?'s':''} in color-team review`,
+      `<button class="btn" onclick="go('pipeline')"><span data-icon="board"></span>Back to Pipeline</button>`) +
+      `<div style="display:grid;grid-template-columns:1fr 280px;gap:24px;align-items:start">
+        <div>${props.length ? byStage : emptyState('No proposals in review','Opportunities move here after CEO go/no-go and capture sign-off. Advance an opp to Stage 7+ in the pipeline to see it here.')}</div>
+        <aside style="background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:20px;position:sticky;top:80px">
+          <div style="font-weight:800;font-size:13px;margin-bottom:4px">Color Team Guide</div>
+          <div style="font-size:11px;color:var(--quiet);margin-bottom:12px">Stage definitions and review focus</div>
+          ${colorLegend}
+        </aside>
+      </div>`;
   },
   team(){
     const team = [["Brian Nguyen","CEO / Final Gate","All final approvals"],["Hayk","Account Manager","Available"],["Michael","Account Manager","NTIA assigned"],["Gabe","Account Manager","Available"],["Eric Ma","BD / WIRE Manager","Census assigned"],["Favi Villa","UX Lead / SME","HCD reviews"]];
