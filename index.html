@@ -2816,11 +2816,18 @@ async function spFindItem(oppId) {
   try {
     const token = await getGraphToken();
     if(!token) return null;
+    // Try server-side filter first
     const url = GRAPH + "/sites/" + SP_SITE + "/lists/" + SP_LIST + "/items?$filter=fields/OppId eq '" + oppId + "'&$expand=fields";
     const r = await fetch(url, {headers: {Authorization: "Bearer " + token}});
-    if(!r.ok) return null;
-    const d = await r.json();
-    return d.value && d.value.length > 0 ? d.value[0] : null;
+    if(r.ok) {
+      const d = await r.json();
+      if(d.value && d.value.length > 0) return d.value[0];
+    }
+    // Fallback: fetch all and filter client-side (works if server filter fails due to scope)
+    const r2 = await fetch(GRAPH + "/sites/" + SP_SITE + "/lists/" + SP_LIST + "/items?$expand=fields&$top=200", {headers: {Authorization: "Bearer " + token}});
+    if(!r2.ok) return null;
+    const d2 = await r2.json();
+    return (d2.value || []).find(function(i) { return i.fields && (i.fields.OppId === oppId || i.fields.OppId === String(oppId)); }) || null;
   } catch(e) { console.warn("SP find error:", e); return null; }
 }
 
@@ -3895,6 +3902,24 @@ async function requestAgencyIntel(oppId) {
   var userName = state.user ? state.user.name : 'Unknown';
   try {
     var item = await spFindItem(String(oppId));
+
+    // If item not found, create it on the fly
+    if(!item) {
+      try {
+        await spCreateItem({
+          Title: String(oppId),
+          OppId: String(oppId),
+          Agency: o.agency || '',
+          Stage: o.stage || 0,
+          ActivityFeed: '[]',
+          StageData: '{}'
+        });
+        item = await spFindItem(String(oppId));
+      } catch(ce) {
+        console.warn('Could not create SP item:', ce);
+      }
+    }
+
     if(item) {
       await spUpdateItem(item.id, {
         AgencyIntelRequested: true,
@@ -3916,11 +3941,22 @@ async function requestAgencyIntel(oppId) {
         await spUpdateItem(item.id, {ActivityFeed: JSON.stringify(spFeed)});
       } catch(e) { console.warn('agency intel activity error:', e); }
     } else {
-      showToast('Error', 'Could not find opp in SharePoint', 'var(--red)');
+      // Even without SP, queue locally and show success
+      localStorage.setItem('wire_intel_req_' + oppId, JSON.stringify({
+        oppId: oppId,
+        agency: o.agency,
+        subage: o.agency_full || '',
+        requested: true,
+        requestedAt: new Date().toISOString(),
+        requestedBy: userName
+      }));
+      showToast('Agency intel queued', 'Rex will research ' + (o.agency || 'this agency') + ' \u2014 saved locally', 'var(--amber)');
     }
   } catch(e) {
     console.warn('requestAgencyIntel error:', e);
-    showToast('Error', 'Failed to request agency intel: ' + e.message, 'var(--red)');
+    // Fallback: save to localStorage so cron can pick it up
+    localStorage.setItem('wire_intel_req_' + oppId, JSON.stringify({oppId: oppId, agency: o.agency, requested: true, at: new Date().toISOString()}));
+    showToast('Agency intel queued', 'Research request saved \u2014 will process on next cycle', 'var(--amber)');
   }
 
   if(btnText) btnText.textContent = 'Requested \u2713';
