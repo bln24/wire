@@ -2057,6 +2057,19 @@ function proposalStagePanel(o){
     11: { who: 'Brian only', action: 'Final gate. Approve to generate submission checklist and drop files to SharePoint.', color: 'var(--green)' }
   }[o.stage] || { who: '', action: '', color: 'var(--amber)' };
 
+  const colorLegend = [
+    {id:7, name:'Pink Team', color:'#ff9a62', desc:'First full draft. Internal review — catch errors, gaps, and weak arguments before anyone else sees it.'},
+    {id:8, name:'Red Team', color:'#ff6b6b', desc:'AI plays the evaluator. Score every section as if you're the CO. Find the holes and fix them.'},
+    {id:9, name:'Gold Team', color:'#ffd166', desc:'Compliance pass. Every PWS requirement must be addressed. Final polish on tone and evidence.'},
+    {id:10, name:'Black Hat', color:'#8d877b', desc:'AI plays the top competitor. Read their attack on your proposal. Harden what's vulnerable.'},
+    {id:11, name:'Final Gate', color:'#58d68d', desc:'Brian approves. Submission checklist generated. Files dropped to SharePoint.'},
+  ];
+  const legendHtml = colorLegend.map(s=>`
+    <div style='display:flex;gap:8px;align-items:flex-start;padding:7px 0;border-bottom:1px solid var(--line);${s.id===o.stage?"background:"+s.color+"12;margin:-7px -12px;padding:7px 12px;border-radius:6px;border-bottom:none":""}'>
+      <span style='min-width:80px;font-size:10px;font-weight:900;color:${s.color};padding-top:1px'>${s.name}</span>
+      <span style='font-size:11px;color:${s.id===o.stage?"var(--ink)":"var(--muted)"}'>${s.desc}</span>
+    </div>`).join('');
+
   return `<section class='detail-section' style='border:1px solid ${stageGuide.color}33;border-radius:10px;padding:16px;background:${stageGuide.color}0a'>
     <div class='detail-label' style='color:${stageGuide.color}'>${esc(st.name)} Stage</div>
     <div style='font-size:12px;color:var(--muted);margin-bottom:10px'><b>Who's up:</b> ${stageGuide.who}</div>
@@ -2065,6 +2078,10 @@ function proposalStagePanel(o){
       <a href='${docUrl}' target='_blank' rel='noreferrer' style='display:inline-flex;align-items:center;gap:5px;background:rgba(244,183,63,.12);border:1px solid rgba(244,183,63,.3);border-radius:7px;padding:8px 14px;color:var(--amber);font-size:12px;font-weight:800;text-decoration:none'>&#8599; Open Word Doc in Teams</a>
       ${o.stage === 8 ? `<button onclick='runRedTeam(${o.id})' class='btn' style='font-size:12px'>&#9654; Run Red Team AI</button>` : ''}
       ${o.stage === 11 ? `<button onclick='runFinalGate(${o.id})' class='btn btn-primary' style='font-size:12px'>&#10003; Approve & Generate Checklist</button>` : ''}
+    </div>
+    <div style='margin-top:16px;padding-top:12px;border-top:1px solid var(--line)'>
+      <div style='font-size:10px;font-weight:900;color:var(--quiet);letter-spacing:.08em;margin-bottom:8px'>COLOR TEAM PIPELINE</div>
+      ${legendHtml}
     </div>
   </section>`;
 }
