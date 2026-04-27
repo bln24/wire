@@ -1726,6 +1726,26 @@ function agencyStrip(){
     </div>`).join("")}</div>`;
 }
 
+function fmtDue(d){
+  if(!d) return '';
+  const dt = new Date(d);
+  const now = new Date();
+  const diff = Math.ceil((dt - now) / 86400000);
+  const opts = {month:'short', day:'numeric'};
+  const label = dt.toLocaleDateString('en-US', opts);
+  if(diff < 0) return label + ' (past)';
+  if(diff === 0) return 'Due today';
+  if(diff <= 7) return label + ' (' + diff + 'd)';
+  return label;
+}
+function dueDateColor(d){
+  if(!d) return 'var(--muted)';
+  const diff = Math.ceil((new Date(d) - new Date()) / 86400000);
+  if(diff < 0) return '#ff9a9a';
+  if(diff <= 7) return '#ff9a62';
+  if(diff <= 14) return '#ffd166';
+  return 'var(--muted)';
+}
 function oppCard(o){
   const sc = scoreColor(o.score);
   return `<article class="opp" data-open="${o.id}" onclick="openOpp(${o.id})">
@@ -1736,7 +1756,7 @@ function oppCard(o){
       ${o.assigned_to ? `<span class="chip blue">${esc(o.assigned_to)}</span>` : ""}
       ${o.cm_fit ? `<span class="chip ${o.cm_fit === "Strong" ? "green" : o.cm_fit === "Pass" ? "red" : ""}">${esc(o.cm_fit)}</span>` : ""}
     </div>
-    <div class="opp-foot"><span>${esc(o.value || "TBD")}</span><div style="display:flex;align-items:center;gap:6px">${(o.hg_url && o.hg_url.length > 50 ? o.hg_url : o.source_url) ? `<a href="${esc(o.hg_url && o.hg_url.length > 50 ? o.hg_url : (o.source_url || 'https://www.highergov.com/contract-opportunity/?search=' + encodeURIComponent(o.title)))}" target="_blank" rel="noreferrer" title="View on HigherGov" style="color:var(--amber);font-size:10px;font-weight:900;text-decoration:none;opacity:.7;line-height:1">HG&#8599;</a>` : ""}<div class="score-ring" style="--score:${Math.min(o.score,100)};--score-color:${sc}"><span>${esc(o.score)}</span></div></div></div>
+    <div class="opp-foot"><span>${esc(o.value || "TBD")}${o.due ? ' · <span style="color:'+dueDateColor(o.due)+';font-weight:700">'+fmtDue(o.due)+'</span>' : ''}</span><div style="display:flex;align-items:center;gap:6px">${(o.hg_url && o.hg_url.length > 50 ? o.hg_url : o.source_url) ? `<a href="${esc(o.hg_url && o.hg_url.length > 50 ? o.hg_url : (o.source_url || 'https://www.highergov.com/contract-opportunity/?search=' + encodeURIComponent(o.title)))}" target="_blank" rel="noreferrer" title="View on HigherGov" style="color:var(--amber);font-size:10px;font-weight:900;text-decoration:none;opacity:.7;line-height:1">HG&#8599;</a>` : ""}<div class="score-ring" style="--score:${Math.min(o.score,100)};--score-color:${sc}"><span>${esc(o.score)}</span></div></div></div>
   </article>`;
 }
 function board(stages){
@@ -1904,7 +1924,8 @@ function openOpp(id){
     `<span class="chip" style="color:${st.color};border-color:${st.color}55;background:${st.color}1f">${esc(st.short)}</span>`,
     `<span class="chip">${esc(o.set_aside || "TBD")}</span>`,
     o.value && o.value !== "TBD" ? `<span class="chip green">${esc(o.value)}</span>` : "",
-    o.assigned_to ? `<span class="chip blue">${esc(o.assigned_to)}</span>` : ""
+    o.assigned_to ? `<span class="chip blue">${esc(o.assigned_to)}</span>` : "",
+    o.due ? `<span class="chip" style="color:${dueDateColor(o.due)};border-color:${dueDateColor(o.due)}55;background:${dueDateColor(o.due)}1f">📅 ${fmtDue(o.due)}</span>` : ""
   ].join("");
   try {
     $("drawerBody").innerHTML = drawerBody(o);
