@@ -1694,7 +1694,14 @@ function setMSUser(account) {
   loadMentionNotifications();
   requestNotifPermission();
   buildNav();
-  go("pipeline");
+  // Check for deep link ?opp= parameter
+  var urlOppId = (new URLSearchParams(window.location.search)).get('opp');
+  if(urlOppId && Number(urlOppId)) {
+    go('pipeline');
+    setTimeout(function(){ openOpp(Number(urlOppId)); }, 400);
+  } else {
+    go("pipeline");
+  }
   // Fetch MS profile photo async (non-blocking)
   fetchMSPhoto(account);
 }
