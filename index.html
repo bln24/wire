@@ -1420,10 +1420,10 @@ const STAGES = [
   {id:4,name:"AM Sign-off",short:"Sign-off",color:"#58d68d"},
   {id:5,name:"Go / No-Go",short:"Go/No-Go",color:"#f4b73f"},
   {id:6,name:"Team Assembly",short:"Team",color:"#b79cff"},
-  {id:7,name:"Pink Team",short:"Pink",color:"#ff9a62"},
-  {id:8,name:"Red Team",short:"Red",color:"#ff6b6b"},
-  {id:9,name:"Gold Team",short:"Gold",color:"#ffd166"},
-  {id:10,name:"Black Hat",short:"Black Hat",color:"#8d877b"},
+  {id:7,name:"Black Hat",short:"Black Hat",color:"#8d877b"},
+  {id:8,name:"Pink Team",short:"Pink",color:"#ff9a62"},
+  {id:9,name:"Red Team",short:"Red",color:"#ff6b6b"},
+  {id:10,name:"Gold Team",short:"Gold",color:"#ffd166"},
   {id:11,name:"Final Gate",short:"Final Gate",color:"#58d68d"}
 ];
 const SMES = ["Favi Villa - UX/HCD","Drupal Engineer - TBD","Data Engineer - TBD","Comms Lead - TBD"];
@@ -1844,9 +1844,9 @@ const PAGES = {
   },
   proposals(){
     const props = OPPS.filter(o => o.stage >= 7).sort((a,b) => b.stage - a.stage || b.score - a.score);
-    const stageNames = {7:'Pink Team',8:'Red Team',9:'Gold Team',10:'Black Hat',11:'Final Gate'};
-    const stageColors = {7:'#ff9a62',8:'#ff6b6b',9:'#ffd166',10:'#8d877b',11:'#58d68d'};
-    const stageDesc = {7:'First full draft — test structure and themes',8:'Critical technical review — identify weaknesses',9:'Executive review — sharpen win themes',10:'Competitive intelligence — anticipate competitor approach',11:'Final compliance and quality check before submit'};
+    const stageNames = {7:'Black Hat',8:'Pink Team',9:'Red Team',10:'Gold Team',11:'Final Gate'};
+    const stageColors = {7:'#8d877b',8:'#ff9a62',9:'#ff6b6b',10:'#ffd166',11:'#58d68d'};
+    const stageDesc = {7:'Competitive intelligence — who are you up against and how do they win? Informs the entire proposal strategy.',8:'First full draft — test structure, themes, and approach.',9:'Critical review — AI plays evaluator, scores every section, finds the holes.',10:'Executive review — sharpen win themes, polish tone, finalize pricing.',11:'Final compliance check and submission. Brian approves. Files dropped to SharePoint.'};
     const colorLegend = [7,8,9,10,11].map(s => `
       <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)">
         <span style="width:12px;height:12px;border-radius:50%;background:${stageColors[s]};flex-shrink:0"></span>
@@ -1894,9 +1894,9 @@ const PAGES = {
 
 function proposalChip(o){
   if(o.stage < 7) return '';
-  var stageNames={7:'Pink Team',8:'Red Team',9:'Gold Team',10:'Black Hat',11:'Final Gate'};
+  var stageNames={7:'Black Hat',8:'Pink Team',9:'Red Team',10:'Gold Team',11:'Final Gate'};
   var sName = stageNames[o.stage] || 'Proposal';
-  var stageColors={7:'#ff9a62',8:'#ff6b6b',9:'#ffd166',10:'#8d877b',11:'#58d68d'};
+  var stageColors={7:'#8d877b',8:'#ff9a62',9:'#ff6b6b',10:'#ffd166',11:'#58d68d'};
   var col = stageColors[o.stage] || '#ff9a62';
   var docIcon = o.sp_url ? ' 📄' : '';
   return `<span class="chip" style="color:${col};background:${col}18;border-color:${col}44;font-weight:900">✏️ ${sName}${docIcon}</span>`;
@@ -2120,10 +2120,10 @@ function proposalStagePanel(o){
   }[o.stage] || { who: '', action: '', color: 'var(--amber)' };
 
   const colorLegend = [
-    {id:7, name:'Pink Team', color:'#ff9a62', desc:'First full draft. Internal review — catch errors, gaps, and weak arguments before anyone else sees it.'},
-    {id:8, name:'Red Team', color:'#ff6b6b', desc:'AI plays the evaluator. Score every section as if you are the CO. Find the holes and fix them.'},
-    {id:9, name:'Gold Team', color:'#ffd166', desc:'Compliance pass. Every PWS requirement must be addressed. Final polish on tone and evidence.'},
-    {id:10, name:'Black Hat', color:'#8d877b', desc:'AI plays the top competitor. Read their attack on your proposal. Harden the vulnerable sections.'},
+    {id:7, name:'Black Hat', color:'#8d877b', desc:'Competitive intelligence before you write. Who are you up against? How do they win? Use this to define your strategy and differentiators.'},
+    {id:8, name:'Pink Team', color:'#ff9a62', desc:'First full draft. Internal review — catch errors, gaps, and weak arguments before anyone else sees it.'},
+    {id:9, name:'Red Team', color:'#ff6b6b', desc:'AI plays the evaluator. Score every section as if you are the CO. Find the holes and fix them.'},
+    {id:10, name:'Gold Team', color:'#ffd166', desc:'Executive review. Sharpen win themes, polish tone, finalize pricing and compliance.'},
     {id:11, name:'Final Gate', color:'#58d68d', desc:'Brian approves. Submission checklist generated. Files dropped to SharePoint.'},
   ];
   const legendHtml = colorLegend.map(s=>`
