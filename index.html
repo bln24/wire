@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WIRE - BLN24 Capture Intelligence</title>
-<!-- build: v11.24 — Go/Pass buttons on CEO Review; Pass updates count in real-time -->
+<!-- build: v11.26 — solicitation document upload + link share in opp drawer; score estimated chip -->
 <style>
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap");
 
@@ -1835,6 +1835,7 @@ function oppCard(o){
       ${o.assigned_to ? `<span class="chip blue">${esc(o.assigned_to)}</span>` : ""}
       ${pursuitTeamChips(o)}
       ${o.cm_fit ? `<span class="chip ${o.cm_fit === "Strong" ? "green" : o.cm_fit === "Pass" ? "red" : ""}">${esc(o.cm_fit)}</span>` : ""}
+      ${solChip(o)}
     </div>
     <div class="opp-foot"><span>${esc(o.value || "TBD")}</span><span style="color:var(--muted);font-size:10px">${o.due ? ' · ' + fmtDue(o.due) : ''}</span><div style="display:flex;align-items:center;gap:6px">${(o.hg_url && o.hg_url.length > 50 ? o.hg_url : o.source_url) ? `<a href="${esc(o.hg_url && o.hg_url.length > 50 ? o.hg_url : (o.source_url || 'https://www.highergov.com/contract-opportunity/?search=' + encodeURIComponent(o.title)))}" target="_blank" rel="noreferrer" title="View on HigherGov" style="color:var(--amber);font-size:10px;font-weight:900;text-decoration:none;opacity:.7;line-height:1">HG&#8599;</a>` : ""}<div class="score-ring" style="--score:${Math.min(o.score,100)};--score-color:${sc}"><span>${esc(o.score)}</span></div></div></div>
   </article>`;
@@ -2158,6 +2159,7 @@ function drawerBody(o){
   var b = "";
   b += stageInputPanel(o);
   b += pursuitTeamSection(o);
+  b += solicitationDocsSection(o);
   b += activityFeedSection(o);
 
   // Recommendation + Win Prob
@@ -3467,6 +3469,180 @@ async function loadOppFromSP(oppId) {
     window._spCache[oppId] = result;
     return result;
   } catch(e) { return null; }
+}
+
+// ── Solicitation Documents ────────────────────────────────────────────
+// Load sol data from localStorage on startup
+(function(){
+  try {
+    var solData = JSON.parse(localStorage.getItem('wire_sol_overrides') || '{}');
+    Object.keys(solData).forEach(function(k) {
+      var o = OPPS.find(function(x) { return x.id === Number(k); });
+      if(o) {
+        if(solData[k].sol_docs) o.sol_docs = solData[k].sol_docs;
+        if(solData[k].sol_url) o.sol_url = solData[k].sol_url;
+      }
+    });
+  } catch(e) {}
+})();
+
+function solChip(o) {
+  var isPassed = o.recommendation === 'Pass' || o.cm_fit === 'Pass';
+  if(isPassed) return '';
+  var hasSol = (o.sp_url && o.sp_url.length > 5) || (o.sol_url && o.sol_url.length > 5) || (o.sol_docs && o.sol_docs.length > 0);
+  if(hasSol) return '<span class="chip" style="color:#58d68d;border-color:#58d68d44;background:#58d68d1a;font-size:10px">\uD83D\uDCC4 Solicitation uploaded</span>';
+  if(o.stage >= 1) return '<span class="chip" style="color:#ffd166;border-color:#ffd16644;background:#ffd1661a;font-size:10px">\u26A0\uFE0F Score estimated</span>';
+  return '';
+}
+
+async function spUploadFile(oppId, file) {
+  try {
+    var tok = await getGraphToken();
+    if(!tok) return null;
+    var folderPath = 'WIRE-Solicitations/' + oppId;
+    var uploadUrl = GRAPH + '/sites/' + SP_SITE + '/drive/root:/' + folderPath + '/' + encodeURIComponent(file.name) + ':/content';
+    var res = await fetch(uploadUrl, {
+      method: 'PUT',
+      headers: { Authorization: 'Bearer ' + tok, 'Content-Type': file.type || 'application/octet-stream' },
+      body: file
+    });
+    var data = await res.json();
+    return data.webUrl || null;
+  } catch(e) { console.warn('spUploadFile error:', e); return null; }
+}
+
+function saveSolOverrides(oppId, o) {
+  var ov = {};
+  try { ov = JSON.parse(localStorage.getItem('wire_sol_overrides') || '{}'); } catch(e) {}
+  ov[oppId] = { sol_docs: o.sol_docs || [], sol_url: o.sol_url || '' };
+  localStorage.setItem('wire_sol_overrides', JSON.stringify(ov));
+}
+
+async function spSaveSolDocs(oppId, solDocs, solUrl) {
+  try {
+    var item = await spFindItem(String(oppId));
+    if(!item) return;
+    var fields = {};
+    if(solDocs !== undefined) fields.SolicitationDocs = JSON.stringify(solDocs);
+    if(solUrl !== undefined) fields.DocumentUrl = solUrl;
+    await spUpdateItem(item.id, fields);
+  } catch(e) { console.warn('spSaveSolDocs error:', e); }
+}
+
+function solicitationDocsSection(o) {
+  var hasSol = (o.sol_url && o.sol_url.length > 5) || (o.sol_docs && o.sol_docs.length > 0);
+  var h = '<section class="detail-section">';
+  h += '<div class="detail-label">Solicitation Documents</div>';
+
+  if(!hasSol) {
+    h += '<div style="color:#ffd166;font-size:12px;margin-bottom:10px;padding:8px 12px;border:1px solid #ffd16644;border-radius:8px;background:#ffd1661a">';
+    h += '\u26A0\uFE0F No solicitation document uploaded. Score is based on summary data only.</div>';
+  }
+
+  // Show existing docs
+  if(o.sol_docs && o.sol_docs.length) {
+    o.sol_docs.forEach(function(doc) {
+      var dt = doc.uploadedAt ? new Date(doc.uploadedAt).toLocaleDateString('en-US', {month:'short', day:'numeric'}) : '';
+      h += '<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--line);border-radius:6px;margin-bottom:6px;background:rgba(244,241,232,.03)">';
+      h += '<span style="font-size:14px">\uD83D\uDCC4</span>';
+      h += '<div style="flex:1;min-width:0">';
+      if(doc.url) h += '<a href="' + esc(doc.url) + '" target="_blank" rel="noreferrer" style="color:var(--ink);font-size:12px;font-weight:700;text-decoration:none">' + esc(doc.name) + '</a>';
+      else h += '<span style="font-size:12px;font-weight:700">' + esc(doc.name) + '</span>';
+      h += '<div style="font-size:10px;color:var(--quiet)">uploaded by ' + esc(doc.uploadedBy || 'Unknown') + (dt ? ' \u00B7 ' + dt : '') + '</div>';
+      h += '</div></div>';
+    });
+  }
+
+  // Show existing link
+  if(o.sol_url && o.sol_url.length > 5) {
+    h += '<div style="margin-bottom:8px"><a href="' + esc(o.sol_url) + '" target="_blank" rel="noreferrer" style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border:1px solid rgba(114,183,255,.3);border-radius:7px;background:rgba(114,183,255,.08);color:var(--blue);font-size:12px;font-weight:800;text-decoration:none">\uD83D\uDD17 ' + esc(o.sol_url.length > 60 ? o.sol_url.substring(0,57) + '...' : o.sol_url) + '</a></div>';
+  }
+
+  // Action buttons
+  h += '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">';
+  h += '<button class="btn" style="font-size:12px" onclick="solTriggerUpload(' + o.id + ')">\uD83D\uDCCE Upload Document</button>';
+  h += '<button class="btn" style="font-size:12px" onclick="solShowLinkInput(' + o.id + ')">\uD83D\uDD17 Paste Link</button>';
+  h += '</div>';
+
+  // Hidden file input
+  h += '<input type="file" id="solFileInput_' + o.id + '" accept=".docx,.pdf,.xlsx,.doc" style="display:none" onchange="solHandleFile(' + o.id + ',this)">';
+
+  // Link input (hidden by default)
+  h += '<div id="solLinkRow_' + o.id + '" style="display:none;margin-top:8px">';
+  h += '<div style="display:flex;gap:8px"><input class="input" id="solLinkInput_' + o.id + '" placeholder="Paste HigherGov URL or SAM.gov link..." style="font-size:12px;padding:8px 10px">';
+  h += '<button class="btn btn-primary" style="font-size:12px" onclick="solSaveLink(' + o.id + ')">Save</button></div></div>';
+
+  // Upload status
+  h += '<div id="solStatus_' + o.id + '" style="min-height:18px;margin-top:8px;font-size:12px"></div>';
+
+  h += '</section>';
+  return h;
+}
+
+function solTriggerUpload(oppId) {
+  var input = $('solFileInput_' + oppId);
+  if(input) input.click();
+}
+
+function solShowLinkInput(oppId) {
+  var row = $('solLinkRow_' + oppId);
+  if(row) row.style.display = 'block';
+  var input = $('solLinkInput_' + oppId);
+  if(input) input.focus();
+}
+
+async function solHandleFile(oppId, input) {
+  if(!input.files || !input.files.length) return;
+  var file = input.files[0];
+  var status = $('solStatus_' + oppId);
+  if(status) { status.style.color = 'var(--amber)'; status.textContent = 'Uploading ' + file.name + '...'; }
+
+  var userName = state.user ? state.user.name : 'Unknown';
+  var webUrl = await spUploadFile(oppId, file);
+
+  var o = OPPS.find(function(x) { return x.id === oppId; });
+  if(!o) return;
+  if(!o.sol_docs) o.sol_docs = [];
+  var docEntry = { name: file.name, url: webUrl || '', uploadedBy: userName, uploadedAt: new Date().toISOString() };
+  o.sol_docs.push(docEntry);
+  saveSolOverrides(oppId, o);
+
+  // Save to SP async
+  spSaveSolDocs(oppId, o.sol_docs, undefined);
+
+  // Log to activity feed
+  spPostComment(oppId, userName, 'uploaded ' + file.name).then(function() {});
+
+  if(status) { status.style.color = 'var(--green)'; status.textContent = '\u2713 ' + file.name + ' uploaded successfully'; }
+  showToast('\uD83D\uDCC4 Document Uploaded', file.name, 'var(--green)');
+
+  // Re-render drawer and refresh pipeline
+  setTimeout(function() { openOpp(oppId); go(state.page); }, 600);
+}
+
+async function solSaveLink(oppId) {
+  var input = $('solLinkInput_' + oppId);
+  if(!input || !input.value.trim()) return;
+  var url = input.value.trim();
+  var status = $('solStatus_' + oppId);
+  var userName = state.user ? state.user.name : 'Unknown';
+
+  var o = OPPS.find(function(x) { return x.id === oppId; });
+  if(!o) return;
+  o.sol_url = url;
+  saveSolOverrides(oppId, o);
+
+  // Save to SP async
+  spSaveSolDocs(oppId, undefined, url);
+
+  // Log to activity feed
+  spPostComment(oppId, userName, 'added solicitation link').then(function() {});
+
+  if(status) { status.style.color = 'var(--green)'; status.textContent = '\u2713 Link saved'; }
+  showToast('\uD83D\uDD17 Link Saved', 'Solicitation link added', 'var(--green)');
+
+  // Re-render drawer and refresh pipeline
+  setTimeout(function() { openOpp(oppId); go(state.page); }, 600);
 }
 
 var _updatesFilter = 'week';
