@@ -1884,7 +1884,7 @@ const PAGES = {
     const mine = filteredOpps().filter(function(o){
       if(!state.user) return false;
       if(o.assigned_to === state.user.key) return true;
-      if(o.pursuit_team && o.pursuit_team.some(function(m){return m.key === state.user.key;})) return true;
+      if(o.pursuit_team && o.pursuit_team.some(function(m){return m && typeof m === 'object' && m.key === state.user.key;})) return true;
       return false;
     });
     return pageHead("Assigned work","My Queue",`${mine.length} opportunities assigned to you or your pursuit teams`) + `
@@ -3234,7 +3234,7 @@ function pursuitTeamSection(o) {
   var team = o.pursuit_team && o.pursuit_team.length ? o.pursuit_team : loadPursuitTeam(o.id);
   if(!o.pursuit_team || !o.pursuit_team.length) o.pursuit_team = team;
   var isCEO = state.user && state.user.role === 'ceo';
-  var isLead = state.user && team.some(function(m){return m.key === state.user.key && m.role === 'Pursuit Lead';});
+  var isLead = state.user && team.some(function(m){return m && typeof m === 'object' && m.key === state.user.key && m.role === 'Pursuit Lead';});
   var canEdit = isCEO || isLead;
 
   var h = '<section class="pt-section detail-section">';
@@ -3251,11 +3251,14 @@ function pursuitTeamSection(o) {
   // Team members
   if(team.length) {
     team.forEach(function(m, idx) {
-      var initials = (m.name||'?').split(' ').map(function(w){return w[0];}).join('').toUpperCase().slice(0,2);
-      var memberRec = ORG_ROSTER.find(function(r){return r.key===m.key;});
+      var mName = (typeof m === 'string') ? m : (m && m.name ? m.name : '?');
+      var mKey = (typeof m === 'string') ? m : (m && m.key ? m.key : '');
+      var mRole = (typeof m === 'string') ? 'Team' : (m && m.role ? m.role : 'Team');
+      var initials = mName.split(' ').map(function(w){return w[0];}).join('').toUpperCase().slice(0,2);
+      var memberRec = ORG_ROSTER.find(function(r){return r.key===mKey;});
       var email = memberRec ? memberRec.email : '';
       h += '<div class="pt-member"><div class="pt-avatar" data-photoemail="' + esc(email) + '">' + esc(initials) + '</div>';
-      h += '<div class="pt-info"><div class="pt-name">' + esc(m.name) + '</div><div class="pt-role">' + esc(m.role||'Team') + '</div></div>';
+      h += '<div class="pt-info"><div class="pt-name">' + esc(mName) + '</div><div class="pt-role">' + esc(mRole) + '</div></div>';
       if(canEdit) h += '<button class="pt-remove" onclick="removePursuitMember(' + o.id + ',' + idx + ')" title="Remove">&times;</button>';
       h += '</div>';
     });
@@ -3349,8 +3352,9 @@ function pursuitTeamChips(o) {
   var shown = team.slice(0, maxShow);
   var extra = team.length - maxShow;
   var html = shown.map(function(m) {
-    var initials = (m.name||'?').split(' ').map(function(w){return w[0];}).join('').toUpperCase().slice(0,2);
-    return '<span class="pt-chip"><span class="pt-chip-avatar">' + esc(initials) + '</span>' + esc(m.name.split(' ')[0]) + '</span>';
+    var mName = (typeof m === 'string') ? m : (m && m.name ? m.name : '?');
+    var initials = mName.split(' ').map(function(w){return w[0];}).join('').toUpperCase().slice(0,2);
+    return '<span class="pt-chip"><span class="pt-chip-avatar">' + esc(initials) + '</span>' + esc(mName.split(' ')[0]) + '</span>';
   }).join('');
   if(extra > 0) html += '<span class="pt-chip">+' + extra + '</span>';
   return html;
