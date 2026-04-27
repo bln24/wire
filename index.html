@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WIRE - BLN24 Capture Intelligence</title>
-<!-- build: v11.32 — @mention only name in gold; email + WIRE notifications on tag -->
+<!-- build: v11.33 — shared Notes section — persistent, editable, visible to all team members -->
 <style>
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap");
 
@@ -1169,6 +1169,30 @@ body.light-mode .ac-list { background:var(--panel); border-color:var(--line-stro
 .af-mention{color:var(--amber);font-weight:700}
 .btn-save-notes{display:inline-flex;align-items:center;gap:5px;margin-top:10px;padding:6px 14px;border:1px solid rgba(244,183,63,.3);border-radius:7px;background:rgba(244,183,63,.12);color:var(--amber);font-size:12px;font-weight:800;cursor:pointer;transition:background .15s,box-shadow .15s}
 .btn-save-notes:hover{background:rgba(244,183,63,.22);box-shadow:0 4px 12px rgba(244,183,63,.15)}
+/* ── Notes Section ──────────────────────────────────────────── */
+.notes-section{margin-bottom:18px}
+.notes-section-title{display:flex;align-items:center;gap:9px;margin-bottom:12px;color:var(--amber);font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.14em}
+.notes-section-title:after{content:"";height:1px;background:rgba(244,183,63,.2);flex:1}
+.note-item{position:relative;padding:10px 12px;border:1px solid var(--line);border-left:2px solid var(--amber);border-radius:6px;margin-bottom:8px;background:rgba(244,241,232,.03);transition:border-color .15s}
+.note-item:hover{border-color:rgba(244,183,63,.35)}
+.note-meta{display:flex;align-items:center;gap:8px;margin-bottom:4px}
+.note-meta-time{font-size:10px;color:var(--quiet)}
+.note-meta-author{font-size:12px;font-weight:700;color:var(--ink)}
+.note-meta-edited{font-size:9px;color:var(--quiet);font-style:italic}
+.note-text{font-size:12px;color:var(--muted);line-height:1.55}
+.note-actions{position:absolute;right:8px;top:8px;display:flex;gap:4px;opacity:0;transition:opacity .15s}
+.note-item:hover .note-actions{opacity:1}
+.note-actions button{width:24px;height:24px;border:none;background:none;color:var(--quiet);font-size:13px;cursor:pointer;display:grid;place-items:center;border-radius:4px;transition:color .12s,background .12s}
+.note-actions button:hover{background:var(--line)}
+.note-actions button.note-del:hover{color:var(--red);background:var(--red-soft)}
+.note-actions button.note-edit:hover{color:var(--amber);background:var(--amber-soft)}
+.note-compose{display:flex;gap:8px;margin-top:10px}
+.note-compose textarea{flex:1;min-height:44px;max-height:120px;resize:vertical}
+.note-edit-area{margin-top:6px}
+.note-edit-area textarea{width:100%;min-height:44px;resize:vertical}
+.note-edit-btns{display:flex;gap:6px;margin-top:6px}
+body.light-mode .note-item{border-color:var(--line);background:var(--panel)}
+body.light-mode .note-item:hover{border-color:rgba(244,183,63,.35)}
 /* ── Pursuit Team ──────────────────────────────────────────── */
 .pt-section{margin-bottom:18px}
 .pt-member{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}
@@ -2151,6 +2175,7 @@ function openOpp(id){
   loadActivityForOpp(o.id);
   loadPursuitTeamFromSP(o.id);
   loadAgencyIntel(o.id);
+  loadNotesFromSP(o.id);
   // Load pursuit team photos
   var ptAvatars = $("drawer").querySelectorAll(".pt-avatar[data-photoemail]");
   ptAvatars.forEach(function(el){ if(el.dataset.photoemail) fetchOrgPhoto(el.dataset.photoemail, el); });
@@ -2184,6 +2209,7 @@ function drawerBody(o){
   b += pursuitTeamSection(o);
   b += agencyIntelSection(o);
   b += solicitationDocsSection(o);
+  b += renderNotesSection(o);
   b += activityFeedSection(o);
 
   // Recommendation + Win Prob
@@ -4291,6 +4317,178 @@ async function solSaveLink(oppId) {
 
   // Re-render drawer and refresh pipeline
   setTimeout(function() { openOpp(oppId); go(state.page); }, 600);
+}
+
+// ── Notes Section Functions ────────────────────────────────────────────
+function renderNotesSection(o) {
+  var notes = loadNotesLocal(o.id);
+  var h = '<section class="notes-section detail-section">';
+  h += '<div class="notes-section-title">Notes</div>';
+  h += '<div id="notesList_' + o.id + '">';
+  h += renderNoteItems(o.id, notes);
+  h += '</div>';
+  h += '<div class="note-compose">';
+  h += '<textarea class="textarea" id="noteInput_' + o.id + '" placeholder="Add a note..." style="font-size:12px;padding:8px 10px"></textarea>';
+  h += '<button class="btn btn-primary" style="font-size:12px;align-self:flex-end" onclick="saveNote(' + o.id + ')">Save</button>';
+  h += '</div>';
+  h += '</section>';
+  return h;
+}
+
+function renderNoteItems(oppId, notes) {
+  if (!notes || !notes.length) {
+    return '<div style="color:var(--quiet);font-size:12px;padding:8px 0">No notes yet.</div>';
+  }
+  return notes.map(function(n) {
+    var dt = n.at ? new Date(n.at) : null;
+    var timeStr = dt ? dt.toLocaleDateString('en-US', {month:'short',day:'numeric'}) + ' ' + dt.toLocaleTimeString('en-US', {hour:'numeric',minute:'2-digit'}) : '';
+    var canModify = state.user && (state.user.role === 'ceo' || (n.byKey && n.byKey === state.user.key));
+    var editedBadge = n.edited ? ' <span class="note-meta-edited">(edited)</span>' : '';
+    var h = '<div class="note-item" id="noteItem_' + oppId + '_' + n.id + '">';
+    h += '<div class="note-meta">';
+    h += '<span class="note-meta-author">' + esc(n.by || 'Unknown') + '</span>';
+    h += '<span class="note-meta-time">' + esc(timeStr) + editedBadge + '</span>';
+    h += '</div>';
+    h += '<div class="note-text" id="noteText_' + oppId + '_' + n.id + '">' + esc(n.text || '') + '</div>';
+    if (canModify) {
+      h += '<div class="note-actions">';
+      h += '<button class="note-edit" onclick="startEditNote(' + oppId + ',\'' + n.id + '\')" title="Edit">\u270F\uFE0F</button>';
+      h += '<button class="note-del" onclick="deleteNote(' + oppId + ',\'' + n.id + '\')" title="Delete">\u2715</button>';
+      h += '</div>';
+    }
+    h += '</div>';
+    return h;
+  }).join('');
+}
+
+function loadNotesLocal(oppId) {
+  try {
+    return JSON.parse(localStorage.getItem('wire_notes_' + oppId) || '[]');
+  } catch(e) { return []; }
+}
+
+function saveNotesLocal(oppId, notes) {
+  localStorage.setItem('wire_notes_' + oppId, JSON.stringify(notes));
+}
+
+function generateNoteId() {
+  return 'n' + Date.now().toString(36) + Math.random().toString(36).substring(2,7);
+}
+
+function saveNote(oppId) {
+  var input = $('noteInput_' + oppId);
+  if (!input) return;
+  var text = input.value.trim();
+  if (!text) return;
+  var userName = state.user ? state.user.name : 'Unknown';
+  var userKey = state.user ? state.user.key : 'unknown';
+  var notes = loadNotesLocal(oppId);
+  var entry = {
+    id: generateNoteId(),
+    text: text,
+    by: userName,
+    byKey: userKey,
+    at: new Date().toISOString(),
+    edited: false
+  };
+  notes.unshift(entry);
+  saveNotesLocal(oppId, notes);
+  input.value = '';
+  var container = $('notesList_' + oppId);
+  if (container) container.innerHTML = renderNoteItems(oppId, notes);
+  spSaveNotes(oppId, notes);
+  showToast('Note added', 'Your note has been saved.', 'var(--green)');
+}
+
+function startEditNote(oppId, noteId) {
+  var notes = loadNotesLocal(oppId);
+  var note = notes.find(function(n) { return n.id === noteId; });
+  if (!note) return;
+  var textEl = $('noteText_' + oppId + '_' + noteId);
+  if (!textEl) return;
+  textEl.innerHTML = '<div class="note-edit-area">' +
+    '<textarea class="textarea" id="noteEditInput_' + oppId + '_' + noteId + '" style="font-size:12px;padding:8px 10px">' + esc(note.text) + '</textarea>' +
+    '<div class="note-edit-btns">' +
+    '<button class="btn btn-primary" style="font-size:11px;min-height:28px;padding:0 10px" onclick="editNote(' + oppId + ',\'' + noteId + '\')">Save</button>' +
+    '<button class="btn" style="font-size:11px;min-height:28px;padding:0 10px" onclick="cancelEditNote(' + oppId + ')">Cancel</button>' +
+    '</div></div>';
+  var editInput = $('noteEditInput_' + oppId + '_' + noteId);
+  if (editInput) editInput.focus();
+}
+
+function editNote(oppId, noteId) {
+  var editInput = $('noteEditInput_' + oppId + '_' + noteId);
+  if (!editInput) return;
+  var newText = editInput.value.trim();
+  if (!newText) return;
+  var notes = loadNotesLocal(oppId);
+  var note = notes.find(function(n) { return n.id === noteId; });
+  if (!note) return;
+  note.text = newText;
+  note.edited = true;
+  saveNotesLocal(oppId, notes);
+  var container = $('notesList_' + oppId);
+  if (container) container.innerHTML = renderNoteItems(oppId, notes);
+  spSaveNotes(oppId, notes);
+  showToast('Note updated', 'Your edit has been saved.', 'var(--amber)');
+}
+
+function cancelEditNote(oppId) {
+  var notes = loadNotesLocal(oppId);
+  var container = $('notesList_' + oppId);
+  if (container) container.innerHTML = renderNoteItems(oppId, notes);
+}
+
+function deleteNote(oppId, noteId) {
+  if (!confirm('Delete this note?')) return;
+  var notes = loadNotesLocal(oppId);
+  notes = notes.filter(function(n) { return n.id !== noteId; });
+  saveNotesLocal(oppId, notes);
+  var container = $('notesList_' + oppId);
+  if (container) container.innerHTML = renderNoteItems(oppId, notes);
+  spSaveNotes(oppId, notes);
+  showToast('Note deleted', 'The note has been removed.', 'var(--red)');
+}
+
+async function spSaveNotes(oppId, notes) {
+  try {
+    var item = await spFindItem(String(oppId));
+    if (item) {
+      await spUpdateItem(item.id, { OppNotes: JSON.stringify(notes) });
+    } else {
+      // Create SP item if it does not exist
+      try {
+        var o = OPPS.find(function(x) { return x.id === oppId; });
+        await spCreateItem({
+          Title: String(oppId),
+          OppId: String(oppId),
+          Agency: o ? (o.agency || '') : '',
+          Stage: o ? String(o.stage || 0) : '0',
+          ActivityFeed: '[]',
+          StageData: '{}',
+          OppNotes: JSON.stringify(notes)
+        });
+      } catch(ce) { console.warn('spSaveNotes create error:', ce); }
+    }
+  } catch(e) { console.warn('spSaveNotes error:', e); }
+}
+
+async function loadNotesFromSP(oppId) {
+  try {
+    var item = await spFindItem(String(oppId));
+    if (item && item.fields && item.fields.OppNotes) {
+      var spNotes = JSON.parse(item.fields.OppNotes);
+      if (spNotes && spNotes.length) {
+        // Merge: SP is source of truth
+        saveNotesLocal(oppId, spNotes);
+        // Re-render if drawer is still open for this opp
+        if (state.opp && state.opp.id === oppId) {
+          var container = $('notesList_' + oppId);
+          if (container) container.innerHTML = renderNoteItems(oppId, spNotes);
+        }
+      }
+    }
+  } catch(e) { console.warn('loadNotesFromSP error:', e); }
 }
 
 var _updatesFilter = 'week';
