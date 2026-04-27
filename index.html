@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WIRE - BLN24 Capture Intelligence</title>
-<!-- build: v11.26 — solicitation document upload + link share in opp drawer; score estimated chip -->
+<!-- build: v11.28 — post-upload notifications + re-analysis trigger + queued chip -->
 <style>
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap");
 
@@ -1095,6 +1095,7 @@ body.light-mode .chip.blue { color:#1a3f6b !important; }
 .toast-title { font-size:13px; font-weight:800; margin-bottom:2px; }
 .toast-msg { font-size:12px; color:var(--muted); }
 .toast-close { background:none; border:none; color:var(--quiet); cursor:pointer; font-size:16px; padding:0 4px; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
 
 /* Assign autocomplete */
 .ac-wrap { position:relative; }
@@ -3508,6 +3509,7 @@ async function loadOppFromSP(oppId) {
       if(o) {
         if(solData[k].sol_docs) o.sol_docs = solData[k].sol_docs;
         if(solData[k].sol_url) o.sol_url = solData[k].sol_url;
+        if(solData[k].sol_status) o.sol_status = solData[k].sol_status;
       }
     });
   } catch(e) {}
@@ -3516,6 +3518,7 @@ async function loadOppFromSP(oppId) {
 function solChip(o) {
   var isPassed = o.recommendation === 'Pass' || o.cm_fit === 'Pass';
   if(isPassed) return '';
+  if(o.sol_status === 'pending_analysis') return '<span class="chip" style="color:var(--amber);border-color:var(--amber)44;background:var(--amber)1a;animation:pulse 1.5s infinite;font-size:10px">\uD83D\uDD04 Re-analysis queued</span>';
   var hasSol = (o.sp_url && o.sp_url.length > 5) || (o.sol_url && o.sol_url.length > 5) || (o.sol_docs && o.sol_docs.length > 0);
   if(hasSol) return '<span class="chip" style="color:#58d68d;border-color:#58d68d44;background:#58d68d1a;font-size:10px">\uD83D\uDCC4 Solicitation uploaded</span>';
   if(o.stage >= 1) return '<span class="chip" style="color:#ffd166;border-color:#ffd16644;background:#ffd1661a;font-size:10px">\u26A0\uFE0F Score estimated</span>';
@@ -3541,7 +3544,7 @@ async function spUploadFile(oppId, file) {
 function saveSolOverrides(oppId, o) {
   var ov = {};
   try { ov = JSON.parse(localStorage.getItem('wire_sol_overrides') || '{}'); } catch(e) {}
-  ov[oppId] = { sol_docs: o.sol_docs || [], sol_url: o.sol_url || '' };
+  ov[oppId] = { sol_docs: o.sol_docs || [], sol_url: o.sol_url || '', sol_status: o.sol_status || '' };
   localStorage.setItem('wire_sol_overrides', JSON.stringify(ov));
 }
 
@@ -3602,7 +3605,91 @@ function solicitationDocsSection(o) {
   // Upload status
   h += '<div id="solStatus_' + o.id + '" style="min-height:18px;margin-top:8px;font-size:12px"></div>';
 
+  // Rex Analysis panel
+  h += rexAnalysisPanel(o);
+
   h += '</section>';
+  return h;
+}
+
+function rexAnalysisPanel(o) {
+  var da = o.deep_analysis || {};
+  var whatNeed = da.what_they_need_deep || o.what_they_need || '';
+  var strategic = da.strategic_take || o.rex_take || '';
+  var isPending = o.sol_status === 'pending_analysis';
+
+  var h = '<div style="margin-top:16px;border:1px solid ' + (isPending ? 'rgba(244,183,63,.3)' : 'var(--line)') + ';border-radius:8px;background:' + (isPending ? 'rgba(244,183,63,.06)' : 'rgba(244,241,232,.03)') + ';overflow:hidden">';
+
+  // Header
+  h += '<div style="padding:10px 14px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px">';
+  h += '<span style="font-size:11px;font-weight:900;color:var(--amber);text-transform:uppercase;letter-spacing:.14em">Rex Analysis</span>';
+  if(isPending) h += '<span style="margin-left:auto;font-size:10px;font-weight:800;color:var(--amber);animation:pulse 1.5s infinite">\uD83D\uDD04 Re-analysis queued</span>';
+  h += '</div>';
+
+  // Pending banner
+  if(isPending) {
+    h += '<div style="padding:8px 14px;background:rgba(244,183,63,.08);border-bottom:1px solid rgba(244,183,63,.15);font-size:11px;color:var(--amber);line-height:1.5">';
+    h += '\uD83D\uDD04 Re-analysis queued \u2014 Rex will update this within 24h after reviewing uploaded documents.</div>';
+  }
+
+  var body = '<div style="padding:14px">';
+
+  // Score + Fit + Set-aside row
+  body += '<div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px">';
+  if(o.score !== undefined) {
+    var sc = o.score >= 90 ? 'var(--green)' : o.score >= 70 ? 'var(--amber)' : o.score >= 50 ? 'var(--blue)' : 'var(--red)';
+    body += '<div style="display:flex;align-items:center;gap:6px;padding:5px 10px;border:1px solid var(--line);border-radius:6px;background:rgba(244,241,232,.04)">';
+    body += '<span style="font-size:10px;color:var(--quiet);font-weight:800;text-transform:uppercase">Score</span>';
+    body += '<span style="font-size:16px;font-weight:900;color:' + sc + '">' + esc(o.score) + ' pts</span></div>';
+  }
+  if(o.cm_fit) {
+    var fitColor = o.cm_fit === 'Strong' ? 'var(--green)' : o.cm_fit === 'Moderate' ? 'var(--amber)' : 'var(--muted)';
+    body += '<div style="display:flex;align-items:center;gap:6px;padding:5px 10px;border:1px solid var(--line);border-radius:6px;background:rgba(244,241,232,.04)">';
+    body += '<span style="font-size:10px;color:var(--quiet);font-weight:800;text-transform:uppercase">Fit</span>';
+    body += '<span style="font-size:12px;font-weight:800;color:' + fitColor + '">' + esc(o.cm_fit) + '</span></div>';
+  }
+  if(o.set_aside) {
+    var saWarn = (o.set_aside === 'Full & Open' || o.set_aside === 'Full and Open') ? ' \u26A0\uFE0F' : '';
+    body += '<div style="display:flex;align-items:center;gap:6px;padding:5px 10px;border:1px solid var(--line);border-radius:6px;background:rgba(244,241,232,.04)">';
+    body += '<span style="font-size:10px;color:var(--quiet);font-weight:800;text-transform:uppercase">Set-aside</span>';
+    body += '<span style="font-size:12px;font-weight:800;color:var(--ink)">' + esc(o.set_aside) + saWarn + '</span></div>';
+  }
+  body += '</div>';
+
+  // Rex take
+  if(strategic) {
+    body += '<div style="border-top:1px solid var(--line);padding-top:10px;margin-bottom:10px">';
+    body += '<div style="font-size:10px;font-weight:800;color:var(--quiet);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px">Rex take</div>';
+    body += '<div style="font-size:12px;line-height:1.6;color:var(--ink)">' + esc(strategic) + '</div>';
+    body += '</div>';
+  }
+
+  // What they need
+  if(whatNeed) {
+    body += '<div style="border-top:1px solid var(--line);padding-top:10px;margin-bottom:10px">';
+    body += '<div style="font-size:10px;font-weight:800;color:var(--quiet);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px">What they need</div>';
+    body += '<div style="font-size:12px;line-height:1.6;color:var(--ink)">' + esc(whatNeed) + '</div>';
+    body += '</div>';
+  }
+
+  // Gaps from cm_tasks
+  var gaps = (o.cm_tasks || []).filter(function(t) { return t.status === 'gap'; });
+  if(gaps.length > 0) {
+    body += '<div style="border-top:1px solid var(--line);padding-top:10px">';
+    body += '<div style="font-size:10px;font-weight:800;color:var(--red);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px">Capability Gaps</div>';
+    gaps.forEach(function(g) {
+      body += '<div style="display:flex;align-items:center;gap:6px;padding:5px 0;font-size:12px">';
+      body += '<span style="color:var(--red)">\u26D4</span>';
+      body += '<span style="color:var(--ink);font-weight:700">' + esc(g.task) + '</span>';
+      if(g.pp) body += '<span style="color:var(--quiet);font-size:10px"> \u2014 ' + esc(g.pp) + '</span>';
+      body += '</div>';
+    });
+    body += '</div>';
+  }
+
+  body += '</div>';
+  h += body;
+  h += '</div>';
   return h;
 }
 
@@ -3633,16 +3720,41 @@ async function solHandleFile(oppId, input) {
     var docEntry = { name: file.name, url: webUrl || '', uploadedBy: userName, uploadedAt: new Date().toISOString() };
     o.sol_docs.push(docEntry);
   }
+
+  // Set pending re-analysis status
+  o.sol_status = 'pending_analysis';
   saveSolOverrides(oppId, o);
 
   // Save to SP async
   spSaveSolDocs(oppId, o.sol_docs, undefined);
 
-  // Log to activity feed
-  spPostComment(oppId, userName, 'uploaded ' + file.name).then(function() {});
+  // Post activity feed entry
+  var afEntry = {type:'sol_upload', msg:'Solicitation documents uploaded (' + files.length + ' file' + (files.length>1?'s':'') + ') \u2014 re-analysis queued', by: userName, at: new Date().toISOString()};
+  var localFeed = [];
+  try { localFeed = JSON.parse(localStorage.getItem('wire_af_' + oppId) || '[]'); } catch(e) { localFeed = []; }
+  localFeed.unshift(afEntry);
+  localStorage.setItem('wire_af_' + oppId, JSON.stringify(localFeed));
+  // Save activity to SP
+  try {
+    var afItem = await spFindItem(String(oppId));
+    if(afItem) {
+      var spFeed = [];
+      try { spFeed = JSON.parse(afItem.fields.ActivityFeed || '[]'); } catch(e) { spFeed = []; }
+      spFeed.unshift(afEntry);
+      await spUpdateItem(afItem.id, {ActivityFeed: JSON.stringify(spFeed)});
+    }
+  } catch(e) { console.warn('solHandleFile activity error:', e); }
 
-  if(status) { status.style.color = 'var(--green)'; status.textContent = '\u2713 ' + file.name + ' uploaded successfully'; }
-  showToast('\uD83D\uDCC4 Document Uploaded', file.name, 'var(--green)');
+  // Trigger re-analysis via SP
+  try {
+    var raItem = await spFindItem(String(oppId));
+    if(raItem) {
+      await spUpdateItem(raItem.id, {ReanalysisRequested: true, ReanalysisRequestedAt: new Date().toISOString(), ReanalysisRequestedBy: userName});
+    }
+  } catch(e) { console.warn('solHandleFile reanalysis trigger error:', e); }
+
+  if(status) { status.style.color = 'var(--green)'; status.textContent = '\u2713 All files uploaded successfully'; }
+  showToast('Documents uploaded \u2014 Rex will re-analyze this opp', files.length + ' file' + (files.length>1?'s':'') + ' uploaded', 'var(--green)');
 
   // Re-render drawer and refresh pipeline
   setTimeout(function() { openOpp(oppId); go(state.page); }, 600);
@@ -3658,16 +3770,41 @@ async function solSaveLink(oppId) {
   var o = OPPS.find(function(x) { return x.id === oppId; });
   if(!o) return;
   o.sol_url = url;
+
+  // Set pending re-analysis status
+  o.sol_status = 'pending_analysis';
   saveSolOverrides(oppId, o);
 
   // Save to SP async
   spSaveSolDocs(oppId, undefined, url);
 
-  // Log to activity feed
-  spPostComment(oppId, userName, 'added solicitation link').then(function() {});
+  // Post activity feed entry
+  var afEntry = {type:'sol_upload', msg:'Solicitation link added \u2014 re-analysis queued', by: userName, at: new Date().toISOString()};
+  var localFeed = [];
+  try { localFeed = JSON.parse(localStorage.getItem('wire_af_' + oppId) || '[]'); } catch(e) { localFeed = []; }
+  localFeed.unshift(afEntry);
+  localStorage.setItem('wire_af_' + oppId, JSON.stringify(localFeed));
+  // Save activity to SP
+  try {
+    var afItem = await spFindItem(String(oppId));
+    if(afItem) {
+      var spFeed = [];
+      try { spFeed = JSON.parse(afItem.fields.ActivityFeed || '[]'); } catch(e) { spFeed = []; }
+      spFeed.unshift(afEntry);
+      await spUpdateItem(afItem.id, {ActivityFeed: JSON.stringify(spFeed)});
+    }
+  } catch(e) { console.warn('solSaveLink activity error:', e); }
+
+  // Trigger re-analysis via SP
+  try {
+    var raItem = await spFindItem(String(oppId));
+    if(raItem) {
+      await spUpdateItem(raItem.id, {ReanalysisRequested: true, ReanalysisRequestedAt: new Date().toISOString(), ReanalysisRequestedBy: userName});
+    }
+  } catch(e) { console.warn('solSaveLink reanalysis trigger error:', e); }
 
   if(status) { status.style.color = 'var(--green)'; status.textContent = '\u2713 Link saved'; }
-  showToast('\uD83D\uDD17 Link Saved', 'Solicitation link added', 'var(--green)');
+  showToast('Solicitation link saved \u2014 Rex will re-analyze this opp', 'Link added successfully', 'var(--green)');
 
   // Re-render drawer and refresh pipeline
   setTimeout(function() { openOpp(oppId); go(state.page); }, 600);
