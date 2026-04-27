@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WIRE - BLN24 Capture Intelligence</title>
-<!-- build: v11.22 — SharePoint persistence, activity feed, pursuit team, Updates page -->
+<!-- build: v11.24 — Go/Pass buttons on CEO Review; Pass updates count in real-time -->
 <style>
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap");
 
@@ -1501,6 +1501,8 @@ const OPPS = LIVE.map((o,i)=>({...o,id:i+1,stage:o.stage || 0,submitted_by:o.sub
 ]);
 // Load stage overrides from localStorage
 (function(){try{var ov=JSON.parse(localStorage.getItem("wire_stage_overrides")||"{}");Object.keys(ov).forEach(function(k){var o=OPPS.find(function(x){return x.id===Number(k);});if(o) o.stage=ov[k];});}catch(e){}})();
+// Load pass overrides from localStorage
+(function(){try{var po=JSON.parse(localStorage.getItem("wire_pass_overrides")||"{}");Object.keys(po).forEach(function(k){var o=OPPS.find(function(x){return x.id===Number(k);});if(o){o.recommendation="Pass";o.cm_fit="Pass";}});}catch(e){}})();
 
 const state = {user:null,page:"pipeline",opp:null,query:""};
 const $ = id => document.getElementById(id);
@@ -1885,9 +1887,9 @@ const PAGES = {
       <div class="stage-label">Proposal and color teams</div>${board(STAGES.slice(6))}`;
   },
   review(){
-    const acts = filteredOpps().filter(o=>o.stage <= 1);
+    const acts = activeOpps().filter(o=>o.stage <= 1);
     return pageHead("CEO queue","Review Queue",`${acts.length} opportunities need a go/no-go decision`) + `
-      <div class="list-view">${acts.length ? acts.map(o=>rowCard(o,"Review")).join("") : emptyState("All clear","Nothing is waiting for review.")}</div>`;
+      <div class="list-view">${acts.length ? acts.map(o=>reviewRowCard(o)).join("") : emptyState("All clear","Nothing is waiting for review.")}</div>`;
   },
   myqueue(){
     const mine = filteredOpps().filter(function(o){
@@ -2015,6 +2017,56 @@ function noticeChip(o){
   else{label=(o.noticeCategory||'').toUpperCase()||'';cls='';}
   if(!label)return '';
   return `<span class="chip ${cls}">${label}</span>`;
+}
+function reviewRowCard(o){
+  const st = stageOf(o);
+  return `<article class="row-card" style="grid-template-columns:1fr auto">
+    <div style="cursor:pointer" onclick="openOpp(${o.id})">
+      <div class="eyebrow" style="margin:0;color:${st.color}">${esc(o.agency)} - ${esc(st.short)}</div>
+      <h3>${esc(o.title)}</h3>
+      <div class="row-meta">${proposalChip(o)}${noticeChip(o)}${vehicleChip(o)}<span class="chip amber">${esc(o.score)} pts</span><span class="chip">${esc(o.set_aside || "TBD")}</span><span class="chip ${o.cm_fit === "Strong" ? "green" : ""}">${esc(o.cm_fit || "Unscored")}</span></div>
+    </div>
+    <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+      <button class="btn" style="background:var(--green);color:#fff;font-size:12px;font-weight:800;padding:0 12px;min-height:32px;border:none" onclick="event.stopPropagation();reviewGo(${o.id})">&#10004; Go</button>
+      <button class="btn" style="background:rgba(244,241,232,.08);color:var(--muted);font-size:12px;font-weight:800;padding:0 12px;min-height:32px;border:1px solid var(--line)" onclick="event.stopPropagation();reviewPass(${o.id})">&#9197; Pass</button>
+      <button class="btn" style="background:transparent;color:var(--amber);font-size:12px;font-weight:800;padding:0 12px;min-height:32px;border:1px solid rgba(244,183,63,.3)" onclick="event.stopPropagation();openOpp(${o.id})">&#128065; Review</button>
+    </div>
+  </article>`;
+}
+function reviewGo(id){
+  var o = OPPS.find(function(x){return x.id===id;});
+  if(!o) return;
+  var oldStage = o.stage;
+  o.stage = 2;
+  var ov = {};
+  try{ ov = JSON.parse(localStorage.getItem('wire_stage_overrides') || '{}'); }catch(ex){}
+  ov[id] = 2;
+  localStorage.setItem('wire_stage_overrides', JSON.stringify(ov));
+  showToast('Moved to Capture', o.title, 'var(--green)');
+  var userName = state.user ? state.user.name : 'Unknown';
+  spSaveStage(id, oldStage, 2, userName);
+  buildNav();
+  renderCommand();
+  go('review');
+}
+function reviewPass(id){
+  var o = OPPS.find(function(x){return x.id===id;});
+  if(!o) return;
+  o.recommendation = 'Pass';
+  o.cm_fit = 'Pass';
+  o.stage = -1;
+  var po = {};
+  try{ po = JSON.parse(localStorage.getItem('wire_pass_overrides') || '{}'); }catch(ex){}
+  po[id] = true;
+  localStorage.setItem('wire_pass_overrides', JSON.stringify(po));
+  var ov = {};
+  try{ ov = JSON.parse(localStorage.getItem('wire_stage_overrides') || '{}'); }catch(ex){}
+  ov[id] = -1;
+  localStorage.setItem('wire_stage_overrides', JSON.stringify(ov));
+  showToast('Passed', 'Passed \u2014 searchable but hidden from pipeline', 'var(--muted)');
+  buildNav();
+  renderCommand();
+  go('review');
 }
 function rowCard(o,action){
   const st = stageOf(o);
@@ -2449,11 +2501,24 @@ function approveOpp(){
   setTimeout(()=>{ closeDrawer(); go(state.page); }, 1200);
 }
 function passOpp(){
+  state.opp.recommendation = 'Pass';
+  state.opp.cm_fit = 'Pass';
   state.opp.stage = -1;
+  // Save pass state to localStorage
+  var po = {};
+  try{ po = JSON.parse(localStorage.getItem('wire_pass_overrides') || '{}'); }catch(ex){}
+  po[state.opp.id] = true;
+  localStorage.setItem('wire_pass_overrides', JSON.stringify(po));
+  // Save stage override
+  var ov = {};
+  try{ ov = JSON.parse(localStorage.getItem('wire_stage_overrides') || '{}'); }catch(ex){}
+  ov[state.opp.id] = -1;
+  localStorage.setItem('wire_stage_overrides', JSON.stringify(ov));
   $("decisionMsg").textContent = "Passed. Removed from the active pipeline.";
+  showToast('Passed', state.opp.title + ' \u2014 hidden from pipeline', 'var(--red)');
   buildNav();
   renderCommand();
-  setTimeout(()=>{closeDrawer(); go(state.page);},650);
+  setTimeout(function(){closeDrawer(); go(state.page);},650);
 }
 function submitOpp(){
   const agency = $("sa").value.trim();
@@ -2952,6 +3017,20 @@ function advanceStage(oppId, newStage) {
   if(!o) return;
   var oldStage = o.stage;
   o.stage = newStage;
+  // If passing, set recommendation and cm_fit
+  if(newStage < 0) {
+    o.recommendation = 'Pass';
+    o.cm_fit = 'Pass';
+    var po = {};
+    try{ po = JSON.parse(localStorage.getItem('wire_pass_overrides') || '{}'); }catch(ex){}
+    po[oppId] = true;
+    localStorage.setItem('wire_pass_overrides', JSON.stringify(po));
+  }
+  // Save stage override to localStorage
+  var sov = {};
+  try{ sov = JSON.parse(localStorage.getItem('wire_stage_overrides') || '{}'); }catch(ex){}
+  sov[oppId] = newStage;
+  localStorage.setItem('wire_stage_overrides', JSON.stringify(sov));
   // Persist to SharePoint (non-blocking)
   var userName = state.user ? state.user.name : 'Unknown';
   spSaveStage(oppId, oldStage, newStage, userName);
