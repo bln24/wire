@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WIRE - BLN24 Capture Intelligence</title>
-<!-- build: v11.30 — save button for stage notes; activity feed always visible; @mention support -->
+<!-- build: v11.31 — Agency Intel panel; research on demand via SharePoint trigger -->
 <style>
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap");
 
@@ -2146,6 +2146,7 @@ function openOpp(id){
   // Load activity feed and pursuit team from SharePoint (async, non-blocking)
   loadActivityForOpp(o.id);
   loadPursuitTeamFromSP(o.id);
+  loadAgencyIntel(o.id);
   // Load pursuit team photos
   var ptAvatars = $("drawer").querySelectorAll(".pt-avatar[data-photoemail]");
   ptAvatars.forEach(function(el){ if(el.dataset.photoemail) fetchOrgPhoto(el.dataset.photoemail, el); });
@@ -2177,6 +2178,7 @@ function drawerBody(o){
   var b = "";
   b += stageInputPanel(o);
   b += pursuitTeamSection(o);
+  b += agencyIntelSection(o);
   b += solicitationDocsSection(o);
   b += activityFeedSection(o);
 
@@ -3806,6 +3808,138 @@ async function spSaveSolDocs(oppId, solDocs, solUrl) {
     if(solUrl !== undefined) fields.DocumentUrl = solUrl;
     await spUpdateItem(item.id, fields);
   } catch(e) { console.warn('spSaveSolDocs error:', e); }
+}
+
+// ── Agency Intel Section ────────────────────────────────────────────────
+function agencyIntelSection(o) {
+  var h = '<section class="detail-section">';
+  h += '<div class="detail-label">';
+  h += '<span style="display:inline-flex;align-items:center;gap:6px">';
+  h += '\uD83C\uDFDB\uFE0F Agency Intel';
+  h += '</span></div>';
+
+  var agency = o.agency || '';
+  var subage = o.subage || o.sub_agency || '';
+  if(agency) {
+    h += '<div style="font-size:13px;font-weight:700;color:var(--ink);margin-bottom:8px">' + esc(agency);
+    if(subage) h += ' <span style="color:var(--quiet);font-weight:400">/ ' + esc(subage) + '</span>';
+    h += '</div>';
+  }
+
+  // Try to parse AgencyIntel from SP data (loaded into o.agency_intel or o.sp_agency_intel)
+  var intel = null;
+  try {
+    var raw = o.agency_intel || '';
+    if(raw && typeof raw === 'string') intel = JSON.parse(raw);
+    else if(raw && typeof raw === 'object') intel = raw;
+  } catch(e) { intel = null; }
+
+  if(intel) {
+    // Render the intel brief
+    if(intel.fy2026_priorities) {
+      h += '<div style="margin-bottom:6px;font-size:12px;line-height:1.5">';
+      h += '<span style="color:var(--amber);font-weight:800">\uD83C\uDFAF FY2026 Priorities:</span> ';
+      var pText = Array.isArray(intel.fy2026_priorities) ? intel.fy2026_priorities.join('; ') : String(intel.fy2026_priorities);
+      h += '<span style="color:var(--muted)">' + esc(pText).substring(0, 400) + '</span></div>';
+    }
+    if(intel.budget_trend) {
+      h += '<div style="margin-bottom:6px;font-size:12px;line-height:1.5">';
+      h += '<span style="color:var(--green);font-weight:800">\uD83D\uDCB0 Budget trend:</span> ';
+      h += '<span style="color:var(--muted)">' + esc(String(intel.budget_trend)) + '</span></div>';
+    }
+    if(intel.bln24_relationship) {
+      h += '<div style="margin-bottom:6px;font-size:12px;line-height:1.5">';
+      h += '<span style="color:var(--blue);font-weight:800">\uD83E\uDD1D BLN24 relationship:</span> ';
+      h += '<span style="color:var(--muted)">' + esc(String(intel.bln24_relationship)) + '</span></div>';
+    }
+    if(intel.proposal_hot_buttons) {
+      h += '<div style="margin-bottom:6px;font-size:12px;line-height:1.5">';
+      h += '<span style="color:var(--violet);font-weight:800">\uD83D\uDCCB Proposal hot buttons:</span> ';
+      var hbText = Array.isArray(intel.proposal_hot_buttons) ? intel.proposal_hot_buttons.join('; ') : String(intel.proposal_hot_buttons);
+      h += '<span style="color:var(--muted)">' + esc(hbText).substring(0, 400) + '</span></div>';
+    }
+    if(intel.naics_spending) {
+      h += '<div style="margin-bottom:6px;font-size:12px;line-height:1.5">';
+      h += '<span style="color:var(--amber);font-weight:800">\uD83D\uDCC8 NAICS spending:</span> ';
+      h += '<span style="color:var(--muted)">' + esc(String(intel.naics_spending)).substring(0, 300) + '</span></div>';
+    }
+    if(intel.watch_notes) {
+      h += '<div style="margin-bottom:6px;font-size:12px;line-height:1.5">';
+      h += '<span style="color:var(--red);font-weight:800">\uD83D\uDC41\uFE0F Watch:</span> ';
+      var wnText = Array.isArray(intel.watch_notes) ? intel.watch_notes.join('; ') : String(intel.watch_notes);
+      h += '<span style="color:var(--muted)">' + esc(wnText).substring(0, 300) + '</span></div>';
+    }
+    if(intel.researched_at) {
+      h += '<div style="font-size:10px;color:var(--quiet);margin-top:4px;margin-bottom:8px">Last researched: ' + esc(String(intel.researched_at).substring(0, 10)) + '</div>';
+    }
+    h += '<button class="btn btn-ghost" style="font-size:11px;min-height:30px;padding:0 10px" onclick="requestAgencyIntel(' + o.id + ')">';
+    h += '\uD83D\uDD04 Refresh Intel</button>';
+  } else {
+    h += '<div style="color:var(--quiet);font-size:12px;margin-bottom:8px">No agency intel available.</div>';
+    h += '<button class="btn" style="font-size:11px;min-height:30px;padding:0 12px;background:var(--amber-soft);border-color:rgba(244,183,63,.3);color:var(--amber);font-weight:800" onclick="requestAgencyIntel(' + o.id + ')">';
+    h += '<span id="intelBtnIcon_' + o.id + '">\uD83D\uDD0D</span> <span id="intelBtnText_' + o.id + '">Research Agency</span></button>';
+  }
+
+  h += '</section>';
+  return h;
+}
+
+async function requestAgencyIntel(oppId) {
+  var o = OPPS.find(function(x) { return x.id === oppId; });
+  if(!o) return;
+  var btnIcon = $('intelBtnIcon_' + oppId);
+  var btnText = $('intelBtnText_' + oppId);
+  if(btnText) btnText.textContent = 'Researching...';
+  if(btnIcon) btnIcon.textContent = '\u23F3';
+
+  var userName = state.user ? state.user.name : 'Unknown';
+  try {
+    var item = await spFindItem(String(oppId));
+    if(item) {
+      await spUpdateItem(item.id, {
+        AgencyIntelRequested: true,
+        Agency: o.agency || '',
+        SubAgency: o.subage || o.sub_agency || ''
+      });
+      showToast('Agency intel requested', 'Rex will research ' + (o.agency || 'this agency') + ' on the next cycle', 'var(--amber)');
+
+      // Post activity feed entry
+      var afEntry = {type: 'agency_intel', msg: 'Agency intel research requested for ' + (o.agency || 'unknown'), by: userName, at: new Date().toISOString()};
+      var localFeed = [];
+      try { localFeed = JSON.parse(localStorage.getItem('wire_af_' + oppId) || '[]'); } catch(e) { localFeed = []; }
+      localFeed.unshift(afEntry);
+      localStorage.setItem('wire_af_' + oppId, JSON.stringify(localFeed));
+      try {
+        var spFeed = [];
+        try { spFeed = JSON.parse(item.fields.ActivityFeed || '[]'); } catch(e) { spFeed = []; }
+        spFeed.unshift(afEntry);
+        await spUpdateItem(item.id, {ActivityFeed: JSON.stringify(spFeed)});
+      } catch(e) { console.warn('agency intel activity error:', e); }
+    } else {
+      showToast('Error', 'Could not find opp in SharePoint', 'var(--red)');
+    }
+  } catch(e) {
+    console.warn('requestAgencyIntel error:', e);
+    showToast('Error', 'Failed to request agency intel: ' + e.message, 'var(--red)');
+  }
+
+  if(btnText) btnText.textContent = 'Requested \u2713';
+  if(btnIcon) btnIcon.textContent = '\u2705';
+}
+
+// Load agency intel from SharePoint when opening drawer
+async function loadAgencyIntel(oppId) {
+  try {
+    var item = await spFindItem(String(oppId));
+    if(item && item.fields && item.fields.AgencyIntel) {
+      var o = OPPS.find(function(x) { return x.id === oppId; });
+      if(o) {
+        o.agency_intel = item.fields.AgencyIntel;
+        // Re-render drawer with intel loaded
+        $("drawerBody").innerHTML = drawerBody(o);
+      }
+    }
+  } catch(e) { console.warn('loadAgencyIntel error:', e); }
 }
 
 function solicitationDocsSection(o) {
