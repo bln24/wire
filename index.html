@@ -3565,7 +3565,7 @@ function solicitationDocsSection(o) {
   h += '</div>';
 
   // Hidden file input
-  h += '<input type="file" id="solFileInput_' + o.id + '" accept=".docx,.pdf,.xlsx,.doc" style="display:none" onchange="solHandleFile(' + o.id + ',this)">';
+  h += '<input type="file" id="solFileInput_' + o.id + '" accept=".docx,.pdf,.xlsx,.doc,.zip,.pptx,.txt" style="display:none" onchange="solHandleFile(' + o.id + ',this)">';
 
   // Link input (hidden by default)
   h += '<div id="solLinkRow_' + o.id + '" style="display:none;margin-top:8px">';
