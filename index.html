@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WIRE - BLN24 Capture Intelligence</title>
-<!-- build: v4.5.1 -->
+<!-- build: v11.22 — SharePoint persistence, activity feed, pursuit team, Updates page -->
 <style>
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap");
 
@@ -1140,6 +1140,51 @@ body.light-mode .ac-list { background:var(--panel); border-color:var(--line-stro
 .stage-panel .sp-check input[type=checkbox]{width:16px;height:16px;accent-color:var(--amber)}
 .sp-comp-list{margin-top:8px}
 .sp-remove{float:right;background:none;border:none;color:var(--red);cursor:pointer;font-size:14px;padding:0 4px}
+/* ── Activity Feed ─────────────────────────────────────────── */
+.activity-feed{margin-bottom:18px}
+.activity-feed-title{display:flex;align-items:center;gap:9px;margin-bottom:12px;color:var(--amber);font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.14em}
+.activity-feed-title:after{content:"";height:1px;background:rgba(244,183,63,.2);flex:1}
+.af-item{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
+.af-item:last-child{border-bottom:none}
+.af-avatar{width:28px;height:28px;border-radius:50%;background:var(--amber-soft);color:var(--amber);display:grid;place-items:center;font-size:10px;font-weight:900;flex-shrink:0}
+.af-avatar.system{background:var(--blue-soft);color:var(--blue)}
+.af-body{flex:1;min-width:0}
+.af-who{font-size:12px;font-weight:700}
+.af-time{font-size:10px;color:var(--quiet);margin-left:8px}
+.af-text{font-size:12px;color:var(--muted);margin-top:2px;line-height:1.5}
+.af-compose{display:flex;gap:8px;margin-top:10px}
+.af-compose input{flex:1}
+.af-compose button{flex-shrink:0}
+/* ── Pursuit Team ──────────────────────────────────────────── */
+.pt-section{margin-bottom:18px}
+.pt-member{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}
+.pt-member:last-child{border-bottom:none}
+.pt-avatar{width:28px;height:28px;border-radius:50%;background:var(--violet);color:#fff;display:grid;place-items:center;font-size:10px;font-weight:900;flex-shrink:0;overflow:hidden;background-size:cover;background-position:center}
+.pt-info{flex:1;min-width:0}
+.pt-name{font-size:12px;font-weight:700}
+.pt-role{font-size:10px;color:var(--quiet)}
+.pt-remove{background:none;border:none;color:var(--red);cursor:pointer;font-size:14px;padding:2px 6px;opacity:.6}
+.pt-remove:hover{opacity:1}
+.pt-add-row{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.pt-add-row select,.pt-add-row input{font-size:12px}
+.pt-chip{display:inline-flex;align-items:center;gap:3px;height:20px;padding:0 6px;border-radius:999px;background:rgba(183,156,255,.12);border:1px solid rgba(183,156,255,.24);font-size:9px;font-weight:800;color:var(--violet)}
+.pt-chip-avatar{width:14px;height:14px;border-radius:50%;background:var(--violet);color:#fff;display:inline-grid;place-items:center;font-size:7px;font-weight:900;overflow:hidden;background-size:cover;background-position:center}
+/* ── Updates page ──────────────────────────────────────────── */
+.updates-list{display:grid;gap:8px;max-width:860px}
+.update-item{display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center;border:1px solid var(--line);border-radius:8px;padding:14px;background:rgba(244,241,232,.04);cursor:pointer;transition:border-color .18s,background .18s}
+.update-item:hover{border-color:rgba(244,183,63,.35);background:rgba(244,183,63,.055)}
+.update-icon{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;font-size:14px;flex-shrink:0}
+.update-icon.stage{background:var(--amber-soft);color:var(--amber)}
+.update-icon.comment{background:var(--blue-soft);color:var(--blue)}
+.update-icon.team{background:rgba(183,156,255,.12);color:var(--violet)}
+.update-body h4{margin:0;font-size:13px;font-weight:700}
+.update-body p{margin:3px 0 0;font-size:12px;color:var(--muted)}
+.update-time{font-size:10px;color:var(--quiet);white-space:nowrap}
+.updates-toggle{margin-bottom:14px}
+body.light-mode .af-item{border-color:var(--line)}
+body.light-mode .pt-member{border-color:var(--line)}
+body.light-mode .update-item{background:var(--panel);border-color:var(--line-strong)}
+body.light-mode .update-item:hover{background:var(--panel-2)}
 </style>
 <script src="msal-browser.min.js"></script>
 </head>
@@ -1612,7 +1657,7 @@ function signInWithMS() {
   }
   ae.textContent = "Redirecting to Microsoft...";
   msalApp.loginRedirect({
-    scopes:["User.Read","User.ReadBasic.All"],
+    scopes:["User.Read","User.ReadBasic.All","Sites.ReadWrite.All"],
     prompt: "select_account"
   }).catch(err => {
     console.error("WIRE loginRedirect error:", err);
@@ -1652,6 +1697,7 @@ function buildNav(){
   const items = isCEO ? [
     ["pipeline","board","Pipeline",OPPS.length],
     ["review","review","CEO Review",needs],
+    ["updates","bell","Updates",window._updatesBadge||0],
     ["submit","plus","Submit Opp",""],
     ["proposals","file","Proposals",""],
     ["winloss","chart","Win / Loss",""],
@@ -1779,6 +1825,7 @@ function oppCard(o){
     <div class="opp-meta">
       ${proposalChip(o)}${noticeChip(o)}${vehicleChip(o)}<span class="chip amber">${esc(o.set_aside || "TBD")}</span>
       ${o.assigned_to ? `<span class="chip blue">${esc(o.assigned_to)}</span>` : ""}
+      ${pursuitTeamChips(o)}
       ${o.cm_fit ? `<span class="chip ${o.cm_fit === "Strong" ? "green" : o.cm_fit === "Pass" ? "red" : ""}">${esc(o.cm_fit)}</span>` : ""}
     </div>
     <div class="opp-foot"><span>${esc(o.value || "TBD")}</span><span style="color:var(--muted);font-size:10px">${o.due ? ' · ' + fmtDue(o.due) : ''}</span><div style="display:flex;align-items:center;gap:6px">${(o.hg_url && o.hg_url.length > 50 ? o.hg_url : o.source_url) ? `<a href="${esc(o.hg_url && o.hg_url.length > 50 ? o.hg_url : (o.source_url || 'https://www.highergov.com/contract-opportunity/?search=' + encodeURIComponent(o.title)))}" target="_blank" rel="noreferrer" title="View on HigherGov" style="color:var(--amber);font-size:10px;font-weight:900;text-decoration:none;opacity:.7;line-height:1">HG&#8599;</a>` : ""}<div class="score-ring" style="--score:${Math.min(o.score,100)};--score-color:${sc}"><span>${esc(o.score)}</span></div></div></div>
@@ -1834,8 +1881,13 @@ const PAGES = {
       <div class="list-view">${acts.length ? acts.map(o=>rowCard(o,"Review")).join("") : emptyState("All clear","Nothing is waiting for review.")}</div>`;
   },
   myqueue(){
-    const mine = filteredOpps().filter(o=>state.user && o.assigned_to === state.user.key);
-    return pageHead("Assigned work","My Queue",`${mine.length} opportunities assigned to you`) + `
+    const mine = filteredOpps().filter(function(o){
+      if(!state.user) return false;
+      if(o.assigned_to === state.user.key) return true;
+      if(o.pursuit_team && o.pursuit_team.some(function(m){return m.key === state.user.key;})) return true;
+      return false;
+    });
+    return pageHead("Assigned work","My Queue",`${mine.length} opportunities assigned to you or your pursuit teams`) + `
       <div class="list-view">${mine.length ? mine.map(o=>rowCard(o,"Open")).join("") : emptyState("Nothing assigned yet","Approved opportunities will land here.")}</div>`;
   },
   submit(){
@@ -1911,6 +1963,11 @@ const PAGES = {
         </aside>
       </div>`;
   },
+  updates(){
+    return pageHead("Activity stream","Updates","Recent activity across all opportunities",
+      `<div class="updates-toggle" style="display:flex;gap:6px"><button class="btn" id="updBtnToday" onclick="loadUpdatesPage('today')">Today</button><button class="btn" id="updBtnWeek" onclick="loadUpdatesPage('week')">This Week</button><button class="btn" id="updBtnAll" onclick="loadUpdatesPage('all')">All</button></div>`) +
+      `<div class="updates-list" id="updatesContainer"><div style="color:var(--quiet);padding:32px;text-align:center">Loading activity from SharePoint...</div></div>`;
+  },
   team(){
     const team = [["Brian Nguyen","CEO / Final Gate","All final approvals"],["Hayk","Account Manager","Available"],["Michael","Account Manager","NTIA assigned"],["Gabe","Account Manager","Available"],["Eric Ma","BD / WIRE Manager","Census assigned"],["Favi Villa","UX Lead / SME","HCD reviews"]];
     return pageHead("Operating model","Team","Capture and proposal roster") + `<section class="section-panel list-view">${team.map(([n,r,note])=>`<div class="row-card" style="cursor:default"><div><div class="eyebrow" style="margin:0;color:var(--quiet)">${r}</div><h3>${n}</h3><p class="page-sub">${note}</p></div><span class="chip amber">${n.split(" ").map(x=>x[0]).join("").slice(0,2)}</span></div>`).join("")}</section>`;
@@ -1970,6 +2027,8 @@ function wireMain(){
   // delegated on main - see global handler below
   const submit = $("submitOpp");
   if(submit) submit.addEventListener("click",submitOpp);
+  // Updates page: load activity async
+  if(state.page === "updates") loadUpdatesPage("week");
 }
 function renderCommand(){
   if(!state.user || state.user.role !== "ceo"){ $("commandBar").classList.remove("on"); return; }
@@ -2004,6 +2063,12 @@ function openOpp(id){
   $("drawer").classList.add("on");
   hydrateIcons($("drawer"));
   wireDrawer();
+  // Load activity feed and pursuit team from SharePoint (async, non-blocking)
+  loadActivityForOpp(o.id);
+  loadPursuitTeamFromSP(o.id);
+  // Load pursuit team photos
+  var ptAvatars = $("drawer").querySelectorAll(".pt-avatar[data-photoemail]");
+  ptAvatars.forEach(function(el){ if(el.dataset.photoemail) fetchOrgPhoto(el.dataset.photoemail, el); });
 }
 function drawerBody(o){
   var da = o.deep_analysis || {};
@@ -2031,6 +2096,8 @@ function drawerBody(o){
 
   var b = "";
   b += stageInputPanel(o);
+  b += pursuitTeamSection(o);
+  b += activityFeedSection(o);
 
   // Recommendation + Win Prob
   if(o.recommendation || o.win_prob) {
@@ -2611,9 +2678,131 @@ const _photoCache = {}; // email -> blob URL or "none"
 async function getGraphToken() {
   if(!msalApp || !state.user || !state.user.msalAccount) return null;
   try {
-    const r = await msalApp.acquireTokenSilent({ scopes:["User.Read","User.ReadBasic.All"], account: state.user.msalAccount });
+    const r = await msalApp.acquireTokenSilent({ scopes:["User.Read","User.ReadBasic.All","Sites.ReadWrite.All"], account: state.user.msalAccount });
     return r.accessToken;
   } catch(e) { return null; }
+}
+
+// ── SharePoint API helpers ────────────────────────────────────────────────
+const SP_SITE = "thebln24.sharepoint.com,d8eb57d0-b328-4597-988d-7f73e3fc1fbe,d189a3d0-8e1d-4552-8e24-06af49f1e696";
+const SP_LIST = "a2f9c834-73d6-4fe6-843c-0ff65567321c";
+const GRAPH = "https://graph.microsoft.com/v1.0";
+
+async function spFindItem(oppId) {
+  try {
+    const token = await getGraphToken();
+    if(!token) return null;
+    const url = GRAPH + "/sites/" + SP_SITE + "/lists/" + SP_LIST + "/items?$filter=fields/OppId eq '" + oppId + "'&$expand=fields";
+    const r = await fetch(url, {headers: {Authorization: "Bearer " + token}});
+    if(!r.ok) return null;
+    const d = await r.json();
+    return d.value && d.value.length > 0 ? d.value[0] : null;
+  } catch(e) { console.warn("SP find error:", e); return null; }
+}
+
+async function spUpdateItem(itemId, fields) {
+  try {
+    const token = await getGraphToken();
+    if(!token) return false;
+    const url = GRAPH + "/sites/" + SP_SITE + "/lists/" + SP_LIST + "/items/" + itemId + "/fields";
+    const r = await fetch(url, {
+      method: "PATCH",
+      headers: {Authorization: "Bearer " + token, "Content-Type": "application/json"},
+      body: JSON.stringify(fields)
+    });
+    return r.ok;
+  } catch(e) { console.warn("SP update error:", e); return false; }
+}
+
+async function spCreateItem(fields) {
+  try {
+    const token = await getGraphToken();
+    if(!token) return null;
+    const url = GRAPH + "/sites/" + SP_SITE + "/lists/" + SP_LIST + "/items";
+    const r = await fetch(url, {
+      method: "POST",
+      headers: {Authorization: "Bearer " + token, "Content-Type": "application/json"},
+      body: JSON.stringify({fields: fields})
+    });
+    if(!r.ok) return null;
+    return await r.json();
+  } catch(e) { console.warn("SP create error:", e); return null; }
+}
+
+// Save stage change to SharePoint + activity feed
+async function spSaveStage(oppId, oldStage, newStage, userName) {
+  try {
+    var item = await spFindItem(String(oppId));
+    if(!item) return;
+    var feed = [];
+    try { feed = JSON.parse(item.fields.ActivityFeed || "[]"); } catch(e) { feed = []; }
+    var oldName = (STAGES.find(function(s){return s.id===oldStage;})||{}).name || ("Stage "+oldStage);
+    var newName = (STAGES.find(function(s){return s.id===newStage;})||{}).name || ("Stage "+newStage);
+    feed.unshift({type:"stage_change",from:oldName,to:newName,by:userName||"Unknown",at:new Date().toISOString()});
+    await spUpdateItem(item.id, {Stage: String(newStage), ActivityFeed: JSON.stringify(feed)});
+  } catch(e) { console.warn("spSaveStage error:", e); }
+}
+
+// Load activity feed from SharePoint (falls back to localStorage)
+async function spLoadActivityFeed(oppId) {
+  try {
+    var item = await spFindItem(String(oppId));
+    if(item && item.fields && item.fields.ActivityFeed) {
+      var feed = JSON.parse(item.fields.ActivityFeed);
+      localStorage.setItem("wire_af_" + oppId, item.fields.ActivityFeed);
+      return feed;
+    }
+  } catch(e) { console.warn("spLoadActivityFeed error:", e); }
+  try { return JSON.parse(localStorage.getItem("wire_af_" + oppId) || "[]"); } catch(e2) { return []; }
+}
+
+// Post a comment to activity feed
+async function spPostComment(oppId, userName, text) {
+  var entry = {type:"comment",by:userName||"Unknown",text:text,at:new Date().toISOString()};
+  // Save to localStorage immediately
+  var local = [];
+  try { local = JSON.parse(localStorage.getItem("wire_af_" + oppId) || "[]"); } catch(e) { local = []; }
+  local.unshift(entry);
+  localStorage.setItem("wire_af_" + oppId, JSON.stringify(local));
+  // Save to SharePoint async
+  try {
+    var item = await spFindItem(String(oppId));
+    if(item) {
+      var feed = [];
+      try { feed = JSON.parse(item.fields.ActivityFeed || "[]"); } catch(e) { feed = []; }
+      feed.unshift(entry);
+      await spUpdateItem(item.id, {ActivityFeed: JSON.stringify(feed)});
+    }
+  } catch(e) { console.warn("spPostComment error:", e); }
+  return local;
+}
+
+// Load all activity feeds for Updates page (paginated)
+async function spLoadAllActivity() {
+  try {
+    var token = await getGraphToken();
+    if(!token) return [];
+    var all = [];
+    var url = GRAPH + "/sites/" + SP_SITE + "/lists/" + SP_LIST + "/items?$expand=fields&$top=100";
+    while(url) {
+      var r = await fetch(url, {headers: {Authorization: "Bearer " + token}});
+      if(!r.ok) break;
+      var d = await r.json();
+      if(d.value) all = all.concat(d.value);
+      url = d["@odata.nextLink"] || null;
+    }
+    return all;
+  } catch(e) { console.warn("spLoadAllActivity error:", e); return []; }
+}
+
+// Save pursuit team to SharePoint
+async function spSavePursuitTeam(oppId, team) {
+  try {
+    var item = await spFindItem(String(oppId));
+    if(item) {
+      await spUpdateItem(item.id, {PursuitTeam: JSON.stringify(team)});
+    }
+  } catch(e) { console.warn("spSavePursuitTeam error:", e); }
 }
 
 async function fetchOrgPhoto(email, avatarEl) {
@@ -2752,7 +2941,11 @@ function advanceStage(oppId, newStage) {
   var SNAMES = ["","","Capture","Capture","Sign-off","Go/No-Go","Team Assembly","Pink Team","Red Team","Gold Team","Black Hat","Final Gate"];
   var o = OPPS.find(function(x){return x.id===oppId;});
   if(!o) return;
+  var oldStage = o.stage;
   o.stage = newStage;
+  // Persist to SharePoint (non-blocking)
+  var userName = state.user ? state.user.name : 'Unknown';
+  spSaveStage(oppId, oldStage, newStage, userName);
   var stageName = newStage < 0 ? "Passed" : (SNAMES[newStage] || ("Stage "+newStage));
   showToast(newStage < 0 ? "✕ No-Go" : "▶ " + stageName, o.title, newStage < 0 ? "var(--red)" : "var(--amber)");
   if(newStage > 0 && o.assigned_to) {
@@ -2801,6 +2994,7 @@ function dropOpp(e, newStage){
   if(!oppId) return;
   var o = OPPS.find(function(x){return x.id === oppId;});
   if(!o || o.stage === newStage) return;
+  var oldStage = o.stage;
   o.stage = newStage;
   var ov = {};
   try{ ov = JSON.parse(localStorage.getItem('wire_stage_overrides') || '{}'); }catch(ex){}
@@ -2808,6 +3002,9 @@ function dropOpp(e, newStage){
   localStorage.setItem('wire_stage_overrides', JSON.stringify(ov));
   var st = STAGES.find(function(s){return s.id === newStage;}) || STAGES[0];
   showToast('Stage Updated', o.title + ' moved to ' + st.name, st.color);
+  // Persist to SharePoint (non-blocking)
+  var userName = state.user ? state.user.name : 'Unknown';
+  spSaveStage(oppId, oldStage, newStage, userName);
   buildNav();
   renderCommand();
   go(state.page);
@@ -2956,6 +3153,326 @@ function saveFinalGate(oppId){
   d.submission_date = ($('spSubDate')||{}).value||'';
   d.submission_folder = ($('spSubFolder')||{}).value||'';
   saveStageData(oppId, d);
+}
+
+// ── Activity Feed Section (in drawer) ──────────────────────────────────
+function activityFeedSection(o) {
+  return '<section class="activity-feed detail-section">' +
+    '<div class="activity-feed-title">Activity</div>' +
+    '<div id="afItems_' + o.id + '"><div style="color:var(--quiet);font-size:12px;padding:8px 0">Loading activity...</div></div>' +
+    '<div class="af-compose">' +
+    '<input class="input" id="afInput_' + o.id + '" placeholder="Add a note..." style="font-size:12px;padding:8px 10px">' +
+    '<button class="btn btn-primary" style="font-size:12px" onclick="postComment(' + o.id + ')">Post</button>' +
+    '</div></section>';
+}
+
+function renderActivityFeed(oppId, feed) {
+  var container = $('afItems_' + oppId);
+  if(!container) return;
+  if(!feed || !feed.length) {
+    container.innerHTML = '<div style="color:var(--quiet);font-size:12px;padding:8px 0">No activity yet. Be the first to add a note.</div>';
+    return;
+  }
+  container.innerHTML = feed.slice(0, 50).map(function(entry) {
+    var initials = (entry.by || '?').split(' ').map(function(w){return w[0];}).join('').toUpperCase().slice(0,2);
+    var isSystem = entry.type === 'stage_change' || entry.type === 'team_change';
+    var dt = entry.at ? new Date(entry.at) : null;
+    var timeStr = dt ? dt.toLocaleDateString('en-US', {month:'short',day:'numeric'}) + ' ' + dt.toLocaleTimeString('en-US', {hour:'numeric',minute:'2-digit'}) : '';
+    var text = '';
+    if(entry.type === 'stage_change') {
+      text = 'Moved from <b>' + esc(entry.from || '?') + '</b> to <b>' + esc(entry.to || '?') + '</b>';
+    } else if(entry.type === 'team_change') {
+      text = esc(entry.text || '');
+    } else {
+      text = esc(entry.text || '');
+    }
+    return '<div class="af-item">' +
+      '<div class="af-avatar' + (isSystem ? ' system' : '') + '">' + (isSystem ? '\u21C5' : esc(initials)) + '</div>' +
+      '<div class="af-body">' +
+      '<span class="af-who">' + esc(entry.by || 'Unknown') + '</span><span class="af-time">' + esc(timeStr) + '</span>' +
+      '<div class="af-text">' + text + '</div>' +
+      '</div></div>';
+  }).join('');
+}
+
+function postComment(oppId) {
+  var input = $('afInput_' + oppId);
+  if(!input) return;
+  var text = input.value.trim();
+  if(!text) return;
+  var userName = state.user ? state.user.name : 'Unknown';
+  input.value = '';
+  spPostComment(oppId, userName, text).then(function(feed) {
+    renderActivityFeed(oppId, feed);
+  });
+}
+
+// Load activity feed when drawer opens (called after drawer renders)
+function loadActivityForOpp(oppId) {
+  spLoadActivityFeed(oppId).then(function(feed) {
+    renderActivityFeed(oppId, feed);
+  });
+}
+
+// ── Pursuit Team Section (in drawer) ──────────────────────────────────
+function loadPursuitTeam(oppId) {
+  try {
+    var saved = JSON.parse(localStorage.getItem('wire_pt_' + oppId) || '[]');
+    return saved;
+  } catch(e) { return []; }
+}
+function savePursuitTeamLocal(oppId, team) {
+  localStorage.setItem('wire_pt_' + oppId, JSON.stringify(team));
+  // Also update the opp object
+  var o = OPPS.find(function(x){return x.id===oppId;});
+  if(o) o.pursuit_team = team;
+  // Save to SharePoint async (non-blocking)
+  spSavePursuitTeam(oppId, team);
+}
+
+function pursuitTeamSection(o) {
+  var team = o.pursuit_team && o.pursuit_team.length ? o.pursuit_team : loadPursuitTeam(o.id);
+  if(!o.pursuit_team || !o.pursuit_team.length) o.pursuit_team = team;
+  var isCEO = state.user && state.user.role === 'ceo';
+  var isLead = state.user && team.some(function(m){return m.key === state.user.key && m.role === 'Pursuit Lead';});
+  var canEdit = isCEO || isLead;
+
+  var h = '<section class="pt-section detail-section">';
+  h += '<div class="detail-label">Pursuit Team</div>';
+
+  // Lead display
+  var lead = o.assigned_to ? (ORG_ROSTER.find(function(r){return r.key===o.assigned_to;})||{name:o.assigned_to}) : null;
+  if(lead) {
+    var leadInitials = (lead.name||'?').split(' ').map(function(w){return w[0];}).join('').toUpperCase().slice(0,2);
+    h += '<div class="pt-member"><div class="pt-avatar" data-photoemail="' + esc(lead.email||'') + '">' + esc(leadInitials) + '</div>';
+    h += '<div class="pt-info"><div class="pt-name">' + esc(lead.name) + '</div><div class="pt-role">Lead (assigned_to)</div></div></div>';
+  }
+
+  // Team members
+  if(team.length) {
+    team.forEach(function(m, idx) {
+      var initials = (m.name||'?').split(' ').map(function(w){return w[0];}).join('').toUpperCase().slice(0,2);
+      var memberRec = ORG_ROSTER.find(function(r){return r.key===m.key;});
+      var email = memberRec ? memberRec.email : '';
+      h += '<div class="pt-member"><div class="pt-avatar" data-photoemail="' + esc(email) + '">' + esc(initials) + '</div>';
+      h += '<div class="pt-info"><div class="pt-name">' + esc(m.name) + '</div><div class="pt-role">' + esc(m.role||'Team') + '</div></div>';
+      if(canEdit) h += '<button class="pt-remove" onclick="removePursuitMember(' + o.id + ',' + idx + ')" title="Remove">&times;</button>';
+      h += '</div>';
+    });
+  } else if(!lead) {
+    h += '<div style="color:var(--quiet);font-size:12px;padding:8px 0">No pursuit team assigned yet.</div>';
+  }
+
+  // Add member form
+  if(canEdit) {
+    var rosterOpts = ORG_ROSTER.slice(0, 60).map(function(r) {
+      return '<option value="' + esc(r.key) + '">' + esc(r.name) + (r.title ? ' \u2014 ' + esc(r.title) : '') + '</option>';
+    }).join('');
+    h += '<div class="pt-add-row">';
+    h += '<select class="select" id="ptAddMember" style="flex:1;min-width:140px;padding:6px 8px"><option value="">Select team member...</option>' + rosterOpts + '</select>';
+    h += '<select class="select" id="ptAddRole" style="width:130px;padding:6px 8px"><option>Pursuit Lead</option><option>SME</option><option>Reviewer</option><option>Writer</option><option>Pricing</option></select>';
+    h += '<button class="btn" style="font-size:12px" onclick="addPursuitMember(' + o.id + ')">+ Add</button>';
+    h += '</div>';
+  }
+
+  h += '</section>';
+  return h;
+}
+
+function addPursuitMember(oppId) {
+  var sel = $('ptAddMember');
+  var roleSel = $('ptAddRole');
+  if(!sel || !sel.value) return;
+  var key = sel.value;
+  var role = roleSel ? roleSel.value : 'Team';
+  var rec = ORG_ROSTER.find(function(r){return r.key===key;});
+  if(!rec) return;
+  var o = OPPS.find(function(x){return x.id===oppId;});
+  if(!o) return;
+  var team = o.pursuit_team || loadPursuitTeam(oppId);
+  // Don't add duplicates
+  if(team.some(function(m){return m.key===key;})) {
+    showToast('Already on team', rec.name + ' is already on this pursuit team.', 'var(--amber)');
+    return;
+  }
+  team.push({key:key, name:rec.name, role:role});
+  savePursuitTeamLocal(oppId, team);
+  // Log to activity feed
+  var userName = state.user ? state.user.name : 'Unknown';
+  spPostComment(oppId, userName, 'Added ' + rec.name + ' as ' + role).then(function(){});
+  // Re-render drawer
+  openOpp(oppId);
+}
+
+function removePursuitMember(oppId, idx) {
+  var o = OPPS.find(function(x){return x.id===oppId;});
+  if(!o) return;
+  var team = o.pursuit_team || loadPursuitTeam(oppId);
+  var removed = team[idx];
+  team.splice(idx, 1);
+  savePursuitTeamLocal(oppId, team);
+  if(removed) {
+    var userName = state.user ? state.user.name : 'Unknown';
+    spPostComment(oppId, userName, 'Removed ' + removed.name + ' from pursuit team').then(function(){});
+  }
+  openOpp(oppId);
+}
+
+async function loadPursuitTeamFromSP(oppId) {
+  try {
+    var spData = await loadOppFromSP(oppId);
+    if(!spData || !spData.pursuitTeam || !spData.pursuitTeam.length) return;
+    var o = OPPS.find(function(x){return x.id===oppId;});
+    if(!o) return;
+    // Merge SP data with local — SP is source of truth
+    o.pursuit_team = spData.pursuitTeam;
+    localStorage.setItem('wire_pt_' + oppId, JSON.stringify(spData.pursuitTeam));
+    // Re-render pursuit team section if drawer is still open for this opp
+    if(state.opp && state.opp.id === oppId) {
+      var ptSection = document.querySelector('.pt-section');
+      if(ptSection) {
+        var tempDiv = document.createElement('div');
+        tempDiv.innerHTML = pursuitTeamSection(o);
+        ptSection.replaceWith(tempDiv.firstElementChild);
+        // Load photos for new elements
+        var ptAvatars = document.querySelectorAll('.pt-avatar[data-photoemail]');
+        ptAvatars.forEach(function(el){ if(el.dataset.photoemail) fetchOrgPhoto(el.dataset.photoemail, el); });
+      }
+    }
+  } catch(e) { console.warn('loadPursuitTeamFromSP error:', e); }
+}
+
+function pursuitTeamChips(o) {
+  var team = o.pursuit_team || [];
+  if(!team.length) return '';
+  var maxShow = 3;
+  var shown = team.slice(0, maxShow);
+  var extra = team.length - maxShow;
+  var html = shown.map(function(m) {
+    var initials = (m.name||'?').split(' ').map(function(w){return w[0];}).join('').toUpperCase().slice(0,2);
+    return '<span class="pt-chip"><span class="pt-chip-avatar">' + esc(initials) + '</span>' + esc(m.name.split(' ')[0]) + '</span>';
+  }).join('');
+  if(extra > 0) html += '<span class="pt-chip">+' + extra + '</span>';
+  return html;
+}
+
+// ── Updates Page Loader ─────────────────────────────────────────────
+window._spCache = window._spCache || {};
+
+async function loadOppFromSP(oppId) {
+  if(window._spCache[oppId]) return window._spCache[oppId];
+  try {
+    var item = await spFindItem(String(oppId));
+    if(!item) return null;
+    var f = item.fields;
+    var result = {
+      spItemId: item.id,
+      stage: f.Stage,
+      activityFeed: JSON.parse(f.ActivityFeed || "[]"),
+      stageData: JSON.parse(f.StageData || "{}"),
+      pursuitTeam: JSON.parse(f.PursuitTeam || "[]"),
+    };
+    window._spCache[oppId] = result;
+    return result;
+  } catch(e) { return null; }
+}
+
+var _updatesFilter = 'week';
+async function loadUpdatesPage(filter) {
+  _updatesFilter = filter || 'week';
+  var container = $('updatesContainer');
+  if(!container) return;
+  // Highlight active filter button
+  ['Today','Week','All'].forEach(function(f){
+    var btn = $('updBtn'+f.charAt(0).toUpperCase()+f.slice(1));
+    if(!btn) return;
+    var isActive = (f.toLowerCase() === filter) || (f === 'Today' && filter === 'today') || (f === 'Week' && filter === 'week') || (f === 'All' && filter === 'all');
+    btn.style.background = isActive ? 'var(--amber-soft)' : '';
+    btn.style.borderColor = isActive ? 'rgba(244,183,63,.3)' : '';
+    btn.style.color = isActive ? 'var(--amber)' : '';
+  });
+  container.innerHTML = '<div style="color:var(--quiet);padding:32px;text-align:center">Loading activity from SharePoint...</div>';
+
+  // Try SharePoint first; fall back to localStorage
+  var allEvents = [];
+  try {
+    var items = await spLoadAllActivity();
+    if(items && items.length) {
+      items.forEach(function(item) {
+        if(!item.fields) return;
+        var oppId = item.fields.OppId || item.fields.Title || '';
+        var feed = [];
+        try { feed = JSON.parse(item.fields.ActivityFeed || '[]'); } catch(e) { feed = []; }
+        var oppTitle = '';
+        var opp = OPPS.find(function(o){return String(o.id) === String(oppId);});
+        if(opp) oppTitle = opp.title || opp.agency || '';
+        else oppTitle = oppId;
+        feed.forEach(function(entry) {
+          entry._oppId = oppId;
+          entry._oppTitle = oppTitle;
+          allEvents.push(entry);
+        });
+      });
+    }
+  } catch(e) { console.warn('Updates SP load failed:', e); }
+
+  // Fallback: gather from localStorage if SP returned nothing
+  if(!allEvents.length) {
+    OPPS.forEach(function(o) {
+      try {
+        var local = JSON.parse(localStorage.getItem('wire_af_' + o.id) || '[]');
+        local.forEach(function(entry) {
+          entry._oppId = o.id;
+          entry._oppTitle = o.title || o.agency || '';
+          allEvents.push(entry);
+        });
+      } catch(e) {}
+    });
+  }
+
+  // Sort reverse-chronological
+  allEvents.sort(function(a,b) {
+    return new Date(b.at || 0) - new Date(a.at || 0);
+  });
+
+  // Filter by selected range
+  var cutoff = 0;
+  if(_updatesFilter === 'today') cutoff = Date.now() - 86400000;
+  else if(_updatesFilter === 'week') cutoff = Date.now() - 7 * 86400000;
+  if(cutoff > 0) {
+    allEvents = allEvents.filter(function(e) {
+      return e.at && new Date(e.at).getTime() > cutoff;
+    });
+  }
+
+  // Update nav badge with 24h count
+  var dayAgo = Date.now() - 86400000;
+  window._updatesBadge = allEvents.filter(function(e){ return e.at && new Date(e.at).getTime() > dayAgo; }).length;
+  var navBadge = document.querySelector('#nav-updates .badge');
+  if(navBadge) navBadge.textContent = window._updatesBadge || '';
+
+  var rangeLabel = _updatesFilter === 'today' ? 'today' : _updatesFilter === 'week' ? 'this week' : '';
+  if(!allEvents.length) {
+    container.innerHTML = '<div style="color:var(--quiet);padding:32px;text-align:center">No recent activity' + (rangeLabel ? ' ' + rangeLabel : '') + '.</div>';
+    return;
+  }
+
+  container.innerHTML = allEvents.slice(0, 200).map(function(entry) {
+    var iconClass = entry.type === 'stage_change' ? 'stage' : entry.type === 'team_change' ? 'team' : 'comment';
+    var iconChar = entry.type === 'stage_change' ? '\u21C5' : entry.type === 'team_change' ? '\uD83D\uDC65' : '\uD83D\uDCAC';
+    var dt = entry.at ? new Date(entry.at) : null;
+    var timeStr = dt ? dt.toLocaleDateString('en-US', {month:'short',day:'numeric'}) + ' ' + dt.toLocaleTimeString('en-US', {hour:'numeric',minute:'2-digit'}) : '';
+    var desc = '';
+    if(entry.type === 'stage_change') desc = 'Moved from ' + esc(entry.from||'?') + ' to ' + esc(entry.to||'?');
+    else if(entry.type === 'team_change') desc = esc(entry.text||'');
+    else desc = esc(entry.text||'');
+    var oppIdNum = Number(entry._oppId) || 0;
+    return '<div class="update-item" onclick="openOpp(' + oppIdNum + ')">' +
+      '<div class="update-icon ' + iconClass + '">' + iconChar + '</div>' +
+      '<div class="update-body"><h4>' + esc(entry._oppTitle||'Unknown') + '</h4><p>' + desc + ' \u2014 ' + esc(entry.by||'') + '</p></div>' +
+      '<div class="update-time">' + esc(timeStr) + '</div>' +
+      '</div>';
+  }).join('');
 }
 
 </script>
