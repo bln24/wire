@@ -1701,7 +1701,7 @@ function buildNav(){
   const isCEO = state.user && state.user.role === "ceo";
   const isAM = state.user && state.user.role === "am";
   const mine = state.user ? OPPS.filter(o=>o.assigned_to === state.user.key).length : 0;
-  const needs = OPPS.filter(o=>o.stage <= 1).length;
+  const needs = activeOpps().filter(o=>o.stage <= 1 && o.stage >= 0).length;
   const items = isCEO ? [
     ["pipeline","board","Pipeline",activeOpps().length],
     ["review","review","CEO Review",needs],
