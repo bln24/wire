@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WIRE - BLN24 Capture Intelligence</title>
-<!-- build: v11.28 — post-upload notifications + re-analysis trigger + queued chip -->
+<!-- build: v11.29 — separate Rex pass recommendation from Brian explicit pass action -->
 <style>
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap");
 
@@ -1503,7 +1503,7 @@ const OPPS = LIVE.map((o,i)=>({...o,id:i+1,stage:o.stage || 0,submitted_by:o.sub
 // Load stage overrides from localStorage
 (function(){try{var ov=JSON.parse(localStorage.getItem("wire_stage_overrides")||"{}");Object.keys(ov).forEach(function(k){var o=OPPS.find(function(x){return x.id===Number(k);});if(o) o.stage=ov[k];});}catch(e){}})();
 // Load pass overrides from localStorage
-(function(){try{var po=JSON.parse(localStorage.getItem("wire_pass_overrides")||"{}");Object.keys(po).forEach(function(k){var o=OPPS.find(function(x){return x.id===Number(k);});if(o){o.recommendation="Pass";o.cm_fit="Pass";}});}catch(e){}})();
+(function(){try{var po=JSON.parse(localStorage.getItem("wire_pass_overrides")||"{}");Object.keys(po).forEach(function(k){var o=OPPS.find(function(x){return x.id===Number(k);});if(o){o.stage=-1;}});}catch(e){}})();
 
 const state = {user:null,page:"pipeline",opp:null,query:""};
 const $ = id => document.getElementById(id);
@@ -1525,17 +1525,23 @@ const iconPaths = {
   inbox:'<path d="M22 12h-6l-2 3h-4l-2-3H2"></path><path d="m5.45 5.11-3.1 6.2A2 2 0 0 0 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6a2 2 0 0 0-.21-.89l-3.1-6.2A2 2 0 0 0 16.9 4H7.2a2 2 0 0 0-1.75 1.11Z"></path>'
 };
 function hydrateIcons(root=document){root.querySelectorAll("[data-icon]").forEach(el=>{el.innerHTML = `<svg class="icon" viewBox="0 0 24 24" aria-hidden="true">${iconPaths[el.dataset.icon] || ""}</svg>`;});}
+function brianPassed(o) {
+  try {
+    var po = JSON.parse(localStorage.getItem("wire_pass_overrides") || "{}");
+    return !!po[o.id] || o.stage === -1;
+  } catch(e) { return o.stage === -1; }
+}
 function activeOpps() {
-  return OPPS.filter(o => o.recommendation !== 'Pass' && o.cm_fit !== 'Pass');
+  return OPPS.filter(o => !brianPassed(o));
 }
 function passedOpps() {
-  return OPPS.filter(o => o.recommendation === 'Pass' || o.cm_fit === 'Pass');
+  return OPPS.filter(o => brianPassed(o));
 }
 function stageOf(o){return STAGES.find(s=>s.id===o.stage) || STAGES[0];}
 function scoreColor(score){return score >= 90 ? "var(--green)" : score >= 70 ? "var(--amber)" : score >= 50 ? "var(--blue)" : "var(--red)"}
 function filteredOpps(){
   const q = state.query.toLowerCase().trim();
-  if(!q) return OPPS.filter(o => o.recommendation !== 'Pass' && o.cm_fit !== 'Pass');
+  if(!q) return OPPS.filter(o => !brianPassed(o));
   return OPPS.filter(o => {
     const blob = [
       o.title, o.agency, o.agency_full, o.cm_fit, o.recommendation,
@@ -1835,7 +1841,8 @@ function oppCard(o){
       ${proposalChip(o)}${noticeChip(o)}${vehicleChip(o)}<span class="chip amber">${esc(o.set_aside || "TBD")}</span>
       ${o.assigned_to ? `<span class="chip blue">${esc(o.assigned_to)}</span>` : ""}
       ${pursuitTeamChips(o)}
-      ${o.cm_fit ? `<span class="chip ${o.cm_fit === "Strong" ? "green" : o.cm_fit === "Pass" ? "red" : ""}">${esc(o.cm_fit)}</span>` : ""}
+      ${o.cm_fit ? `<span class="chip ${o.cm_fit === "Strong" ? "green" : ""}">${esc(o.cm_fit)}</span>` : ""}
+      ${(o.recommendation === "Pass" && !brianPassed(o)) ? `<span class="chip" style="color:#ff9a9a;border-color:#ff9a9a44;background:#ff9a9a1a;font-size:10px">Rex recommends pass</span>` : ""}
       ${solChip(o)}
     </div>
     <div class="opp-foot"><span>${esc(o.value || "TBD")}</span><span style="color:var(--muted);font-size:10px">${o.due ? ' · ' + fmtDue(o.due) : ''}</span><div style="display:flex;align-items:center;gap:6px">${(o.hg_url && o.hg_url.length > 50 ? o.hg_url : o.source_url) ? `<a href="${esc(o.hg_url && o.hg_url.length > 50 ? o.hg_url : (o.source_url || 'https://www.highergov.com/contract-opportunity/?search=' + encodeURIComponent(o.title)))}" target="_blank" rel="noreferrer" title="View on HigherGov" style="color:var(--amber);font-size:10px;font-weight:900;text-decoration:none;opacity:.7;line-height:1">HG&#8599;</a>` : ""}<div class="score-ring" style="--score:${Math.min(o.score,100)};--score-color:${sc}"><span>${esc(o.score)}</span></div></div></div>
@@ -2166,7 +2173,8 @@ function drawerBody(o){
   // Recommendation + Win Prob
   if(o.recommendation || o.win_prob) {
     b += "<section class=\"detail-section\" style=\"padding-bottom:0\">";
-    if(o.recommendation) b += "<span class=\"chip\" style=\"margin-right:6px\">⚡ " + esc(o.recommendation) + "</span>";
+    if(o.recommendation === "Pass") b += "<span class=\"chip\" style=\"margin-right:6px;color:var(--red);border-color:rgba(255,107,107,.26);background:rgba(255,107,107,.1)\">Rex: Pass</span>";
+    else if(o.recommendation) b += "<span class=\"chip\" style=\"margin-right:6px\">\u26A1 " + esc(o.recommendation) + "</span>";
     if(o.win_prob) b += "<span class=\"chip\">" + esc(o.win_prob) + "</span>";
     b += "</section>";
   }
@@ -3516,7 +3524,7 @@ async function loadOppFromSP(oppId) {
 })();
 
 function solChip(o) {
-  var isPassed = o.recommendation === 'Pass' || o.cm_fit === 'Pass';
+  var isPassed = brianPassed(o);
   if(isPassed) return '';
   if(o.sol_status === 'pending_analysis') return '<span class="chip" style="color:var(--amber);border-color:var(--amber)44;background:var(--amber)1a;animation:pulse 1.5s infinite;font-size:10px">\uD83D\uDD04 Re-analysis queued</span>';
   var hasSol = (o.sp_url && o.sp_url.length > 5) || (o.sol_url && o.sol_url.length > 5) || (o.sol_docs && o.sol_docs.length > 0);
