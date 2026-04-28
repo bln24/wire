@@ -1203,8 +1203,22 @@ body.light-mode .note-item:hover{border-color:rgba(244,183,63,.35)}
 .pt-role{font-size:10px;color:var(--quiet)}
 .pt-remove{background:none;border:none;color:var(--red);cursor:pointer;font-size:14px;padding:2px 6px;opacity:.6}
 .pt-remove:hover{opacity:1}
-.pt-add-row{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.pt-add-row{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;align-items:flex-start}
 .pt-add-row select,.pt-add-row input{font-size:12px}
+.pt-ac-wrap{position:relative;flex:1;min-width:160px}
+.pt-ac-wrap input{width:100%;box-sizing:border-box;padding:6px 8px;font-size:12px}
+.ptAcList{position:absolute;z-index:100;top:100%;left:0;width:100%;background:var(--panel);border:1px solid var(--line);border-radius:8px;max-height:240px;overflow-y:auto;display:none}
+.ptAcList .ac-item:hover{background:var(--hover)}
+.opp-link{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}
+.opp-link:last-child{border-bottom:none}
+.opp-link-title{font-size:12px;font-weight:700;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.opp-link-domain{font-size:9px;font-weight:700;padding:2px 7px;border-radius:999px;background:rgba(183,156,255,.12);border:1px solid rgba(183,156,255,.24);color:var(--violet);white-space:nowrap}
+.opp-link-open{color:var(--blue);text-decoration:none;font-size:11px;font-weight:700;white-space:nowrap}
+.opp-link-open:hover{text-decoration:underline}
+.opp-link-rm{background:none;border:none;color:var(--red);cursor:pointer;font-size:13px;padding:2px 4px;opacity:.5}
+.opp-link-rm:hover{opacity:1}
+.opp-link-form{margin-top:8px;display:flex;flex-direction:column;gap:6px}
+.opp-link-form input{font-size:12px;padding:6px 8px}
 .pt-chip{display:inline-flex;align-items:center;gap:3px;height:20px;padding:0 6px;border-radius:999px;background:rgba(183,156,255,.12);border:1px solid rgba(183,156,255,.24);font-size:9px;font-weight:800;color:var(--violet)}
 .pt-chip-avatar{width:14px;height:14px;border-radius:50%;background:var(--violet);color:#fff;display:inline-grid;place-items:center;font-size:7px;font-weight:900;overflow:hidden;background-size:cover;background-position:center}
 /* ── Updates page ──────────────────────────────────────────── */
@@ -2234,6 +2248,7 @@ function openOpp(id){
   loadPursuitTeamFromSP(o.id);
   loadAgencyIntel(o.id);
   loadNotesFromSP(o.id);
+  loadOppLinksFromSP(o.id);
   // Load pursuit team photos
   var ptAvatars = $("drawer").querySelectorAll(".pt-avatar[data-photoemail]");
   ptAvatars.forEach(function(el){ if(el.dataset.photoemail) fetchOrgPhoto(el.dataset.photoemail, el); });
@@ -2265,8 +2280,9 @@ function drawerBody(o){
   var b = "";
   b += stageInputPanel(o);
   b += pursuitTeamSection(o);
-  b += agencyIntelSection(o);
   b += solicitationDocsSection(o);
+  b += oppLinksSection(o);
+  b += agencyIntelSection(o);
   b += renderNotesSection(o);
   b += activityFeedSection(o);
 
@@ -3822,8 +3838,8 @@ function pursuitTeamSection(o) {
   // Team members
   if(team.length) {
     team.forEach(function(m, idx) {
-      var mName = (typeof m === 'string') ? m : (m && m.name ? m.name : '?');
       var mKey = (typeof m === 'string') ? m : (m && m.key ? m.key : '');
+      var mName = getTeamMemberName(m);
       var mRole = (typeof m === 'string') ? 'Team' : (m && m.role ? m.role : 'Team');
       var initials = mName.split(' ').map(function(w){return w[0];}).join('').toUpperCase().slice(0,2);
       var memberRec = ORG_ROSTER.find(function(r){return r.key===mKey;});
@@ -3839,12 +3855,12 @@ function pursuitTeamSection(o) {
 
   // Add member form
   if(canEdit) {
-    var rosterOpts = ORG_ROSTER.slice(0, 60).map(function(r) {
-      return '<option value="' + esc(r.key) + '">' + esc(r.name) + (r.title ? ' \u2014 ' + esc(r.title) : '') + '</option>';
-    }).join('');
     h += '<div class="pt-add-row">';
-    h += '<select class="select" id="ptAddMember" style="flex:1;min-width:140px;padding:6px 8px"><option value="">Select team member...</option>' + rosterOpts + '</select>';
-    h += '<select class="select" id="ptAddRole" style="width:130px;padding:6px 8px"><option>Pursuit Lead</option><option>SME</option><option>Reviewer</option><option>Writer</option><option>Pricing</option></select>';
+    h += '<div class="pt-ac-wrap">';
+    h += '<input type="text" class="input" id="ptAcInput_' + o.id + '" placeholder="Add team member..." autocomplete="off" oninput="ptAcFilter(this, ' + o.id + ')" onfocus="ptAcFilter(this, ' + o.id + ')" onblur="setTimeout(function(){ptAcClose(' + o.id + ')},300)">';
+    h += '<div class="ptAcList" id="ptAcList_' + o.id + '"></div>';
+    h += '</div>';
+    h += '<select class="select" id="ptAddRole_' + o.id + '" style="width:130px;padding:6px 8px"><option>Pursuit Lead</option><option>SME</option><option>Reviewer</option><option>Writer</option><option>Pricing</option></select>';
     h += '<button class="btn" style="font-size:12px" onclick="addPursuitMember(' + o.id + ')">+ Add</button>';
     h += '</div>';
   }
@@ -3853,11 +3869,58 @@ function pursuitTeamSection(o) {
   return h;
 }
 
+function getTeamMemberName(member) {
+  if(typeof member === 'string') {
+    var r = ORG_ROSTER.find(function(x){ return x.key === member; });
+    return r ? r.name : member;
+  }
+  return member.name || member.key || 'Unknown';
+}
+
+function ptAcFilter(input, oppId) {
+  var q = (input.value || '').toLowerCase();
+  var list = $('ptAcList_' + oppId);
+  if(!list) return;
+  if(!q || q.length < 1) { list.innerHTML = ''; list.style.display = 'none'; return; }
+  var matches = ORG_ROSTER.filter(function(r) {
+    return r.name.toLowerCase().includes(q) || (r.email||'').toLowerCase().includes(q);
+  }).slice(0, 6);
+  if(!matches.length) { list.innerHTML = ''; list.style.display = 'none'; return; }
+  list.innerHTML = matches.map(function(r) {
+    var safeKey = esc(r.key);
+    var safeName = esc(r.name);
+    return '<div class="ac-item" data-rkey="' + safeKey + '" data-rname="' + safeName + '" onmousedown="ptAcPick(' + oppId + ',this)" style="display:flex;align-items:center;gap:10px;padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--line)">' +
+      '<span style="width:28px;height:28px;border-radius:50%;background:var(--violet);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0">' + (r.initials||r.name.slice(0,2).toUpperCase()) + '</span>' +
+      '<div><div style="font-size:13px;font-weight:600">' + safeName + '</div><div style="font-size:11px;color:var(--quiet)">' + esc(r.label||r.email||'') + '</div></div>' +
+      '</div>';
+  }).join('');
+  list.style.display = 'block';
+}
+
+function ptAcClose(oppId) {
+  var list = $('ptAcList_' + oppId);
+  if(list) { list.innerHTML = ''; list.style.display = 'none'; }
+}
+
+function ptAcPick(oppId, el) {
+  var key = el.getAttribute('data-rkey');
+  var name = el.getAttribute('data-rname');
+  var input = $('ptAcInput_' + oppId);
+  if(input) input.value = name;
+  ptAcClose(oppId);
+  window._ptAcSelected = window._ptAcSelected || {};
+  window._ptAcSelected[oppId] = key;
+}
+
 function addPursuitMember(oppId) {
-  var sel = $('ptAddMember');
-  var roleSel = $('ptAddRole');
-  if(!sel || !sel.value) return;
-  var key = sel.value;
+  window._ptAcSelected = window._ptAcSelected || {};
+  var key = window._ptAcSelected[oppId];
+  var roleSel = $('ptAddRole_' + oppId);
+  if(!key) {
+    var input = $('ptAcInput_' + oppId);
+    if(input){ input.classList.add('err'); setTimeout(function(){ input.classList.remove('err'); }, 1500); }
+    return;
+  }
   var role = roleSel ? roleSel.value : 'Team';
   var rec = ORG_ROSTER.find(function(r){return r.key===key;});
   if(!rec) return;
@@ -3865,12 +3928,16 @@ function addPursuitMember(oppId) {
   if(!o) return;
   var team = o.pursuit_team || loadPursuitTeam(oppId);
   // Don't add duplicates
-  if(team.some(function(m){return m.key===key;})) {
+  if(team.some(function(m){return (typeof m === 'string' ? m : m.key)===key;})) {
     showToast('Already on team', rec.name + ' is already on this pursuit team.', 'var(--amber)');
     return;
   }
   team.push({key:key, name:rec.name, role:role});
   savePursuitTeamLocal(oppId, team);
+  // Clear autocomplete state
+  delete window._ptAcSelected[oppId];
+  var input = $('ptAcInput_' + oppId);
+  if(input) input.value = '';
   // Log to activity feed
   var userName = state.user ? state.user.name : 'Unknown';
   spPostComment(oppId, userName, 'Added ' + rec.name + ' as ' + role).then(function(){});
@@ -3923,7 +3990,7 @@ function pursuitTeamChips(o) {
   var shown = team.slice(0, maxShow);
   var extra = team.length - maxShow;
   var html = shown.map(function(m) {
-    var mName = (typeof m === 'string') ? m : (m && m.name ? m.name : '?');
+    var mName = getTeamMemberName(m);
     var initials = mName.split(' ').map(function(w){return w[0];}).join('').toUpperCase().slice(0,2);
     return '<span class="pt-chip"><span class="pt-chip-avatar">' + esc(initials) + '</span>' + esc(mName.split(' ')[0]) + '</span>';
   }).join('');
@@ -4662,6 +4729,153 @@ async function loadNotesFromSP(oppId) {
       }
     }
   } catch(e) { console.warn('loadNotesFromSP error:', e); }
+}
+
+// ── Opp Links Section ────────────────────────────────────────────────
+function loadOppLinks(oppId) {
+  try { return JSON.parse(localStorage.getItem('wire_links_' + oppId) || '[]'); } catch(e) { return []; }
+}
+function saveOppLinksLocal(oppId, links) {
+  localStorage.setItem('wire_links_' + oppId, JSON.stringify(links));
+  var o = OPPS.find(function(x){ return x.id === oppId; });
+  if(o) o.links = links;
+  spSaveOppLinks(oppId, links);
+}
+
+function linkDomain(url) {
+  if(!url) return 'Link';
+  if(url.includes('sharepoint.com')) return 'SharePoint';
+  if(url.includes('google.com') || url.includes('docs.google')) return 'Google';
+  if(url.includes('ebuy.gsa.gov')) return 'eBuy';
+  if(url.includes('sam.gov')) return 'SAM.gov';
+  if(url.includes('highergov.com')) return 'HigherGov';
+  try { return new URL(url).hostname.replace('www.',''); } catch(e) { return 'Link'; }
+}
+
+function oppLinksSection(o) {
+  var links = o.links && o.links.length ? o.links : loadOppLinks(o.id);
+  if(!o.links) o.links = links;
+  var isCEO = state.user && state.user.role === 'ceo';
+  var canEdit = isCEO || (state.user && o.pursuit_team && o.pursuit_team.some(function(m){ return m && typeof m === 'object' && m.key === state.user.key; }));
+
+  var h = '<section class="detail-section">';
+  h += '<div class="detail-label" style="display:flex;align-items:center;justify-content:space-between">';
+  h += '<span>Links &amp; Resources</span>';
+  if(canEdit) h += '<button class="btn" style="font-size:11px;padding:2px 10px" onclick="toggleLinkForm(' + o.id + ')">+ Add Link</button>';
+  h += '</div>';
+
+  // Add form (hidden by default)
+  h += '<div id="linkForm_' + o.id + '" class="opp-link-form" style="display:none">';
+  h += '<input type="text" class="input" id="linkTitle_' + o.id + '" placeholder="Link title (e.g. Capture Deck, PWS, Teaming Agreement)">';
+  h += '<input type="url" class="input" id="linkUrl_' + o.id + '" placeholder="https://...">';
+  h += '<button class="btn" style="font-size:12px;align-self:flex-start" onclick="addOppLink(' + o.id + ')">Save Link</button>';
+  h += '</div>';
+
+  // Link list
+  if(links.length) {
+    links.forEach(function(lnk, idx) {
+      var domain = linkDomain(lnk.url);
+      h += '<div class="opp-link">';
+      h += '<span style="font-size:14px;flex-shrink:0">\uD83D\uDCCE</span>';
+      h += '<span class="opp-link-title">' + esc(lnk.title || 'Untitled') + '</span>';
+      h += '<span class="opp-link-domain">' + esc(domain) + '</span>';
+      h += '<a class="opp-link-open" href="' + esc(lnk.url) + '" target="_blank" rel="noopener">\u2197</a>';
+      var canRemove = isCEO || (state.user && lnk.addedBy === state.user.name);
+      if(canRemove) h += '<button class="opp-link-rm" onclick="removeOppLink(' + o.id + ',' + idx + ')" title="Remove">\u2715</button>';
+      h += '</div>';
+    });
+  } else {
+    h += '<div style="color:var(--quiet);font-size:12px;padding:6px 0">No links added yet.</div>';
+  }
+
+  h += '</section>';
+  return h;
+}
+
+function toggleLinkForm(oppId) {
+  var form = $('linkForm_' + oppId);
+  if(form) form.style.display = form.style.display === 'none' ? 'flex' : 'none';
+}
+
+function addOppLink(oppId) {
+  var titleEl = $('linkTitle_' + oppId);
+  var urlEl = $('linkUrl_' + oppId);
+  if(!titleEl || !urlEl) return;
+  var title = titleEl.value.trim();
+  var url = urlEl.value.trim();
+  if(!title || !url) {
+    if(!title) titleEl.classList.add('err');
+    if(!url) urlEl.classList.add('err');
+    setTimeout(function(){ titleEl.classList.remove('err'); urlEl.classList.remove('err'); }, 1500);
+    return;
+  }
+  var o = OPPS.find(function(x){ return x.id === oppId; });
+  if(!o) return;
+  var links = o.links || loadOppLinks(oppId);
+  var userName = state.user ? state.user.name : 'Unknown';
+  links.push({ title: title, url: url, addedBy: userName, addedAt: new Date().toISOString() });
+  saveOppLinksLocal(oppId, links);
+  // Log activity
+  spPostComment(oppId, userName, 'Added link: ' + title).then(function(){});
+  // Re-render
+  openOpp(oppId);
+}
+
+function removeOppLink(oppId, idx) {
+  var o = OPPS.find(function(x){ return x.id === oppId; });
+  if(!o) return;
+  var links = o.links || loadOppLinks(oppId);
+  var removed = links[idx];
+  links.splice(idx, 1);
+  saveOppLinksLocal(oppId, links);
+  if(removed) {
+    var userName = state.user ? state.user.name : 'Unknown';
+    spPostComment(oppId, userName, 'Removed link: ' + (removed.title || 'Untitled')).then(function(){});
+  }
+  openOpp(oppId);
+}
+
+async function spSaveOppLinks(oppId, links) {
+  try {
+    var item = await spFindItem(String(oppId));
+    if(item) {
+      await spUpdateItem(item.id, { OppLinks: JSON.stringify(links) });
+    } else {
+      try {
+        var o = OPPS.find(function(x){ return x.id === oppId; });
+        await spCreateItem({
+          Title: String(oppId),
+          OppId: String(oppId),
+          Agency: o ? (o.agency || '') : '',
+          Stage: o ? String(o.stage || 0) : '0',
+          ActivityFeed: '[]',
+          StageData: '{}',
+          OppLinks: JSON.stringify(links)
+        });
+      } catch(ce) { console.warn('spSaveOppLinks create error:', ce); }
+    }
+  } catch(e) { console.warn('spSaveOppLinks error:', e); }
+}
+
+async function loadOppLinksFromSP(oppId) {
+  try {
+    var item = await spFindItem(String(oppId));
+    if(item && item.fields && item.fields.OppLinks) {
+      var spLinks = JSON.parse(item.fields.OppLinks);
+      if(spLinks && spLinks.length) {
+        localStorage.setItem('wire_links_' + oppId, JSON.stringify(spLinks));
+        var o = OPPS.find(function(x){ return x.id === oppId; });
+        if(o) o.links = spLinks;
+        if(state.opp && state.opp.id === oppId) {
+          var drawer = $('drawer');
+          if(drawer) {
+            var tempDiv = document.createElement('div');
+            tempDiv.innerHTML = oppLinksSection(o);
+          }
+        }
+      }
+    }
+  } catch(e) { console.warn('loadOppLinksFromSP error:', e); }
 }
 
 var _updatesFilter = 'week';
