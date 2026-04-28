@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WIRE - BLN24 Capture Intelligence</title>
-<!-- build: v11.37 — Run Red Team AI functional — calls Worker, renders scored critique inline -->
+<!-- build: v11.38 — Red Team AI score updates opp scorecard + shows source chip -->
 <style>
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap");
 
@@ -1555,6 +1555,8 @@ const OPPS = LIVE.map((o,i)=>({...o,id:i+1,stage:o.stage || 0,submitted_by:o.sub
 (function(){try{var ov=JSON.parse(localStorage.getItem("wire_stage_overrides")||"{}");Object.keys(ov).forEach(function(k){var o=OPPS.find(function(x){return x.id===Number(k);});if(o) o.stage=ov[k];});}catch(e){}})();
 // Load pass overrides from localStorage
 (function(){try{var po=JSON.parse(localStorage.getItem("wire_pass_overrides")||"{}");Object.keys(po).forEach(function(k){var o=OPPS.find(function(x){return x.id===Number(k);});if(o){o.stage=-1;}});}catch(e){}})();
+// Load score overrides from localStorage (Red Team AI scores)
+(function(){try{var so=JSON.parse(localStorage.getItem("wire_score_overrides")||"{}");Object.keys(so).forEach(function(k){var o=OPPS.find(function(x){return x.id===Number(k);});if(o){o.score=so[k].score;o.score_source=so[k].source;o.score_updated_at=so[k].updated_at;}});}catch(e){}})();
 
 const state = {user:null,page:"pipeline",opp:null,query:""};
 const $ = id => document.getElementById(id);
@@ -1941,6 +1943,7 @@ function oppCard(o){
       ${o.cm_fit ? `<span class="chip ${o.cm_fit === "Strong" ? "green" : ""}">${esc(o.cm_fit)}</span>` : ""}
       ${(o.recommendation === "Pass" && !brianPassed(o)) ? `<span class="chip" style="color:#ff9a9a;border-color:#ff9a9a44;background:#ff9a9a1a;font-size:10px">Rex recommends pass</span>` : ""}
       ${solChip(o)}
+      ${o.score_source === 'Red Team AI Review' ? `<span class="chip" style="color:#ff6b6b;border-color:#ff6b6b44;background:#ff6b6b1a;font-size:10px">🔴 Red Team AI: ${esc(String(o.score))}pts</span>` : ''}
     </div>
     <div class="opp-foot"><span>${esc(o.value || "TBD")}</span><span style="color:var(--muted);font-size:10px">${o.due ? ' · ' + fmtDue(o.due) : ''}</span><div style="display:flex;align-items:center;gap:6px">${(o.hg_url && o.hg_url.length > 50 ? o.hg_url : o.source_url) ? `<a href="${esc(o.hg_url && o.hg_url.length > 50 ? o.hg_url : (o.source_url || 'https://www.highergov.com/contract-opportunity/?search=' + encodeURIComponent(o.title)))}" target="_blank" rel="noreferrer" title="View on HigherGov" style="color:var(--amber);font-size:10px;font-weight:900;text-decoration:none;opacity:.7;line-height:1">HG&#8599;</a>` : ""}<div class="score-ring" style="--score:${Math.min(o.score,100)};--score-color:${sc}"><span>${esc(o.score)}</span></div></div></div>
   </article>`;
@@ -2230,8 +2233,13 @@ function openOpp(id){
     `<span class="chip">${esc(o.set_aside || "TBD")}</span>`,
     o.value && o.value !== "TBD" ? `<span class="chip green">${esc(o.value)}</span>` : "",
     o.assigned_to ? `<span class="chip blue">${esc(o.assigned_to)}</span>` : "",
-    o.due ? `<span class="chip" style="color:${dueDateColor(o.due)};border-color:${dueDateColor(o.due)}55;background:${dueDateColor(o.due)}1f">📅 ${fmtDue(o.due)}</span>` : ""
+    o.due ? `<span class="chip" style="color:${dueDateColor(o.due)};border-color:${dueDateColor(o.due)}55;background:${dueDateColor(o.due)}1f">📅 ${fmtDue(o.due)}</span>` : "",
+    o.score_source === 'Red Team AI Review' ? `<span class="chip" style="color:#ff6b6b;border-color:#ff6b6b44;background:#ff6b6b1a;font-size:10px">🔴 Red Team AI: ${esc(String(o.score))}pts</span>` : ""
   ].join("");
+  // Show score source badge below tags if Red Team scored
+  if(o.score_source === 'Red Team AI Review'){
+    $("drawerTags").innerHTML += '<div style="width:100%;margin-top:4px;font-size:10px;font-weight:700;color:var(--quiet);letter-spacing:.05em">Score source: <span style="color:#ff6b6b">Red Team AI Review</span>' + (o.score_updated_at ? ' \u00B7 ' + new Date(o.score_updated_at).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '') + '</div>';
+  }
   try {
     $("drawerBody").innerHTML = drawerBody(o);
   } catch(err) {
@@ -2498,8 +2506,31 @@ function runRedTeam(oppId){
       btn.style.opacity = '1';
     }
     if(d.ok && d.critique){
+      var oldScore = o.score;
       localStorage.setItem('wire_red_team_'+oppId, JSON.stringify(d.critique));
-      if(resultDiv) resultDiv.innerHTML = renderRedTeamCritique(oppId);
+      // Update opp score from Red Team AI
+      o.score = d.critique.overall_score || o.score;
+      o.score_source = 'Red Team AI Review';
+      o.score_updated_at = new Date().toISOString();
+      // Save score override to localStorage
+      var so = {};
+      try { so = JSON.parse(localStorage.getItem('wire_score_overrides') || '{}'); } catch(ex){}
+      so[oppId] = {score: o.score, source: o.score_source, updated_at: o.score_updated_at};
+      localStorage.setItem('wire_score_overrides', JSON.stringify(so));
+      if(resultDiv) resultDiv.innerHTML = '<div style="margin:10px 0 6px;padding:10px 14px;border-radius:8px;background:rgba(88,214,141,.1);border:1px solid rgba(88,214,141,.25);font-size:13px;font-weight:700;color:var(--green)">Score updated: ' + oldScore + ' \u2192 ' + o.score + ' (Red Team AI)</div>' + renderRedTeamCritique(oppId);
+      // Re-render drawer tags and header to reflect new score
+      var stNow = stageOf(o);
+      $('drawerTags').innerHTML = [
+        '<span class="chip amber">' + esc(String(o.score)) + ' pts</span>',
+        '<span class="chip" style="color:'+stNow.color+';border-color:'+stNow.color+'55;background:'+stNow.color+'1f">' + esc(stNow.short) + '</span>',
+        '<span class="chip">' + esc(o.set_aside || 'TBD') + '</span>',
+        o.value && o.value !== 'TBD' ? '<span class="chip green">' + esc(o.value) + '</span>' : '',
+        o.assigned_to ? '<span class="chip blue">' + esc(o.assigned_to) + '</span>' : '',
+        o.due ? '<span class="chip" style="color:'+dueDateColor(o.due)+';border-color:'+dueDateColor(o.due)+'55;background:'+dueDateColor(o.due)+'1f">\uD83D\uDCC5 '+fmtDue(o.due)+'</span>' : '',
+        '<span class="chip" style="color:#ff6b6b;border-color:#ff6b6b44;background:#ff6b6b1a;font-size:10px">\uD83D\uDD34 Red Team AI: '+esc(String(o.score))+'pts</span>'
+      ].join('');
+      // Re-render the board so the card shows the updated score
+      go(state.page);
     } else {
       if(resultDiv) resultDiv.innerHTML = '<div style="margin-top:12px;padding:12px;border:1px dashed var(--red);border-radius:8px;color:var(--red);font-size:12px">Error: '+ esc(d.error||'Unknown error') +'</div>';
     }
