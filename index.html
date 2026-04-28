@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WIRE - BLN24 Capture Intelligence</title>
-<!-- build: v11.35 — multi-file upload on Submit Opp page — solicitation docs attach to new opp -->
+<!-- build: v11.37 — Run Red Team AI functional — calls Worker, renders scored critique inline -->
 <style>
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap");
 
@@ -2417,9 +2417,10 @@ function proposalStagePanel(o){
     <div style='font-size:12px;color:var(--muted);margin-bottom:14px'>${stageGuide.action}</div>
     <div style='display:flex;gap:8px;flex-wrap:wrap'>
       <a href='${docUrl}' target='_blank' rel='noreferrer' style='display:inline-flex;align-items:center;gap:5px;background:rgba(244,183,63,.12);border:1px solid rgba(244,183,63,.3);border-radius:7px;padding:8px 14px;color:var(--amber);font-size:12px;font-weight:800;text-decoration:none'>&#8599; Open Word Doc in Teams</a>
-      ${o.stage === 8 ? `<button onclick='runRedTeam(${o.id})' class='btn' style='font-size:12px'>&#9654; Run Red Team AI</button>` : ''}
+      ${o.stage === 8 ? `<button id='redTeamBtn_${o.id}' onclick='runRedTeam(${o.id})' class='btn' style='font-size:12px'>&#9654; Run Red Team AI</button>` : ''}
       ${o.stage === 10 ? `<button onclick='runFinalGate(${o.id})' class='btn btn-primary' style='font-size:12px'>&#10003; Approve & Generate Checklist</button>` : ''}
     </div>
+    <div id='redTeamResult_${o.id}'>${renderRedTeamCritique(o.id)}</div>
     <div style='margin-top:16px;padding-top:12px;border-top:1px solid var(--line)'>
       <div style='font-size:10px;font-weight:900;color:var(--quiet);letter-spacing:.08em;margin-bottom:8px'>COLOR TEAM PIPELINE</div>
       ${legendHtml}
@@ -2438,22 +2439,78 @@ function aiPromptBox(o){
   </section>`;
 }
 
+function renderRedTeamCritique(oppId){
+  var cached = null;
+  try { cached = JSON.parse(localStorage.getItem('wire_red_team_'+oppId)); } catch(e){}
+  if(!cached) return '';
+  var dt = cached.evaluated_at ? new Date(cached.evaluated_at) : null;
+  var dateStr = dt ? dt.toLocaleDateString('en-US',{month:'short',day:'numeric'}) + ' ' + dt.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}) : 'Unknown';
+  var sc = cached.overall_score || 0;
+  var scoreColor = sc >= 85 ? 'var(--green)' : sc >= 70 ? 'var(--amber)' : 'var(--red)';
+  var docNote = cached.had_document === false ? ' <span style="color:var(--quiet);font-size:10px">(scored without document)</span>' : '';
+  var sections = [
+    {key:'executive_summary', icon:'\uD83D\uDCCB', label:'Executive Summary'},
+    {key:'technical_approach', icon:'\uD83D\uDCCB', label:'Technical Approach'},
+    {key:'past_performance', icon:'\uD83D\uDCCB', label:'Past Performance'},
+    {key:'questions', icon:'\uD83D\uDCCB', label:'Questions'}
+  ];
+  var shtml = sections.map(function(s){
+    var d = cached[s.key];
+    if(!d) return '';
+    var scolor = d.score >= 85 ? 'var(--green)' : d.score >= 70 ? 'var(--amber)' : 'var(--red)';
+    return '<div style="margin:6px 0;font-size:12px">' + s.icon + ' <b>' + s.label + ':</b> <span style="color:'+scolor+';font-weight:800">' + d.score + '/100</span> \u2014 ' + esc(d.feedback) + '</div>';
+  }).join('');
+  var whtml = (cached.top_weaknesses||[]).map(function(w,i){ return '<div style="margin:3px 0;font-size:12px;color:var(--ink)">' + (i+1) + '. ' + esc(w) + '</div>'; }).join('');
+  return '<div style="margin-top:14px;padding:14px;border:1px solid var(--line);border-radius:8px;background:rgba(255,107,107,.05)">' +
+    '<div style="font-size:10px;font-weight:900;color:var(--quiet);letter-spacing:.08em;margin-bottom:8px">\u2500\u2500 RED TEAM CRITIQUE \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500</div>' +
+    '<div style="font-size:10px;color:var(--quiet);margin-bottom:10px">Last run: ' + dateStr + docNote + '</div>' +
+    '<div style="font-size:22px;font-weight:900;color:'+scoreColor+';margin-bottom:12px">OVERALL SCORE: ' + sc + '/100</div>' +
+    shtml +
+    '<div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--line)">' +
+    '<div style="font-size:11px;font-weight:800;color:var(--amber);margin-bottom:6px">\u26A0\uFE0F Top 3 weaknesses to fix before Gold Team:</div>' +
+    whtml +
+    '</div></div>';
+}
+
 function runRedTeam(oppId){
-  const o = OPPS.find(x=>x.id===oppId);
+  var o = OPPS.find(function(x){return x.id===oppId;});
   if(!o) return;
-  const msg = $('aiRewriteMsg_'+oppId);
-  if(msg) msg.textContent = 'Red Team analysis running... check back in ~30 seconds.';
-  fetch('https://bln24-hg-proxy.t24worker.workers.dev/ai-rewrite',{
+  var btn = $('redTeamBtn_'+oppId);
+  if(btn){
+    btn.disabled = true;
+    btn.innerHTML = '\u23F3 Running Red Team...';
+    btn.style.opacity = '0.6';
+  }
+  var resultDiv = $('redTeamResult_'+oppId);
+  if(resultDiv) resultDiv.innerHTML = '<div style="margin-top:12px;padding:12px;border:1px dashed var(--line);border-radius:8px;color:var(--amber);font-size:12px">\u23F3 Red Team evaluation running... GPT-4.1 is scoring your proposal. This takes 15-30 seconds.</div>';
+  fetch('https://bln24-hg-proxy.bln24.workers.dev/red-team',{
     method:'POST', headers:{'Content-Type':'application/json'},
     body:JSON.stringify({
-      opp_id:oppId, section_title:'Full Proposal - Red Team Review',
-      current_text:'Red Team review of the full proposal',
-      instruction:'Play 5 federal evaluator personas (CO, COR, PM, Technical Reviewer, Program Director). For each, score the proposal Technical/Past Performance/Price and give 2 specific criticisms and 1 specific strength. Format as a structured review.',
-      context:'Opp: '+o.title+' | Agency: '+o.agency+' | Win theme: '+(o.ai_win_theme||'')
+      opp_id: oppId,
+      opp_title: o.title || '',
+      agency: o.agency || '',
+      sp_url: o.sp_url || ''
     })
-  }).then(r=>r.json()).then(d=>{
-    if(msg) msg.textContent = d.rewritten_text ? 'Red Team done. Review: ' + d.change_summary : 'Error: '+(d.error||'unknown');
-  }).catch(e=>{ if(msg) msg.textContent='Error: '+e.message; });
+  }).then(function(r){return r.json();}).then(function(d){
+    if(btn){
+      btn.disabled = false;
+      btn.innerHTML = '&#9654; Run Red Team AI';
+      btn.style.opacity = '1';
+    }
+    if(d.ok && d.critique){
+      localStorage.setItem('wire_red_team_'+oppId, JSON.stringify(d.critique));
+      if(resultDiv) resultDiv.innerHTML = renderRedTeamCritique(oppId);
+    } else {
+      if(resultDiv) resultDiv.innerHTML = '<div style="margin-top:12px;padding:12px;border:1px dashed var(--red);border-radius:8px;color:var(--red);font-size:12px">Error: '+ esc(d.error||'Unknown error') +'</div>';
+    }
+  }).catch(function(e){
+    if(btn){
+      btn.disabled = false;
+      btn.innerHTML = '&#9654; Run Red Team AI';
+      btn.style.opacity = '1';
+    }
+    if(resultDiv) resultDiv.innerHTML = '<div style="margin-top:12px;padding:12px;border:1px dashed var(--red);border-radius:8px;color:var(--red);font-size:12px">Error: '+ esc(e.message) +'</div>';
+  });
 }
 
 function runFinalGate(oppId){
