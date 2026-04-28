@@ -1380,7 +1380,8 @@ const USERS = {
   favi:{name:"Favi Villa",role:"sme",label:"UX Lead / SME",email:"favi.villa@bln24.com"}
 };
 // Full org roster — pulled from Microsoft Entra ID (135 employees)
-const ORG_ROSTER = [
+// Initialized as static fallback, then replaced by AD sync on login
+let ORG_ROSTER = [
   {key:"aaron_lee",name:"Aaron Lee",title:"",email:"aaron.lee@bln24.com"},
   {key:"adina_anton",name:"Adina Anton",title:"Director, Data Analytics",email:"adina.anton@bln24.com"},
   {key:"akeem_adedokun",name:"Akeem Adedokun",title:"",email:"akeem.adedokun@bln24.com"},
@@ -1525,11 +1526,10 @@ const STAGES = [
   {id:4,name:"AM Sign-off",short:"Sign-off",color:"#58d68d"},
   {id:5,name:"Go / No-Go",short:"Go/No-Go",color:"#f4b73f"},
   {id:6,name:"Team Assembly",short:"Team",color:"#b79cff"},
-  {id:7,name:"Black Hat",short:"Black Hat",color:"#8d877b"},
-  {id:8,name:"Pink Team",short:"Pink",color:"#ff9a62"},
-  {id:9,name:"Red Team",short:"Red",color:"#ff6b6b"},
-  {id:10,name:"Gold Team",short:"Gold",color:"#ffd166"},
-  {id:11,name:"Final Gate",short:"Final Gate",color:"#58d68d"}
+  {id:7,name:"Pink Team",short:"Pink",color:"#ff9a62"},
+  {id:8,name:"Red Team",short:"Red",color:"#ff6b6b"},
+  {id:9,name:"Gold Team",short:"Gold",color:"#ffd166"},
+  {id:10,name:"Final Gate",short:"Final Gate",color:"#58d68d"}
 ];
 const SMES = ["Favi Villa - UX/HCD","Drupal Engineer - TBD","Data Engineer - TBD","Comms Lead - TBD"];
 const LIVE = typeof LIVE_OPPS !== "undefined" ? LIVE_OPPS : [];
@@ -1655,7 +1655,7 @@ async function initMSAL() {
   }
 }
 initMSAL();
-const ROLE_MAP = {"brian@bln24.com": "ceo", "brian.nguyen@bln24.com": "ceo", "hayk@bln24.com": "am", "michael@bln24.com": "am", "gabe@bln24.com": "am", "eric.ma@bln24.com": "am", "eric@bln24.com": "am", "favi.villa@bln24.com": "sme", "favi@bln24.com": "sme"};
+const ROLE_MAP = {"brian@bln24.com": "ceo", "brian.nguyen@bln24.com": "ceo", "hayk@bln24.com": "am", "michael@bln24.com": "am", "gabe@bln24.com": "am", "eric.ma@bln24.com": "am", "eric@bln24.com": "am", "favi.villa@bln24.com": "sme", "favi@bln24.com": "sme", "calvin.androwski@bln24.com": "am"};
 
 function getRoleFromEmail(email) {
   const e = (email || "").toLowerCase();
@@ -1694,6 +1694,8 @@ function setMSUser(account) {
   loadMentionNotifications();
   requestNotifPermission();
   buildNav();
+  // Sync ORG_ROSTER from Azure AD (non-blocking)
+  syncOrgRosterFromAD();
   // Check for deep link ?opp= parameter
   var urlOppId = (new URLSearchParams(window.location.search)).get('opp');
   if(urlOppId && Number(urlOppId)) {
@@ -1704,6 +1706,42 @@ function setMSUser(account) {
   }
   // Fetch MS profile photo async (non-blocking)
   fetchMSPhoto(account);
+}
+
+async function syncOrgRosterFromAD() {
+  try {
+    const tok = await getGraphToken();
+    if(!tok) return;
+    var url = "https://graph.microsoft.com/v1.0/users?$filter=endswith(userPrincipalName,'@bln24.com')&$select=id,displayName,mail,userPrincipalName,jobTitle&$top=100";
+    var r = await fetch(url, {headers:{Authorization:'Bearer '+tok}});
+    var d = await r.json();
+    // If server-side filter fails (tenant restriction), fall back to client-side filter
+    if(d.error) {
+      r = await fetch("https://graph.microsoft.com/v1.0/users?$select=id,displayName,mail,userPrincipalName,jobTitle&$top=999",
+        {headers:{Authorization:'Bearer '+tok}});
+      d = await r.json();
+      if(d.value) d.value = d.value.filter(function(u){
+        return (u.mail||u.userPrincipalName||"").toLowerCase().endsWith("@bln24.com");
+      });
+    }
+    if(d.value && d.value.length > 0) {
+      ORG_ROSTER = d.value.map(function(u) {
+        var nameParts = (u.displayName||'').split(' ');
+        var key = (u.mail||u.userPrincipalName||'').toLowerCase().split('@')[0].replace(/\./g,'_');
+        return {
+          key: key,
+          name: u.displayName || u.mail,
+          label: u.jobTitle || 'Team Member',
+          role: getRoleFromEmail(u.mail||u.userPrincipalName||''),
+          email: (u.mail || u.userPrincipalName || '').toLowerCase(),
+          initials: nameParts.map(function(w){return w[0];}).join('').slice(0,2).toUpperCase()
+        };
+      });
+      console.log('WIRE: ORG_ROSTER synced from AD:', ORG_ROSTER.length, 'users');
+    }
+  } catch(e) {
+    console.warn('AD sync failed, using static roster:', e);
+  }
 }
 
 function signInWithMS() {
@@ -1993,15 +2031,15 @@ const PAGES = {
   },
   proposals(){
     const props = OPPS.filter(o => o.stage >= 7).sort((a,b) => b.stage - a.stage || b.score - a.score);
-    const stageNames = {7:'Black Hat',8:'Pink Team',9:'Red Team',10:'Gold Team',11:'Final Gate'};
-    const stageColors = {7:'#8d877b',8:'#ff9a62',9:'#ff6b6b',10:'#ffd166',11:'#58d68d'};
-    const stageDesc = {7:'Competitive intelligence — who are you up against and how do they win? Informs the entire proposal strategy.',8:'First full draft — test structure, themes, and approach.',9:'Critical review — AI plays evaluator, scores every section, finds the holes.',10:'Executive review — sharpen win themes, polish tone, finalize pricing.',11:'Final compliance check and submission. Brian approves. Files dropped to SharePoint.'};
-    const colorLegend = [7,8,9,10,11].map(s => `
+    const stageNames = {7:'Pink Team',8:'Red Team',9:'Gold Team',10:'Final Gate'};
+    const stageColors = {7:'#ff9a62',8:'#ff6b6b',9:'#ffd166',10:'#58d68d'};
+    const stageDesc = {7:'First full draft — test structure, themes, and approach.',8:'Critical review — AI plays evaluator, scores every section, finds the holes.',9:'Executive review — sharpen win themes, polish tone, finalize pricing.',10:'Final compliance check and submission. Brian approves. Files dropped to SharePoint.'};
+    const colorLegend = [7,8,9,10].map(s => `
       <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)">
         <span style="width:12px;height:12px;border-radius:50%;background:${stageColors[s]};flex-shrink:0"></span>
         <div><b style="color:${stageColors[s]}">${stageNames[s]}</b> <span style="color:var(--quiet);font-size:11px">Stage ${s}</span><div style="color:var(--quiet);font-size:11px">${stageDesc[s]}</div></div>
       </div>`).join('');
-    const byStage = [11,10,9,8,7].map(s => {
+    const byStage = [10,9,8,7].map(s => {
       const col = props.filter(o => o.stage === s);
       if(!col.length) return '';
       return `<div style="margin-bottom:28px">
@@ -2048,9 +2086,9 @@ const PAGES = {
 
 function proposalChip(o){
   if(o.stage < 7) return '';
-  var stageNames={7:'Black Hat',8:'Pink Team',9:'Red Team',10:'Gold Team',11:'Final Gate'};
+  var stageNames={7:'Pink Team',8:'Red Team',9:'Gold Team',10:'Final Gate'};
   var sName = stageNames[o.stage] || 'Proposal';
-  var stageColors={7:'#8d877b',8:'#ff9a62',9:'#ff6b6b',10:'#ffd166',11:'#58d68d'};
+  var stageColors={7:'#ff9a62',8:'#ff6b6b',9:'#ffd166',10:'#58d68d'};
   var col = stageColors[o.stage] || '#ff9a62';
   var docIcon = o.sp_url ? ' 📄' : '';
   return `<span class="chip" style="color:${col};background:${col}18;border-color:${col}44;font-weight:900">✏️ ${sName}${docIcon}</span>`;
@@ -2342,16 +2380,14 @@ function proposalStagePanel(o){
     7: { who: 'Account Manager', action: 'Review AI first draft. Flag any errors. Use the AI prompt box below to request rewrites.', color: '#ff9a62' },
     8: { who: 'All + AI Evaluators', action: 'AI plays CO, COR, PM, Tech, and Director personas. Each scores the draft. Respond to critiques before advancing.', color: 'var(--red)' },
     9: { who: 'Account Manager + Brian', action: 'Compliance check - every SOW requirement must be addressed. AI polishes tone and evidence. Brian does final read.', color: '#ffd166' },
-    10: { who: 'Brian', action: 'AI plays the top competitor. Read their attack on your proposal. Harden the vulnerable sections.', color: '#8d877b' },
-    11: { who: 'Brian only', action: 'Final gate. Approve to generate submission checklist and drop files to SharePoint.', color: 'var(--green)' }
+    10: { who: 'Brian only', action: 'Final gate. Approve to generate submission checklist and drop files to SharePoint.', color: 'var(--green)' }
   }[o.stage] || { who: '', action: '', color: 'var(--amber)' };
 
   const colorLegend = [
-    {id:7, name:'Black Hat', color:'#8d877b', desc:'Competitive intelligence before you write. Who are you up against? How do they win? Use this to define your strategy and differentiators.'},
-    {id:8, name:'Pink Team', color:'#ff9a62', desc:'First full draft. Internal review — catch errors, gaps, and weak arguments before anyone else sees it.'},
-    {id:9, name:'Red Team', color:'#ff6b6b', desc:'AI plays the evaluator. Score every section as if you are the CO. Find the holes and fix them.'},
-    {id:10, name:'Gold Team', color:'#ffd166', desc:'Executive review. Sharpen win themes, polish tone, finalize pricing and compliance.'},
-    {id:11, name:'Final Gate', color:'#58d68d', desc:'Brian approves. Submission checklist generated. Files dropped to SharePoint.'},
+    {id:7, name:'Pink Team', color:'#ff9a62', desc:'First full draft. Internal review — catch errors, gaps, and weak arguments before anyone else sees it.'},
+    {id:8, name:'Red Team', color:'#ff6b6b', desc:'AI plays the evaluator. Score every section as if you are the CO. Find the holes and fix them.'},
+    {id:9, name:'Gold Team', color:'#ffd166', desc:'Executive review. Sharpen win themes, polish tone, finalize pricing and compliance.'},
+    {id:10, name:'Final Gate', color:'#58d68d', desc:'Brian approves. Submission checklist generated. Files dropped to SharePoint.'},
   ];
   const legendHtml = colorLegend.map(s=>`
     <div style='display:flex;gap:8px;align-items:flex-start;padding:7px 0;border-bottom:1px solid var(--line);${s.id===o.stage?"background:"+s.color+"12;margin:-7px -12px;padding:7px 12px;border-radius:6px;border-bottom:none":""}'>
@@ -2366,7 +2402,7 @@ function proposalStagePanel(o){
     <div style='display:flex;gap:8px;flex-wrap:wrap'>
       <a href='${docUrl}' target='_blank' rel='noreferrer' style='display:inline-flex;align-items:center;gap:5px;background:rgba(244,183,63,.12);border:1px solid rgba(244,183,63,.3);border-radius:7px;padding:8px 14px;color:var(--amber);font-size:12px;font-weight:800;text-decoration:none'>&#8599; Open Word Doc in Teams</a>
       ${o.stage === 8 ? `<button onclick='runRedTeam(${o.id})' class='btn' style='font-size:12px'>&#9654; Run Red Team AI</button>` : ''}
-      ${o.stage === 11 ? `<button onclick='runFinalGate(${o.id})' class='btn btn-primary' style='font-size:12px'>&#10003; Approve & Generate Checklist</button>` : ''}
+      ${o.stage === 10 ? `<button onclick='runFinalGate(${o.id})' class='btn btn-primary' style='font-size:12px'>&#10003; Approve & Generate Checklist</button>` : ''}
     </div>
     <div style='margin-top:16px;padding-top:12px;border-top:1px solid var(--line)'>
       <div style='font-size:10px;font-weight:900;color:var(--quiet);letter-spacing:.08em;margin-bottom:8px'>COLOR TEAM PIPELINE</div>
@@ -3149,7 +3185,7 @@ function requestNotifPermission() {
 // ── Stage advance buttons ─────────────────────────────────────────────────
 function stageAdvanceButtons(o) {
   if(!o) return "";
-  var SNAMES = ["","","Capture","Capture","Sign-off","Go/No-Go","Team Assembly","Pink Team","Red Team","Gold Team","Black Hat","Final Gate"];
+  var SNAMES = ["","","Capture","Capture","Sign-off","Go/No-Go","Team Assembly","Pink Team","Red Team","Gold Team","Final Gate"];
   var d = '<div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--line)"><div class="detail-label" style="margin-bottom:10px">Advance Stage</div><div style="display:flex;gap:8px;flex-wrap:wrap">';
   if(o.stage >= 0 && o.stage < 5) {
     d += '<button class="btn btn-primary" style="font-size:12px" onclick="advanceStage(' + o.id + ',5)">▶ Go/No-Go</button>';
@@ -3158,7 +3194,7 @@ function stageAdvanceButtons(o) {
   } else if(o.stage === 5) {
     d += '<button class="btn btn-primary" style="font-size:13px;padding:10px 20px;background:var(--green);border-color:var(--green)" onclick="advanceStage(' + o.id + ',7)">✔ GO — Start Proposal</button>';
     d += '<button class="btn btn-danger" style="font-size:13px;padding:10px 20px" onclick="advanceStage(' + o.id + ',-1)">✖ NO-GO</button>';
-  } else if(o.stage >= 6 && o.stage < 11) {
+  } else if(o.stage >= 6 && o.stage < 10) {
     d += '<button class="btn btn-primary" style="font-size:12px" onclick="advanceStage(' + o.id + ',' + (o.stage+1) + ')">▶ ' + (SNAMES[o.stage+1]||"Next Stage") + '</button>';
   }
   d += '</div></div>';
@@ -3166,7 +3202,7 @@ function stageAdvanceButtons(o) {
 }
 
 function advanceStage(oppId, newStage) {
-  var SNAMES = ["","","Capture","Capture","Sign-off","Go/No-Go","Team Assembly","Pink Team","Red Team","Gold Team","Black Hat","Final Gate"];
+  var SNAMES = ["","","Capture","Capture","Sign-off","Go/No-Go","Team Assembly","Pink Team","Red Team","Gold Team","Final Gate"];
   var o = OPPS.find(function(x){return x.id===oppId;});
   if(!o) return;
   var oldStage = o.stage;
@@ -3260,32 +3296,34 @@ function saveStageData(oppId, data){
   localStorage.setItem('wire_stage_'+oppId, JSON.stringify(data));
 }
 function stageInputPanel(o){
-  if(o.stage < 7) return '';
+  if(o.stage < 2) return '';
   var d = loadStageData(o.id);
   var h = '';
-  if(o.stage === 7){
+  if(o.stage === 2){
     var comps = d.competitors || [];
     var entries = d.team_inputs || [];
-    h = '<div class="stage-panel" style="border-left:3px solid #8d877b">' +
-      '<h3 style="color:#8d877b">&#9823; Black Hat Intelligence</h3>' +
+    h = '<div class="stage-panel" style="border-left:3px solid #72b7ff">' +
+      '<h3 style="color:#72b7ff">&#9823; Competitive Intel (Black Hat)</h3>' +
       '<div class="sp-row"><input class="input sp-input" id="spCompName" placeholder="Competitor name"><input class="input sp-input" id="spCompStrategy" placeholder="Their likely strategy / win theme"><button class="btn" onclick="addBlackHatComp('+o.id+')" style="font-size:12px">+ Add</button></div>' +
       '<div class="sp-comp-list" id="spCompList">' + comps.map(function(c,i){ return '<div class="sp-entry"><b>'+esc(c.name)+'</b> &mdash; '+esc(c.strategy)+'<button class="sp-remove" onclick="removeBlackHatComp('+o.id+','+i+')">&times;</button></div>'; }).join('') + '</div>' +
       '<div class="field" style="margin-top:12px"><label class="label">Our vulnerabilities</label><textarea class="textarea sp-textarea" id="spVulnerabilities" onchange="saveBlackHat('+o.id+')">'+esc(d.vulnerabilities||'')+'</textarea></div>' +
       '<div class="field"><label class="label">Counter-moves</label><textarea class="textarea sp-textarea" id="spCounterMoves" onchange="saveBlackHat('+o.id+')">'+esc(d.counter_moves||'')+'</textarea></div>' +
       '<div class="field"><label class="label">Team inputs</label><div class="sp-row"><input class="input sp-input" id="spTeamInput" placeholder="Add intel..."><button class="btn" onclick="addBlackHatIntel('+o.id+')" style="font-size:12px">Add Intel</button></div></div>' +
       '<div class="sp-entries" id="spIntelList">' + entries.map(function(en){ return '<div class="sp-entry"><div>'+esc(en.text)+'</div><div class="sp-entry-time">'+esc(en.time)+'</div></div>'; }).join('') + '</div>' +
-      '<button class="btn-save-notes" onclick="saveStageNotesBtn('+o.id+',7)">&#128190; Save Notes</button>' +
+      '<button class="btn-save-notes" onclick="saveStageNotesBtn('+o.id+',2)">&#128190; Save Notes</button>' +
       '</div>';
-  } else if(o.stage === 8){
+  }
+  if(o.stage < 7) return h;
+  if(o.stage === 7){
     h = '<div class="stage-panel" style="border-left:3px solid #ff9a62">' +
       '<h3 style="color:#ff9a62">&#128221; Pink Team Review</h3>' +
       '<div class="field"><label class="label">Draft document</label><input class="input" id="spDraftLink" value="'+esc(d.draft_link||'')+'" placeholder="Paste link to draft document" onchange="savePinkTeam('+o.id+')"></div>' +
       (d.draft_link ? '<div style="margin-bottom:12px"><a href="'+esc(d.draft_link)+'" target="_blank" rel="noreferrer" style="color:var(--amber);font-size:12px;font-weight:800">Open draft &#8599;</a></div>' : '<div style="margin-bottom:12px;color:var(--quiet);font-size:12px">No doc attached</div>') +
       '<div class="field"><label class="label">Open issues</label><textarea class="textarea sp-textarea" id="spOpenIssues" placeholder="List open issues..." onchange="savePinkTeam('+o.id+')">'+esc(d.open_issues||'')+'</textarea></div>' +
       '<div class="field"><label class="label">Reviewer notes</label><textarea class="textarea sp-textarea" id="spReviewerNotes" placeholder="Reviewer notes..." onchange="savePinkTeam('+o.id+')">'+esc(d.reviewer_notes||'')+'</textarea></div>' +
-      '<button class="btn-save-notes" onclick="saveStageNotesBtn('+o.id+',8)">&#128190; Save Notes</button>' +
+      '<button class="btn-save-notes" onclick="saveStageNotesBtn('+o.id+',7)">&#128190; Save Notes</button>' +
       '</div>';
-  } else if(o.stage === 9){
+  } else if(o.stage === 8){
     var scores = d.scores || {};
     var sections = ['Executive Summary','Technical','Past Performance','Price'];
     h = '<div class="stage-panel" style="border-left:3px solid #ff6b6b">' +
