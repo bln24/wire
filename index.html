@@ -2354,7 +2354,7 @@ function drawerBody(o){
     b += "</div><div style='font-size:11px;color:var(--quiet)'>HigherGov lists all attached PWS/SOW files on the profile page &middot; SAM.gov has official posted documents &middot; Upload below for AI analysis</div></section>";
   }
 
-  // Proposal stage panel (stages 7-11)
+  // Proposal stage panel (stages 7-10)
   if(o.stage >= 7) b += proposalStagePanel(o);
 
   // AI prompt box (all roles, all stages with solicitation)
@@ -3335,9 +3335,9 @@ function stageInputPanel(o){
       }).join('') + '</div>' +
       '<div class="field"><label class="label">Key weaknesses</label><textarea class="textarea sp-textarea" id="spWeaknesses" placeholder="Key weaknesses found..." onchange="saveRedTeam('+o.id+')">'+esc(d.weaknesses||'')+'</textarea></div>' +
       '<div class="field"><label class="label">Action items</label><textarea class="textarea sp-textarea" id="spActionItems" placeholder="Action items to address..." onchange="saveRedTeam('+o.id+')">'+esc(d.action_items||'')+'</textarea></div>' +
-      '<button class="btn-save-notes" onclick="saveStageNotesBtn('+o.id+',9)">&#128190; Save Notes</button>' +
+      '<button class="btn-save-notes" onclick="saveStageNotesBtn('+o.id+',8)">&#128190; Save Notes</button>' +
       '</div>';
-  } else if(o.stage === 10){
+  } else if(o.stage === 9){
     var wta = d.win_theme_approved || 'pending';
     var pr = d.pricing_reviewed || 'no';
     h = '<div class="stage-panel" style="border-left:3px solid #ffd166">' +
@@ -3346,9 +3346,9 @@ function stageInputPanel(o){
       '<div class="sp-toggle"><label>Pricing reviewed</label><select class="select" id="spPricingReviewed" onchange="saveGoldTeam('+o.id+')" style="max-width:160px"><option value="no"'+(pr==='no'?' selected':'')+'>No</option><option value="yes"'+(pr==='yes'?' selected':'')+'>Yes</option></select></div>' +
       '<div class="field"><label class="label">Compliance flagged</label><textarea class="textarea sp-textarea" id="spCompFlagged" placeholder="Compliance issues..." onchange="saveGoldTeam('+o.id+')">'+esc(d.compliance_flagged||'')+'</textarea></div>' +
       '<div class="field"><label class="label">Final notes</label><textarea class="textarea sp-textarea" id="spFinalNotes" placeholder="Final notes..." onchange="saveGoldTeam('+o.id+')">'+esc(d.final_notes||'')+'</textarea></div>' +
-      '<button class="btn-save-notes" onclick="saveStageNotesBtn('+o.id+',10)">&#128190; Save Notes</button>' +
+      '<button class="btn-save-notes" onclick="saveStageNotesBtn('+o.id+',9)">&#128190; Save Notes</button>' +
       '</div>';
-  } else if(o.stage === 11){
+  } else if(o.stage === 10){
     var checks = d.checks || {};
     var checkItems = [
       ['tech_volume','Technical volume complete'],
@@ -3364,7 +3364,7 @@ function stageInputPanel(o){
       }).join('') +
       '<div class="field" style="margin-top:12px"><label class="label">Submission date</label><input type="date" class="input" id="spSubDate" value="'+esc(d.submission_date||'')+'" onchange="saveFinalGate('+o.id+')"></div>' +
       '<div class="field"><label class="label">SharePoint submission folder</label><input class="input" id="spSubFolder" value="'+esc(d.submission_folder||'')+'" placeholder="Link to SharePoint folder" onchange="saveFinalGate('+o.id+')"></div>' +
-      '<button class="btn-save-notes" onclick="saveStageNotesBtn('+o.id+',11)">&#128190; Save Notes</button>' +
+      '<button class="btn-save-notes" onclick="saveStageNotesBtn('+o.id+',10)">&#128190; Save Notes</button>' +
       '</div>';
   }
   return h;
@@ -3442,14 +3442,14 @@ function saveFinalGate(oppId){
 
 // ── Save Stage Notes Button (all stage panels) ──────────────────────────
 function saveStageNotesBtn(oppId, stageNum){
-  var stageNames = {7:'Black Hat',8:'Pink Team',9:'Red Team',10:'Gold Team',11:'Final Gate'};
+  var stageNames = {2:'Competitive Intel',7:'Pink Team',8:'Red Team',9:'Gold Team',10:'Final Gate'};
   var stageName = stageNames[stageNum] || 'Stage ' + stageNum;
   // Call the appropriate save function to ensure localStorage is current
-  if(stageNum === 7) saveBlackHat(oppId);
-  else if(stageNum === 8) savePinkTeam(oppId);
-  else if(stageNum === 9) saveRedTeam(oppId);
-  else if(stageNum === 10) saveGoldTeam(oppId);
-  else if(stageNum === 11) saveFinalGate(oppId);
+  if(stageNum === 2) saveBlackHat(oppId);
+  else if(stageNum === 7) savePinkTeam(oppId);
+  else if(stageNum === 8) saveRedTeam(oppId);
+  else if(stageNum === 9) saveGoldTeam(oppId);
+  else if(stageNum === 10) saveFinalGate(oppId);
   var d = loadStageData(oppId);
   var userName = state.user ? state.user.name : 'Unknown';
   // Post to activity feed
