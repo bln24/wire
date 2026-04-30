@@ -2708,23 +2708,14 @@ function intelList(title,items,tone,oppId){
     </div>`).join("")}</section>`;
 }
 function ceoControls(o){
-  return `<section class="detail-section"><div class="detail-label">CEO decision</div>
-    <div class="field"><label class="label">Set Pursuit Lead</label>
-      <div style="font-size:11px;color:var(--quiet);margin-bottom:6px">The lead owns this opp and sees it in their My Queue. Add other team members in the Pursuit Team section above.</div>
-      <div class="ac-wrap">
-        <input class="input" id="assignTo" placeholder="Search by name or title..." autocomplete="off"
-          value="${o.assigned_to && ORG_ROSTER.find(r=>r.key===o.assigned_to) ? ORG_ROSTER.find(r=>r.key===o.assigned_to).name : o.assigned_to || ""}"
-          oninput="acFilter(this)" onfocus="acFilter(this)" onblur="setTimeout(()=>acClose(),350)">
-        <input type="hidden" id="assignToKey" value="${o.assigned_to || ""}">
-        <div class="ac-list" id="acList"></div>
-      </div>
-    </div>
-    <div class="field"><label class="label">Challenge WIRE</label><textarea class="textarea" id="challenge" placeholder="What did the model miss? Be specific: wrong capability score, missing competitor, wrong scope interpretation."></textarea>
-      <button class="btn" style="margin-top:8px;font-size:12px" onclick="submitChallenge(${o.id})"><span data-icon="send"></span>Submit Feedback to Rex</button>
-    </div>
-    <div class="message" id="decisionMsg"></div>
-    ${stageAdvanceButtons(o)}
-  </section>`;
+  // Hidden inputs for assignee — read by approveOpp()
+  var currentName = o.assigned_to && ORG_ROSTER.find(r=>r.key===o.assigned_to) ? ORG_ROSTER.find(r=>r.key===o.assigned_to).name : o.assigned_to || '';
+  return `<div style="display:none">
+    <input id="assignTo" value="${esc(currentName)}">
+    <input id="assignToKey" value="${esc(o.assigned_to || '')}">
+  </div>
+  <div class="message" id="decisionMsg"></div>
+  ${stageAdvanceButtons(o)}`;
 }
 function amControls(){
   return `<section class="detail-section"><div class="detail-label">Capture strategy</div>
@@ -4010,12 +4001,28 @@ function pursuitTeamSection(o) {
   var h = '<section class="pt-section detail-section">';
   h += '<div class="detail-label">Pursuit Team</div>';
 
-  // Lead display
+  // CEO: inline Pursuit Lead setter
+  if(isCEO) {
+    var currentName = o.assigned_to && ORG_ROSTER.find(function(r){return r.key===o.assigned_to;}) ? ORG_ROSTER.find(function(r){return r.key===o.assigned_to;}).name : o.assigned_to || '';
+    h += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--line)">';
+    h += '<span style="font-size:11px;font-weight:800;color:var(--amber);min-width:60px">Lead</span>';
+    h += '<div class="ac-wrap" style="flex:1">';
+    h += '<input class="input" id="assignTo" placeholder="Set pursuit lead..." autocomplete="off" style="height:34px;font-size:12px" value="' + esc(currentName) + '" oninput="acFilter(this)" onfocus="acFilter(this)" onblur="setTimeout(function(){acClose()},350)">';
+    h += '<input type="hidden" id="assignToKey" value="' + esc(o.assigned_to || '') + '">';
+    h += '<div class="ac-list" id="acList"></div></div>';
+    h += '</div>';
+  }
+
+  // Lead display (non-CEO or after set)
   var lead = o.assigned_to ? (ORG_ROSTER.find(function(r){return r.key===o.assigned_to;})||{name:o.assigned_to}) : null;
-  if(lead) {
+  if(lead && !isCEO) {
     var leadInitials = (lead.name||'?').split(' ').map(function(w){return w[0];}).join('').toUpperCase().slice(0,2);
     h += '<div class="pt-member"><div class="pt-avatar" data-photoemail="' + esc(lead.email||'') + '">' + esc(leadInitials) + '</div>';
-    h += '<div class="pt-info"><div class="pt-name">' + esc(lead.name) + '</div><div class="pt-role">Lead (assigned_to)</div></div></div>';
+    h += '<div class="pt-info"><div class="pt-name">' + esc(lead.name) + '</div><div class="pt-role">Lead</div></div></div>';
+  } else if(lead && isCEO) {
+    var leadInitials2 = (lead.name||'?').split(' ').map(function(w){return w[0];}).join('').toUpperCase().slice(0,2);
+    h += '<div class="pt-member"><div class="pt-avatar" data-photoemail="' + esc(lead.email||'') + '">' + esc(leadInitials2) + '</div>';
+    h += '<div class="pt-info"><div class="pt-name">' + esc(lead.name) + '</div><div class="pt-role">Lead</div></div></div>';
   }
 
   // Team members
