@@ -1719,7 +1719,9 @@ function setMSUser(account) {
     go('pipeline');
     setTimeout(function(){ openOpp(Number(urlOppId)); }, 400);
   } else {
-    go("pipeline");
+    // Non-CEO users land on My Queue; CEO lands on pipeline
+    var startPage = (role === 'ceo') ? 'pipeline' : 'myqueue';
+    go(startPage);
   }
   // Fetch MS profile photo async (non-blocking)
   fetchMSPhoto(account);
@@ -2008,8 +2010,8 @@ const PAGES = {
       if(o.pursuit_team && o.pursuit_team.some(function(m){return m && typeof m === 'object' && m.key === state.user.key;})) return true;
       return false;
     });
-    return pageHead("Assigned work","My Queue",`${mine.length} opportunities assigned to you or your pursuit teams`) + `
-      <div class="list-view">${mine.length ? mine.map(o=>rowCard(o,"Open")).join("") : emptyState("Nothing assigned yet","Approved opportunities will land here.")}</div>`;
+    return pageHead("Assigned work","My Queue",`${mine.length} ${mine.length === 1 ? 'opportunity' : 'opportunities'} assigned to you`) + `
+      <div class="list-view">${mine.length ? mine.map(o=>myQueueCard(o)).join('') : emptyState('Nothing assigned yet','Approved opportunities will land here.')}</div>`;
   },
   submit(){
     return pageHead("Field intelligence","Submit an Opportunity","Add relationship-driven context that the automated feed may miss") + `
@@ -2185,6 +2187,51 @@ function reviewPass(id){
   renderCommand();
   go('review');
 }
+function myQueueCard(o){
+  const st = stageOf(o);
+  var myRole = 'Team';
+  if(state.user){
+    if(o.assigned_to === state.user.key) myRole = 'Lead';
+    else if(o.pursuit_team) {
+      var me = o.pursuit_team.find(function(m){ return m && typeof m === 'object' && m.key === state.user.key; });
+      if(me) myRole = me.role || 'Team';
+    }
+  }
+  // What action is needed at this stage
+  var actionNeeded = {
+    2: 'Run competitive intel and build capture strategy',
+    3: 'Complete SME technical review',
+    4: 'Sign off on capture approach',
+    5: 'Go / No-Go decision needed',
+    6: 'Assemble proposal team',
+    7: 'Pink Team — review first draft',
+    8: 'Red Team — score and critique sections',
+    9: 'Gold Team — final executive review',
+    10: 'Final Gate — Brian approval'
+  }[o.stage] || 'Review opportunity';
+  var dueColor = o.due ? dueDateColor(o.due) : 'var(--quiet)';
+  var roleBadge = myRole === 'Lead'
+    ? "<span style='font-size:10px;font-weight:900;color:var(--amber);background:rgba(244,183,63,.12);border:1px solid rgba(244,183,63,.3);border-radius:4px;padding:2px 7px'>LEAD</span>"
+    : "<span style='font-size:10px;font-weight:700;color:var(--quiet);background:rgba(244,241,232,.06);border:1px solid var(--line);border-radius:4px;padding:2px 7px'>"+esc(myRole)+"</span>";
+  return `<article class="row-card" data-open="${o.id}" onclick="openOpp(${o.id})" style="cursor:pointer">
+    <div style="flex:1;min-width:0">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+        <span style="font-size:10px;font-weight:900;color:${st.color};text-transform:uppercase;letter-spacing:.06em">${esc(o.agency)}</span>
+        <span style="font-size:10px;font-weight:800;color:${st.color};background:${st.color}18;border:1px solid ${st.color}44;border-radius:4px;padding:1px 7px">${esc(st.name)}</span>
+        ${roleBadge}
+      </div>
+      <div style="font-size:15px;font-weight:800;color:var(--ink);line-height:1.25;margin-bottom:8px">${esc(o.title)}</div>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <span style="font-size:11px;font-weight:700;color:var(--ink);background:rgba(244,241,232,.05);border:1px solid var(--line);border-radius:5px;padding:3px 9px">&#9654; ${esc(actionNeeded)}</span>
+        ${o.value && o.value !== 'TBD' ? "<span class='chip green'>"+esc(o.value)+"</span>" : ''}
+        ${o.due ? "<span style='font-size:11px;font-weight:700;color:"+dueColor+"'>&#128197; "+fmtDue(o.due)+"</span>" : ''}
+        <span style="font-size:11px;color:var(--quiet)">${esc(o.score)}/100</span>
+      </div>
+    </div>
+    <span data-icon="chevron-right" style="opacity:.4;flex-shrink:0"></span>
+  </article>`;
+}
+
 function rowCard(o,action){
   const st = stageOf(o);
   return `<article class="row-card" data-open="${o.id}" onclick="openOpp(${o.id})">
@@ -2662,7 +2709,8 @@ function intelList(title,items,tone,oppId){
 }
 function ceoControls(o){
   return `<section class="detail-section"><div class="detail-label">CEO decision</div>
-    <div class="field"><label class="label">Assign to</label>
+    <div class="field"><label class="label">Set Pursuit Lead</label>
+      <div style="font-size:11px;color:var(--quiet);margin-bottom:6px">The lead owns this opp and sees it in their My Queue. Add other team members in the Pursuit Team section above.</div>
       <div class="ac-wrap">
         <input class="input" id="assignTo" placeholder="Search by name or title..." autocomplete="off"
           value="${o.assigned_to && ORG_ROSTER.find(r=>r.key===o.assigned_to) ? ORG_ROSTER.find(r=>r.key===o.assigned_to).name : o.assigned_to || ""}"
