@@ -2492,16 +2492,23 @@ function saveCaptureContext(oppId){
   var el = $('captureCtx_'+oppId);
   if(!el) return;
   var notes = el.value.trim();
+  var userName = (state.user && state.user.name) || 'Unknown';
   var cd = {};
   try { cd = JSON.parse(localStorage.getItem('wire_capture_ctx_'+oppId)||'{}'); } catch(e){}
   cd.notes = notes;
   cd.updated_at = new Date().toISOString();
-  cd.updated_by = (state.user && state.user.name) || 'Unknown';
+  cd.updated_by = userName;
   localStorage.setItem('wire_capture_ctx_'+oppId, JSON.stringify(cd));
   var msg = $('captureCtxMsg_'+oppId);
   if(msg){ msg.style.color='var(--green)'; msg.textContent = 'Notes saved.'; setTimeout(function(){ msg.textContent=''; }, 3000); }
+  // Save to SharePoint CaptureContext field
+  spFindItem(String(oppId)).then(function(item){
+    if(item) return spUpdateItem(item.id, {CaptureContext: JSON.stringify(cd)});
+    // Create item if missing
+    var o = OPPS.find(function(x){return x.id===oppId;});
+    return spCreateItem({Title:String(oppId),OppId:String(oppId),Agency:o?(o.agency||''):'',Stage:o?String(o.stage||0):'0',ActivityFeed:'[]',StageData:'{}',CaptureContext:JSON.stringify(cd)});
+  }).catch(function(e){ console.warn('saveCaptureContext SP error:',e); });
   // Post to activity feed
-  var userName = (state.user && state.user.name) || 'Team';
   spPostComment(oppId, userName, 'Capture notes updated: ' + notes.substring(0,120) + (notes.length > 120 ? '...' : '')).then(function(feed){ renderActivityFeed(oppId, feed); });
 }
 
@@ -2680,13 +2687,52 @@ function submitAIRewrite(oppId){
     })
   }).then(r=>r.json()).then(d=>{
     if(d.rewritten_text){
-      if(msg){ msg.style.color='var(--green)'; msg.innerHTML = '<b>AI Rewrite Ready:</b><br><br>' + d.rewritten_text.replace(/\n/g,'<br>') + '<br><br><small style="color:var(--quiet)">' + (d.change_summary||'') + '</small>'; }
+      var escaped = d.rewritten_text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      if(msg){
+        msg.style.color='var(--green)';
+        msg.innerHTML = '<div style="font-size:11px;font-weight:800;color:var(--amber);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">AI Rewrite Ready</div>'
+          + '<div style="background:rgba(244,241,232,.05);border:1px solid var(--line);border-radius:6px;padding:12px;font-size:12px;line-height:1.6;color:var(--ink);white-space:pre-wrap;margin-bottom:10px">' + escaped + '</div>'
+          + (d.change_summary ? '<div style="font-size:10px;color:var(--quiet);margin-bottom:10px">'+d.change_summary.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</div>' : '')
+          + '<div style="display:flex;gap:8px">'
+          + '<button class="btn" style="font-size:11px" id="aiCopyBtn_'+oppId+'">&#128203; Copy</button>'
+          + '<button class="btn btn-primary" style="font-size:11px" id="aiSaveNoteBtn_'+oppId+'">&#128190; Save to Notes</button>'
+          + '</div>';
+        // Store rewrite text on buttons via closure-safe dataset
+        var copyBtn = $('aiCopyBtn_'+oppId);
+        var saveBtn = $('aiSaveNoteBtn_'+oppId);
+        if(copyBtn) copyBtn.addEventListener('click', function(){
+          navigator.clipboard.writeText(d.rewritten_text).then(function(){ showToast('Copied','Rewrite copied to clipboard','var(--green)'); });
+        });
+        if(saveBtn) saveBtn.addEventListener('click', function(){
+          saveAIRewriteAsNote(oppId, section || 'General', d.rewritten_text);
+        });
+      }
     } else {
       if(msg){ msg.style.color='var(--red)'; msg.textContent = 'Error: '+(d.error||'Unknown error'); }
     }
   }).catch(e=>{ if(msg){ msg.style.color='var(--red)'; msg.textContent='Error: '+e.message; } });
 }
 
+
+function saveAIRewriteAsNote(oppId, sectionTitle, text){
+  var userName = (state.user && state.user.name) || 'Unknown';
+  var userKey = (state.user && state.user.key) || 'unknown';
+  var notes = loadNotesLocal(oppId);
+  var entry = {
+    id: generateNoteId(),
+    text: '[AI Rewrite — ' + sectionTitle + ']\n' + text,
+    by: userName,
+    byKey: userKey,
+    at: new Date().toISOString(),
+    edited: false
+  };
+  notes.unshift(entry);
+  saveNotesLocal(oppId, notes);
+  spSaveNotes(oppId, notes);
+  var container = $('notesList_' + oppId);
+  if(container) container.innerHTML = renderNoteItems(oppId, notes);
+  showToast('Saved to Notes', 'AI rewrite saved under Notes for this opp', 'var(--green)');
+}
 
 function capabilityMatrix(o){
   if(!o.cm_tasks || !o.cm_tasks.length) return "";
@@ -4676,8 +4722,11 @@ async function solHandleFile(oppId, input) {
     }
   } catch(e) { console.warn('solHandleFile reanalysis trigger error:', e); }
 
-  if(status) { status.style.color = 'var(--green)'; status.textContent = '\u2713 All files uploaded successfully'; }
-  showToast('Documents uploaded \u2014 Rex will re-analyze this opp', files.length + ' file' + (files.length>1?'s':'') + ' uploaded', 'var(--green)');
+  if(status) { status.style.color = 'var(--amber)'; status.textContent = '\u23F3 Uploaded \u2014 Rex is re-analyzing...'; }
+  showToast('Documents uploaded', 'Rex is re-analyzing this opp now...', 'var(--amber)');
+
+  // Actually trigger re-analysis inline
+  await runRexReanalysis(oppId, o, status);
 
   // Re-render drawer and refresh pipeline
   setTimeout(function() { openOpp(oppId); go(state.page); }, 600);
@@ -4726,11 +4775,91 @@ async function solSaveLink(oppId) {
     }
   } catch(e) { console.warn('solSaveLink reanalysis trigger error:', e); }
 
-  if(status) { status.style.color = 'var(--green)'; status.textContent = '\u2713 Link saved'; }
-  showToast('Solicitation link saved \u2014 Rex will re-analyze this opp', 'Link added successfully', 'var(--green)');
+  if(status) { status.style.color = 'var(--amber)'; status.textContent = '\u23F3 Link saved \u2014 Rex is re-analyzing...'; }
+  showToast('Solicitation link saved', 'Rex is re-analyzing this opp now...', 'var(--amber)');
+
+  // Actually trigger re-analysis inline
+  await runRexReanalysis(oppId, o, status);
 
   // Re-render drawer and refresh pipeline
   setTimeout(function() { openOpp(oppId); go(state.page); }, 600);
+}
+
+// ── Rex Re-analysis (called after doc upload or link save) ───────────────
+async function runRexReanalysis(oppId, o, statusEl) {
+  var WORKER = 'https://bln24-hg-proxy.t24worker.workers.dev';
+  var userName = (state.user && state.user.name) || 'Unknown';
+  try {
+    // Step 1: fetch solicitation text. If we have a doc URL, try to get text via worker.
+    // Fall back to using existing what_they_need + description as context.
+    var solText = '';
+    if(o.sol_docs && o.sol_docs.length && o.sol_docs[0].url) {
+      // We can't fetch SP files directly from browser without a download token.
+      // Use opp metadata as the analysis input — good enough for re-scoring.
+      solText = '';
+    }
+    // Build context from what we have
+    var ctx = [
+      'Agency: ' + (o.agency || ''),
+      'Title: ' + (o.title || ''),
+      'Set-aside: ' + (o.set_aside || ''),
+      'NAICS: ' + (o.naics || ''),
+      'Value: ' + (o.value || ''),
+      'Synopsis: ' + (o.description || '').substring(0, 2000),
+      'What they need: ' + (o.what_they_need || '').substring(0, 1000),
+      'Capture team notes: ' + (function(){ try{ return JSON.parse(localStorage.getItem('wire_capture_ctx_'+oppId)||'{}').notes || ''; }catch(e){return '';} }()),
+      'Uploaded docs: ' + (o.sol_docs||[]).map(function(d){return d.name;}).join(', '),
+    ].join('\n');
+
+    if(statusEl) { statusEl.style.color='var(--amber)'; statusEl.textContent='\u23F3 Rex is analyzing...'; }
+
+    var resp = await fetch(WORKER + '/analyze-solicitation', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        opp_id: oppId,
+        opp_title: o.title || '',
+        opp_agency: o.agency || '',
+        text: ctx
+      })
+    });
+    var data = await resp.json();
+    if(data.ok && data.analysis) {
+      var a = data.analysis;
+      // Update opp object with fresh analysis
+      if(a.summary) o.what_they_need = a.summary;
+      if(a.win_strategy) o.ai_win_theme = a.win_strategy;
+      if(a.set_aside && a.set_aside !== 'Unknown') o.set_aside = a.set_aside;
+      if(a.due_date) o.due = a.due_date;
+      if(a.naics) o.naics = a.naics;
+      // Merge into deep_analysis
+      o.deep_analysis = o.deep_analysis || {};
+      if(a.win_strategy) o.deep_analysis.strategic_take = a.win_strategy;
+      if(a.summary) o.deep_analysis.what_they_need_deep = a.summary;
+      if(a.capability_gaps && a.capability_gaps.length) o.deep_analysis.honest_gaps = a.capability_gaps.join('\n');
+      // Clear pending status
+      o.sol_status = 'analyzed';
+      saveSolOverrides(oppId, o);
+      // Save analysis to SP
+      try {
+        var item = await spFindItem(String(oppId));
+        if(item) await spUpdateItem(item.id, {
+          DeepAnalysis: JSON.stringify(o.deep_analysis),
+          ReanalysisRequested: false,
+          ReanalysisCompletedAt: new Date().toISOString()
+        });
+      } catch(e){ console.warn('runRexReanalysis SP save error:', e); }
+      // Post to activity
+      spPostComment(oppId, 'Rex (AI)', 'Re-analysis complete after document upload. Summary updated.').then(function(feed){ renderActivityFeed(oppId, feed); });
+      if(statusEl) { statusEl.style.color='var(--green)'; statusEl.textContent='\u2713 Rex re-analysis complete \u2014 assessment updated'; }
+      showToast('Rex re-analysis complete', 'Assessment updated based on uploaded documents', 'var(--green)');
+    } else {
+      if(statusEl) { statusEl.style.color='var(--red)'; statusEl.textContent='Re-analysis failed: ' + (data.error || 'Unknown error'); }
+    }
+  } catch(e) {
+    console.warn('runRexReanalysis error:', e);
+    if(statusEl) { statusEl.style.color='var(--red)'; statusEl.textContent='Re-analysis error: ' + e.message; }
+  }
 }
 
 // ── Notes Section Functions ────────────────────────────────────────────
