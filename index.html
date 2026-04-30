@@ -1,10 +1,11 @@
+<!-- WIRE BUILD 20260430112816 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>WIRE - BLN24 Capture Intelligence</title>
-<!-- build: v11.38 — Red Team AI score updates opp scorecard + shows source chip -->
+<!-- build: v11.38 - Red Team AI score updates opp scorecard + shows source chip -->
 <style>
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap");
 
@@ -816,7 +817,7 @@ button{cursor:pointer}
     border-left:none;border-bottom:3px solid transparent;white-space:nowrap}
   .nav-item.on{border-left:none;border-bottom-color:var(--amber);background:var(--amber-soft)}
   .nav-item .icon{width:18px;height:18px}
-  /* Hide count badge on mobile — too cramped */
+  /* Hide count badge on mobile - too cramped */
   .nav-item .badge{display:none}
   /* Extra bottom padding so content clears the nav bar */
   .main{padding-bottom:80px !important}
@@ -853,7 +854,7 @@ button{cursor:pointer}
   .opp-title{font-size:12px}
   .stage-col{min-height:0}
 
-  /* Drawer — full screen on mobile */
+  /* Drawer - full screen on mobile */
   .drawer{width:100vw;top:0;border-left:none;border-radius:0}
   .drawer-bg{background:rgba(0,0,0,.6)}
   .drawer-top{padding:16px 16px 12px}
@@ -1393,7 +1394,7 @@ const USERS = {
   eric:{name:"Eric Ma",role:"am",label:"BD Manager",email:"eric.ma@bln24.com"},
   favi:{name:"Favi Villa",role:"sme",label:"UX Lead / SME",email:"favi.villa@bln24.com"}
 };
-// Full org roster — pulled from Microsoft Entra ID (135 employees)
+// Full org roster - pulled from Microsoft Entra ID (135 employees)
 // Initialized as static fallback, then replaced by AD sync on login
 let ORG_ROSTER = [
   {key:"aaron_lee",name:"Aaron Lee",title:"",email:"aaron.lee@bln24.com"},
@@ -1981,7 +1982,7 @@ const PAGES = {
       ${lifecycleRail()}
       ${agencyStrip()}
       <div class="insight-grid">
-        ${metric(activeOpps().length,"Active opps","All tracked opportunities","var(--amber)",[18,28,12,34,22],"showFiltered('all','All Active Opportunities')")}  
+        ${metric(activeOpps().length,"Active opps","All tracked opportunities","var(--amber)",[18,28,12,34,22],"showFiltered('all','All Active Opportunities')")}
         ${metric(high,"Priority fits","Score 70+ - high-confidence pursuits","var(--green)",[10,22,32,28,38],"showFiltered('priority','Priority Fits - Score 70+')")}
         ${metric(`$${Math.round(total)}M+`,"Visible TCV","Known values only; TBD excluded","var(--blue)",[30,14,26,40,18],"showFiltered('tcv','Known TCV Opportunities')")}
         ${metric(needs,"Need decision","Waiting for CEO go/no-go","var(--red)",[20,34,16,28,42],"go('review')")}
@@ -2050,7 +2051,7 @@ const PAGES = {
     const props = OPPS.filter(o => o.stage >= 7).sort((a,b) => b.stage - a.stage || b.score - a.score);
     const stageNames = {7:'Pink Team',8:'Red Team',9:'Gold Team',10:'Final Gate'};
     const stageColors = {7:'#ff9a62',8:'#ff6b6b',9:'#ffd166',10:'#58d68d'};
-    const stageDesc = {7:'First full draft — test structure, themes, and approach.',8:'Critical review — AI plays evaluator, scores every section, finds the holes.',9:'Executive review — sharpen win themes, polish tone, finalize pricing.',10:'Final compliance check and submission. Brian approves. Files dropped to SharePoint.'};
+    const stageDesc = {7:'First full draft - test structure, themes, and approach.',8:'Critical review - AI plays evaluator, scores every section, finds the holes.',9:'Executive review - sharpen win themes, polish tone, finalize pricing.',10:'Final compliance check and submission. Brian approves. Files dropped to SharePoint.'};
     const colorLegend = [7,8,9,10].map(s => `
       <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)">
         <span style="width:12px;height:12px;border-radius:50%;background:${stageColors[s]};flex-shrink:0"></span>
@@ -2228,13 +2229,12 @@ function openOpp(id){
   $("drawerAgency").innerHTML = esc(o.agency) + " - " + esc(st.name) + (sourceLink ? " <a href='" + esc(sourceLink) + "' target='_blank' rel='noreferrer' style='color:var(--amber);font-weight:900;font-size:10px;text-decoration:none;margin-left:6px' title='Source'>Source &#8599;</a>" : "");
   $("drawerTitle").textContent = o.title;
   $("drawerTags").innerHTML = [
-    `<span class="chip amber">${esc(o.score)} pts</span>`,
+    `<span class="chip amber" title="Fit score out of 100. Based on set-aside match, capability matrix, incumbency, and contract value.">${esc(o.score)}/100</span>`,
     `<span class="chip" style="color:${st.color};border-color:${st.color}55;background:${st.color}1f">${esc(st.short)}</span>`,
     `<span class="chip">${esc(o.set_aside || "TBD")}</span>`,
     o.value && o.value !== "TBD" ? `<span class="chip green">${esc(o.value)}</span>` : "",
     o.assigned_to ? `<span class="chip blue">${esc(o.assigned_to)}</span>` : "",
-    o.due ? `<span class="chip" style="color:${dueDateColor(o.due)};border-color:${dueDateColor(o.due)}55;background:${dueDateColor(o.due)}1f">📅 ${fmtDue(o.due)}</span>` : "",
-    o.score_source === 'Red Team AI Review' ? `<span class="chip" style="color:#ff6b6b;border-color:#ff6b6b44;background:#ff6b6b1a;font-size:10px">🔴 Red Team AI: ${esc(String(o.score))}pts</span>` : ""
+    o.due ? `<span class="chip" style="color:${dueDateColor(o.due)};border-color:${dueDateColor(o.due)}55;background:${dueDateColor(o.due)}1f">📅 ${fmtDue(o.due)}</span>` : ""
   ].join("");
   // Show score source badge below tags if Red Team scored
   if(o.score_source === 'Red Team AI Review'){
@@ -2311,20 +2311,25 @@ function drawerBody(o){
   }
 
   // What they actually need
-  b += "<section class=\"detail-section\"><div class=\"detail-label\"><span data-icon=\"spark\"></span>What They Actually Need</div>";
-  if(whatNeed) b += "<p class=\"detail-copy\">" + truncateText(whatNeed, 320, "need-" + o.id) + "</p>";
-  b += "</section>";
+  if(whatNeed) {
+    b += "<section class=\"detail-section\"><div class=\"detail-label\"><span data-icon=\"spark\"></span>What They Actually Need</div>";
+    b += "<p class=\"detail-copy\">" + truncateText(whatNeed, 320, "need-" + o.id) + "</p>";
+    b += "</section>";
+  }
 
-  // WIRE’s Strategic Take
-  b += "<section class=\"detail-section\"><div class=\"detail-label\">Rex\u2019s Strategic Take<span style=\"font-size:9px;opacity:.4;font-weight:400;text-transform:none\">" + modelBadge + "</span></div>";
-  if(strategic) b += "<div class=\"callout\">" + truncateText(strategic, 400, "strat-" + o.id) + "</div>";
-  b += "</section>";
+  // WIRE's Strategic Take
+  if(strategic) {
+    b += "<section class=\"detail-section\"><div class=\"detail-label\">Rex\u2019s Strategic Take<span style=\"font-size:9px;opacity:.4;font-weight:400;text-transform:none\">" + modelBadge + "</span></div>";
+    b += "<div class=\"callout\">" + truncateText(strategic, 400, "strat-" + o.id) + "</div>";
+    b += "</section>";
+  }
 
   // Win Theme
-  b += "<section class=\"detail-section\"><div class=\"detail-label\">Win Theme</div>";
-  if(winDeep) b += "<div class=\"callout\" style=\"border-left-color:var(--amber)\">" + truncateText(winDeep, 320, "win-" + o.id) + "</div>";
-  if(o.brian_win_theme) b += "<div class=\"callout\" style=\"margin-top:8px\">\ud83d\udc64 " + truncateText(o.brian_win_theme, 240, "bwt-" + o.id) + "</div>";
-  b += "</section>";
+  if(winDeep) {
+    b += "<section class=\"detail-section\"><div class=\"detail-label\">Win Theme</div>";
+    b += "<div class=\"callout\" style=\"border-left-color:var(--amber)\">" + truncateText(winDeep, 320, "win-" + o.id) + "</div>";
+    b += "</section>";
+  }
 
   // Watch Notes
   var watchNotes = da.watch_notes_deep || o.watch_notes || "";
@@ -2358,31 +2363,16 @@ function drawerBody(o){
     b += "</section>";
   }
 
-  // Competitors + Partners
-  b += intelList("Competitors", o.competitors, "red", o.id);
+  // Competitors (only show standalone list at stages < 2; stage 2+ shows it in stageInputPanel Black Hat)
+  if(o.stage < 2) b += intelList("Competitors", o.competitors, "red", o.id);
   b += intelList("Teaming partners", o.partners, "green", o.id);
-
-  // Document links
-  {
-    var solNum = (o.source_url || "").match(/(?:RFI|RFP|SOLICIT)[0-9A-Z]+/i);
-    solNum = solNum ? solNum[0].toUpperCase() : "";
-    var samUrl = solNum
-      ? "https://sam.gov/search/?keywords=" + encodeURIComponent(solNum) + "&index=opp&is_active=true"
-      : "https://sam.gov/search/?keywords=" + encodeURIComponent(o.title.split(" ").slice(0,5).join(" ")) + "&index=opp";
-    var hgDocsUrl = (o.hg_url && o.hg_url.length > 50) ? o.hg_url.replace(/\/$/, "") + "/" : "";
-    b += "<section class='detail-section'><div class='detail-label'>Solicitation Documents</div>";
-    b += "<div style='display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px'>";
-    if(o.source_url) b += "<a href='" + esc(o.source_url) + "' target='_blank' rel='noreferrer' style='display:inline-flex;align-items:center;gap:5px;background:rgba(244,183,63,.12);border:1px solid rgba(244,183,63,.3);border-radius:7px;padding:8px 14px;color:var(--amber);font-size:12px;font-weight:800;text-decoration:none'>&#8659; eBuy / GSA Solicitation</a>";
-    b += "<a href='" + samUrl + "' target='_blank' rel='noreferrer' style='display:inline-flex;align-items:center;gap:5px;background:rgba(88,214,141,.08);border:1px solid rgba(88,214,141,.25);border-radius:7px;padding:8px 14px;color:var(--green);font-size:12px;font-weight:800;text-decoration:none'>&#8599; SAM.gov</a>";
-    if(hgDocsUrl) b += "<a href='" + esc(hgDocsUrl) + "' target='_blank' rel='noreferrer' style='display:inline-flex;align-items:center;gap:5px;background:rgba(114,183,255,.08);border:1px solid rgba(114,183,255,.22);border-radius:7px;padding:8px 14px;color:var(--blue);font-size:12px;font-weight:800;text-decoration:none'>&#8599; HigherGov (+ attachments)</a>";
-    b += "</div><div style='font-size:11px;color:var(--quiet)'>HigherGov lists all attached PWS/SOW files on the profile page &middot; SAM.gov has official posted documents &middot; Upload below for AI analysis</div></section>";
-  }
 
   // Proposal stage panel (stages 7-10)
   if(o.stage >= 7) b += proposalStagePanel(o);
 
-  // AI prompt box (all roles, all stages with solicitation)
-  b += aiPromptBox(o);
+  // Capture context box (stages 0-6) OR AI prompt rewrite box (stages 7+)
+  if(o.stage < 7) b += captureContextBox(o);
+  else b += aiPromptBox(o);
 
   // Controls
   if(state.user && state.user.role === "ceo") b += ceoControls(o);
@@ -2408,7 +2398,7 @@ function proposalStagePanel(o){
   }[o.stage] || { who: '', action: '', color: 'var(--amber)' };
 
   const colorLegend = [
-    {id:7, name:'Pink Team', color:'#ff9a62', desc:'First full draft. Internal review — catch errors, gaps, and weak arguments before anyone else sees it.'},
+    {id:7, name:'Pink Team', color:'#ff9a62', desc:'First full draft. Internal review - catch errors, gaps, and weak arguments before anyone else sees it.'},
     {id:8, name:'Red Team', color:'#ff6b6b', desc:'AI plays the evaluator. Score every section as if you are the CO. Find the holes and fix them.'},
     {id:9, name:'Gold Team', color:'#ffd166', desc:'Executive review. Sharpen win themes, polish tone, finalize pricing and compliance.'},
     {id:10, name:'Final Gate', color:'#58d68d', desc:'Brian approves. Submission checklist generated. Files dropped to SharePoint.'},
@@ -2434,6 +2424,63 @@ function proposalStagePanel(o){
       ${legendHtml}
     </div>
   </section>`;
+}
+
+function captureContextBox(o){
+  var saved = '';
+  try { var cd = JSON.parse(localStorage.getItem('wire_capture_ctx_'+o.id)||'{}'); saved = cd.notes || ''; } catch(e){}
+  return `<section class='detail-section'>
+    <div class='detail-label'><span data-icon='spark'></span>Capture Team Notes</div>
+    <div style='font-size:11px;color:var(--quiet);margin-bottom:10px'>Add context for the capture team — anything Rex missed, intel from a call, relationship notes, or reasons to challenge the score. This feeds back into Rex\'s analysis.</div>
+    <div class='field'><textarea class='textarea' id='captureCtx_${o.id}' placeholder='e.g. We have a warm relationship with the COR. Incumbent is struggling. Our NOAA past perf is directly relevant here.' style='min-height:80px'>${esc(saved)}</textarea></div>
+    <div style='display:flex;gap:8px;align-items:center'>
+      <button onclick='saveCaptureContext(${o.id})' class='btn btn-primary' style='font-size:12px'><span data-icon='save'></span>Save Notes</button>
+      <button onclick='submitCaptureChallenge(${o.id})' class='btn' style='font-size:12px'><span data-icon='send'></span>Challenge Rex\'s Score</button>
+    </div>
+    <div class='message' id='captureCtxMsg_${o.id}'></div>
+  </section>`;
+}
+
+function saveCaptureContext(oppId){
+  var el = $('captureCtx_'+oppId);
+  if(!el) return;
+  var notes = el.value.trim();
+  var cd = {};
+  try { cd = JSON.parse(localStorage.getItem('wire_capture_ctx_'+oppId)||'{}'); } catch(e){}
+  cd.notes = notes;
+  cd.updated_at = new Date().toISOString();
+  cd.updated_by = (state.user && state.user.name) || 'Unknown';
+  localStorage.setItem('wire_capture_ctx_'+oppId, JSON.stringify(cd));
+  var msg = $('captureCtxMsg_'+oppId);
+  if(msg){ msg.style.color='var(--green)'; msg.textContent = 'Notes saved.'; setTimeout(function(){ msg.textContent=''; }, 3000); }
+  // Post to activity feed
+  var userName = (state.user && state.user.name) || 'Team';
+  spPostComment(oppId, userName, 'Capture notes updated: ' + notes.substring(0,120) + (notes.length > 120 ? '...' : '')).then(function(feed){ renderActivityFeed(oppId, feed); });
+}
+
+function submitCaptureChallenge(oppId){
+  var el = $('captureCtx_'+oppId);
+  if(!el || !el.value.trim()){ 
+    var msg = $('captureCtxMsg_'+oppId);
+    if(msg){ msg.style.color='var(--red)'; msg.textContent='Add notes before challenging the score.'; }
+    return;
+  }
+  var o = OPPS.find(function(x){return x.id===oppId;});
+  if(!o) return;
+  var txt = el.value.trim();
+  var userName = (state.user && state.user.name) || 'Team';
+  // Log as challenge in activity feed
+  var entry = {type:'challenge',msg:'Score challenge: '+txt,by:userName,at:new Date().toISOString()};
+  var lsKey = 'wire_activity_'+oppId;
+  var feed = [];
+  try{ feed = JSON.parse(localStorage.getItem(lsKey)||'[]'); }catch(ex){}
+  feed.push(entry);
+  localStorage.setItem(lsKey, JSON.stringify(feed));
+  // Persist challenge on opp object
+  o.brian_challenge = (o.brian_challenge ? o.brian_challenge + ' | ' : '') + txt;
+  var msg = $('captureCtxMsg_'+oppId);
+  if(msg){ msg.style.color='var(--green)'; msg.textContent='Challenge submitted. Rex will re-analyze.'; setTimeout(function(){ msg.textContent=''; }, 4000); }
+  spPostComment(oppId, userName, 'Score challenge submitted: ' + txt.substring(0,160)).then(function(f){ renderActivityFeed(oppId, f); });
 }
 
 function aiPromptBox(o){
@@ -2521,14 +2568,15 @@ function runRedTeam(oppId){
       // Re-render drawer tags and header to reflect new score
       var stNow = stageOf(o);
       $('drawerTags').innerHTML = [
-        '<span class="chip amber">' + esc(String(o.score)) + ' pts</span>',
+        '<span class="chip amber" title="Fit score out of 100">' + esc(String(o.score)) + '/100</span>',
         '<span class="chip" style="color:'+stNow.color+';border-color:'+stNow.color+'55;background:'+stNow.color+'1f">' + esc(stNow.short) + '</span>',
         '<span class="chip">' + esc(o.set_aside || 'TBD') + '</span>',
         o.value && o.value !== 'TBD' ? '<span class="chip green">' + esc(o.value) + '</span>' : '',
         o.assigned_to ? '<span class="chip blue">' + esc(o.assigned_to) + '</span>' : '',
-        o.due ? '<span class="chip" style="color:'+dueDateColor(o.due)+';border-color:'+dueDateColor(o.due)+'55;background:'+dueDateColor(o.due)+'1f">\uD83D\uDCC5 '+fmtDue(o.due)+'</span>' : '',
-        '<span class="chip" style="color:#ff6b6b;border-color:#ff6b6b44;background:#ff6b6b1a;font-size:10px">\uD83D\uDD34 Red Team AI: '+esc(String(o.score))+'pts</span>'
+        o.due ? '<span class="chip" style="color:'+dueDateColor(o.due)+';border-color:'+dueDateColor(o.due)+'55;background:'+dueDateColor(o.due)+'1f">\uD83D\uDCC5 '+fmtDue(o.due)+'</span>' : ''
       ].join('');
+      // Score source line for Red Team
+      $('drawerTags').innerHTML += '<div style="width:100%;margin-top:4px;font-size:10px;font-weight:700;color:var(--quiet);letter-spacing:.05em">Score source: <span style="color:#ff6b6b">Red Team AI Review</span>' + (o.score_updated_at ? ' \u00B7 ' + new Date(o.score_updated_at).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '') + '</div>';
       // Re-render the board so the card shows the updated score
       go(state.page);
     } else {
@@ -2614,10 +2662,9 @@ function intelList(title,items,tone,oppId){
 }
 function ceoControls(o){
   return `<section class="detail-section"><div class="detail-label">CEO decision</div>
-    <div class="field"><label class="label">Your win theme</label><textarea class="textarea" id="ceoTheme">${esc(o.brian_win_theme || "")}</textarea></div>
     <div class="field"><label class="label">Assign to</label>
       <div class="ac-wrap">
-        <input class="input" id="assignTo" placeholder="Search by name or title…" autocomplete="off"
+        <input class="input" id="assignTo" placeholder="Search by name or title..." autocomplete="off"
           value="${o.assigned_to && ORG_ROSTER.find(r=>r.key===o.assigned_to) ? ORG_ROSTER.find(r=>r.key===o.assigned_to).name : o.assigned_to || ""}"
           oninput="acFilter(this)" onfocus="acFilter(this)" onblur="setTimeout(()=>acClose(),350)">
         <input type="hidden" id="assignToKey" value="${o.assigned_to || ""}">
@@ -2700,7 +2747,7 @@ function approveOpp(){
   const assigneeName = ORG_ROSTER.find(r=>r.key===assignee)?.name || typedName || assignee;
   const oppTitle = state.opp.title || "Opportunity";
   state.opp.assigned_to = assignee;
-  state.opp.brian_win_theme = $("ceoTheme")?.value || state.opp.brian_win_theme;
+  // brian_win_theme now set via Win Theme section in drawer body
   state.opp.stage = Math.max(state.opp.stage, 2);
   $("decisionMsg")?.classList.remove("err");
   buildNav();
@@ -2959,8 +3006,8 @@ function seedNotifications(role){
   if(role==="ceo"){
     NOTIFS.push(
       {title:"DEA RFI due soon", body:"DOJ DEA Web Developer RFI closes May 9. Qualtrics form not submitted.", time: now - 3600000, unread:true, opp_id: deaOpp ? deaOpp.id : null},
-      {title:"NTIA Phase 2 — strategy pending", body:"Michael hasn\'t submitted capture strategy yet. Nudge him.", time: now - 7200000, unread:true, opp_id: ntiaOpp ? ntiaOpp.id : null},
-      {title:"Census ADRM — CEO review needed", body:"Scored 89pts. Assigned to Eric. Awaiting your go/no-go.", time: now - 86400000, unread:false, opp_id: censusOpp ? censusOpp.id : 900}
+      {title:"NTIA Phase 2 - strategy pending", body:"Michael hasn\'t submitted capture strategy yet. Nudge him.", time: now - 7200000, unread:true, opp_id: ntiaOpp ? ntiaOpp.id : null},
+      {title:"Census ADRM - CEO review needed", body:"Scored 89pts. Assigned to Eric. Awaiting your go/no-go.", time: now - 86400000, unread:false, opp_id: censusOpp ? censusOpp.id : 900}
     );
   } else {
     const myOpp = OPPS.find(o => state.user && o.assigned_to === state.user.key);
@@ -3185,7 +3232,7 @@ async function fetchOrgPhoto(email, avatarEl) {
   }
   _photoCache[email] = "none"; // optimistic
   try {
-    // Use worker proxy — avoids need for User.ReadBasic.All consent
+    // Use worker proxy - avoids need for User.ReadBasic.All consent
     const proxyUrl = "https://bln24-hg-proxy.bln24.workers.dev/user-photo?email=" + encodeURIComponent(email);
     const r = await fetch(proxyUrl);
     if(!r.ok) return;
@@ -3296,7 +3343,7 @@ function stageAdvanceButtons(o) {
     d += '<button class="btn btn-primary" style="font-size:12px;background:#ff9a62;border-color:#ff9a62" onclick="advanceStage(' + o.id + ',7)">⚡ Jump to Proposal</button>';
     d += '<button class="btn" style="font-size:12px;color:var(--quiet)" onclick="advanceStage(' + o.id + ',-1)">✕ Pass</button>';
   } else if(o.stage === 5) {
-    d += '<button class="btn btn-primary" style="font-size:13px;padding:10px 20px;background:var(--green);border-color:var(--green)" onclick="advanceStage(' + o.id + ',7)">✔ GO — Start Proposal</button>';
+    d += '<button class="btn btn-primary" style="font-size:13px;padding:10px 20px;background:var(--green);border-color:var(--green)" onclick="advanceStage(' + o.id + ',7)">✔ GO - Start Proposal</button>';
     d += '<button class="btn btn-danger" style="font-size:13px;padding:10px 20px" onclick="advanceStage(' + o.id + ',-1)">✖ NO-GO</button>';
   } else if(o.stage >= 6 && o.stage < 10) {
     d += '<button class="btn btn-primary" style="font-size:12px" onclick="advanceStage(' + o.id + ',' + (o.stage+1) + ')">▶ ' + (SNAMES[o.stage+1]||"Next Stage") + '</button>';
@@ -4053,7 +4100,7 @@ async function loadPursuitTeamFromSP(oppId) {
     if(!spData || !spData.pursuitTeam || !spData.pursuitTeam.length) return;
     var o = OPPS.find(function(x){return x.id===oppId;});
     if(!o) return;
-    // Merge SP data with local — SP is source of truth
+    // Merge SP data with local - SP is source of truth
     o.pursuit_team = spData.pursuitTeam;
     localStorage.setItem('wire_pt_' + oppId, JSON.stringify(spData.pursuitTeam));
     // Re-render pursuit team section if drawer is still open for this opp
@@ -4492,22 +4539,6 @@ function rexAnalysisPanel(o) {
     body += '<span style="font-size:12px;font-weight:800;color:var(--ink)">' + esc(o.set_aside) + saWarn + '</span></div>';
   }
   body += '</div>';
-
-  // Rex take
-  if(strategic) {
-    body += '<div style="border-top:1px solid var(--line);padding-top:10px;margin-bottom:10px">';
-    body += '<div style="font-size:10px;font-weight:800;color:var(--quiet);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px">Rex take</div>';
-    body += '<div style="font-size:12px;line-height:1.6;color:var(--ink)">' + esc(strategic) + '</div>';
-    body += '</div>';
-  }
-
-  // What they need
-  if(whatNeed) {
-    body += '<div style="border-top:1px solid var(--line);padding-top:10px;margin-bottom:10px">';
-    body += '<div style="font-size:10px;font-weight:800;color:var(--quiet);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px">What they need</div>';
-    body += '<div style="font-size:12px;line-height:1.6;color:var(--ink)">' + esc(whatNeed) + '</div>';
-    body += '</div>';
-  }
 
   // Gaps from cm_tasks
   var gaps = (o.cm_tasks || []).filter(function(t) { return t.status === 'gap'; });
